@@ -12,6 +12,7 @@ typedef struct filter_lock_t
 } filter_lock_t;
 
 int create_lock(size_t number_of_threads, filter_lock_t** lock);
+void free_lock(filter_lock_t*);
 
 // Lock mutex if not already locked
 // If already locked, wait

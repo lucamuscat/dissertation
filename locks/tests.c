@@ -16,11 +16,13 @@ void* increment_counter(thread_data* data)
 {
     for (int i = 0; i < ITERATIONS; ++i)
     {
-        wait_lock(data->thread_id, data->obj->lock);
-        DEBUG_LOG("Entered CS");
+        wait_lock_stm(data->thread_id, data->obj->lock);
         // CS
         data->obj->counter += INCREMENT_VALUE;
-        unlock(data->thread_id, data->obj->lock);
+        DEBUG_LOG_F("\nThread Id: %ld", data->thread_id);
+        DEBUG_LOG_F("\nCounter: %ld", data->obj->counter);
+
+        unlock_stm(data->thread_id, data->obj->lock);
     }
     return NULL;
 }
@@ -33,7 +35,7 @@ bool counter_test(size_t n)
 
     for (size_t i = 0; i < n; ++i)
     {
-        DEBUG_LOG_F("Created thread %ld\n", i);
+        DEBUG_LOG_F("\n[I] Created thread %ld\n", i);
         pthread_create(&threads[i], NULL, (void*)increment_counter, thread_parameters[i]);
     }
     for (size_t i = 0; i < n; ++i)
@@ -41,14 +43,12 @@ bool counter_test(size_t n)
         pthread_join(threads[i], NULL);
     }
 
-    printf("\n%ld\n", mutex->counter);
+    DEBUG_LOG_F("\n%ld\n", mutex->counter);
     assert(mutex->counter == (ITERATIONS*INCREMENT_VALUE*n));
 
-    /*
     free_lock(mutex->lock);
     free(mutex);
     free(threads);
     free_thread_data(thread_parameters, n);
-    */
     return true;
 }

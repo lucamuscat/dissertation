@@ -2,10 +2,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "tests.h"
-#include "util.h"
-#include "filter_lock.h"
-#include "globals.h"
+#include "increment_counter_utils.h"
+#include "../../util.h"
+#include "../../filter_lock.h"
+#include "../../globals.h"
 
 
 #define ITERATIONS 10

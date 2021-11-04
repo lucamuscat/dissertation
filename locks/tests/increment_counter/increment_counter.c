@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
-#include "tests.h"
-#include "globals.h"
+#include "increment_counter_utils.h"
+#include "../../globals.h"
 
 #ifndef TEST_ITERATIONS
 #define TEST_ITERATIONS 1000

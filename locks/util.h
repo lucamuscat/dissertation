@@ -17,5 +17,6 @@ typedef struct thread_data
 
 mutex* create_mutex_object(size_t);
 thread_data** create_thread_data(mutex*, size_t);
+void free_thread_data(thread_data**, size_t);
 
 #endif

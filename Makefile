@@ -7,14 +7,18 @@ ERROR_FLAGS = -Wall -Wextra
 # -fnu-tm is used to enabled transaction_atomic
 LIBRARIES = -lpthread -fgnu-tm
 
-FILTER_LOCK_FILES = ./locks/tests.c ./locks/util.c ./locks/test_locks.c ./locks/filter_lock.c
-FILTER_LOCK_OUTPUT_NAME = filter_lock.o
+TESTS_DIR = ./locks/tests
 
-filter_lock:
-	gcc $(FILTER_LOCK_FILES) $(LIBRARIES) -o locks/$(FILTER_LOCK_OUTPUT_NAME) $(DEBUG_FLAGS) $(ERROR_FLAGS)
+OUTPUT_DIR = ./build
 
-run_filter_lock:
-	./locks/filter_lock.o 10
+FILTER_LOCK_DEPENDENCIES = ./locks/util.c ./locks/filter_lock.c
+FILTER_LOCK_INCREMENT_TEST_FILES = $(TESTS_DIR)/increment_counter/*.c
+FILTER_LOCK_INCREMENT_OUTPUT_NAME = filter_lock_inc.o
 
-debug_filter_lock:
-	gdb --args ./locks/filter_lock.o 10
+all: increment_filter_lock_test spinlock_filter_lock_test
+
+increment_filter_lock_test:
+	gcc $(FILTER_LOCK_DEPENDENCIES) $(FILTER_LOCK_INCREMENT_TEST_FILES) $(LIBRARIES) -o $(OUTPUT_DIR)/$(FILTER_LOCK_INCREMENT_OUTPUT_NAME) $(DEBUG_FLAGS) $(ERROR_FLAGS)
+
+spinlock_filter_lock_test:
+	gcc $(FILTER_LOCK_DEPENDENCIES) ./locks/tests/spinlock.c $(LIBRARIES) -o $(OUTPUT_DIR)/spinlock.o $(DEBUG_FLAGS) $(ERROR_FLAGS)

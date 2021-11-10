@@ -10,13 +10,13 @@
 /// @param n: Number of threads.
 /// @returns: True if passed.
 /// False if failed.
-bool counter_test(size_t n);
+bool counter_test(int n);
 
 /// Tests that threads will spin lock
 /// when a mutex is already locked.
 /// @param n: Number of threads.
 /// @returns: True if passed.
 /// False if failed.
-bool spinlock_test(size_t n);
+// bool spinlock_test(size_t n);
 
 #endif

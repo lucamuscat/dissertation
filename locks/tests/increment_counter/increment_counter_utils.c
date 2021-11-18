@@ -12,21 +12,20 @@
 
 bool counter_test(int num_of_threads)
 {
-    printf("Number of threads: %d", num_of_threads);
     omp_set_num_threads(num_of_threads);
     void* lock;
     create_lock(&lock);
-    DEBUG_LOG("Create lock");
     int counter = 0;
     #pragma omp parallel
     {
-        wait_lock(lock);
         for (int i = 0; i < ITERATIONS; ++i)
         {
+            wait_lock(lock);
             counter += INCREMENT_VALUE;
+            unlock(lock);
         }
-        unlock(lock);
     }
     assert(counter == (ITERATIONS * INCREMENT_VALUE * num_of_threads));
+    free_lock(lock);
     return true;
 }

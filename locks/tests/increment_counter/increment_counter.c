@@ -11,7 +11,10 @@
 int main(int argc, char* argv[])
 {
     if (argc != 2)
+    {
+        puts("Missing args");
         return -1;
+    }
 
     char* pEnd;
     const long int number_of_threads = strtol(argv[1], &pEnd, 10);

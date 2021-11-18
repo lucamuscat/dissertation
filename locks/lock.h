@@ -1,9 +1,6 @@
 #ifndef LOCK_H
 #define LOCK_H
 
-#include <stdbool.h>
-#include <stddef.h>
-
 int create_lock(void** lock);
 void free_lock(void*);
 

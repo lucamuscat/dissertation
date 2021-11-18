@@ -21,3 +21,8 @@ void unlock(void* lock)
 {
     omp_unset_lock(lock);
 }
+
+void free_lock(void* lock)
+{
+    omp_destroy_lock(lock);
+}

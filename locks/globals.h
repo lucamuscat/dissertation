@@ -10,4 +10,9 @@
 #define DEBUG_LOG_F(message, format) do {} while(0)
 #endif
 
+#define FULL_BARRIER asm("mfence")
+// Untested
+#define WRITE_BARRIER asm("sfence")
+#define LOAD_BARRIER asm("lfence")
+
 #endif

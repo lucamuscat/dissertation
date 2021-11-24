@@ -12,9 +12,12 @@
 
 bool counter_test(int num_of_threads)
 {
-    omp_set_num_threads(num_of_threads);
     void* lock;
-    create_lock(&lock);
+    if (create_lock(&lock) != 0)
+    {
+        DEBUG_LOG("Create lock failed");
+        assert(false);
+    }
     int counter = 0;
     #pragma omp parallel
     {

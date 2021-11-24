@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <omp.h>
 #include "increment_counter_utils.h"
+#include "../../lock.h"
 #include "../../globals.h"
 
 #ifndef TEST_ITERATIONS
@@ -18,6 +19,7 @@ int main(int argc, char* argv[])
 
     char* pEnd;
     const long int number_of_threads = strtol(argv[1], &pEnd, 10);
+    omp_set_num_threads(number_of_threads);
     for (size_t i = 0; i < TEST_ITERATIONS; ++i)
     {
         DEBUG_LOG_F("\n============\nIteration: %ld\n============\n", i);

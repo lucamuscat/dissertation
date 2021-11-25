@@ -7,32 +7,28 @@
 #include "globals.h"
 
 #define P_LOCK ((filter_lock_t*)lock)
+#define P_LOCK_2 ((filter_lock_t*)*lock)
 
 typedef struct filter_lock_t
 {
     int* level;
     int* victim;
-    size_t number_of_threads;
 } filter_lock_t;
 
 int create_lock(void** lock)
 {
     const int num_of_threads = omp_get_num_threads();
-    filter_lock_t** temp = (filter_lock_t**)lock;
-    *temp = (filter_lock_t*)malloc(sizeof(filter_lock_t));
-    if (temp != NULL)
+    *lock = malloc(sizeof(filter_lock_t));
+    if (*lock != NULL)
     {
-        (*temp)->level = (int*)malloc(sizeof(int) * num_of_threads);
-        if ((*temp)->level == NULL)
+        //(*temp)->level = (int*)malloc(sizeof(int) * num_of_threads);
+        P_LOCK_2->level = (int*)calloc(num_of_threads, sizeof(int));
+        if (P_LOCK_2->level == NULL)
             return errno;
-        (*temp)->victim = (int*)malloc(sizeof(int) * num_of_threads);
-        if ((*temp)->victim == NULL)
+        // (*temp)->victim = (int*)malloc(sizeof(int) * num_of_threads);
+        P_LOCK_2->victim = (int*)calloc(num_of_threads, sizeof(int));
+        if (P_LOCK_2->victim == NULL)
             return errno;
-        for (int i = 0; i < num_of_threads; ++i)
-        {
-            (*temp)->level[i] = 0;
-            (*temp)->victim[i] = 0;
-        }
         return 0;
     }
     return errno;
@@ -40,21 +36,22 @@ int create_lock(void** lock)
 
 void free_lock(void* lock)
 {
-    //free(P_LOCK->level);
-    //free(P_LOCK->victim);
-    //free(P_LOCK);
+    free(P_LOCK->level);
+    free(P_LOCK->victim);
+    free(P_LOCK);
 }
 
 void wait_lock(void* lock)
 {
-    int num_of_threads = omp_get_num_threads();
-    int thread_id = omp_get_thread_num();
+    const int thread_id = omp_get_thread_num();
+    const int num_of_threads = omp_get_num_threads();
     for (int i = 1; i < num_of_threads; ++i)
     {
         P_LOCK->level[thread_id] = i;
         P_LOCK->victim[i] = thread_id;
         // Spin lock
         bool stay = true;
+        FULL_BARRIER;
         while (stay)
         {
             stay = false;
@@ -74,5 +71,6 @@ void wait_lock(void* lock)
 
 void unlock(void* lock)
 {
+    FULL_BARRIER;
     P_LOCK->level[omp_get_thread_num()] = 0;
 }

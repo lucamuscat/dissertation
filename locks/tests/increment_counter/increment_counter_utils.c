@@ -19,7 +19,7 @@ bool counter_test(int num_of_threads)
         assert(false);
     }
     int counter = 0;
-    #pragma omp parallel
+    #pragma omp parallel shared(lock, counter)
     {
         for (int i = 0; i < ITERATIONS; ++i)
         {
@@ -28,6 +28,7 @@ bool counter_test(int num_of_threads)
             unlock(lock);
         }
     }
+    DEBUG_LOG_F("Counter: %d", counter);
     assert(counter == (ITERATIONS * INCREMENT_VALUE * num_of_threads));
     free_lock(lock);
     return true;

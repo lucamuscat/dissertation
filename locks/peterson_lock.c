@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "lock.h"
+#include "globals.h"
 
 typedef struct peterson_lock_t
 {
@@ -28,7 +29,7 @@ void wait_lock(void* lock)
     P_LOCK->flag[i] = true;
     P_LOCK->victim = i;
     // Full memory fence is needed as stores and loads occur before the fence
-    asm("mfence");
+    FULL_BARRIER;
     while (P_LOCK->flag[j] && P_LOCK->victim == i) {}; // wait
 }
 

@@ -13,14 +13,17 @@ typedef struct filter_lock_t
 {
     int* level;
     int* victim;
+    int num_of_threads;
 } filter_lock_t;
 
 int create_lock(void** lock)
 {
-    const int num_of_threads = omp_get_num_threads();
+    const int num_of_threads = omp_get_max_threads();
+    DEBUG_LOG_F("Created lock of size %d\n", num_of_threads);
     *lock = malloc(sizeof(filter_lock_t));
     if (*lock != NULL)
     {
+        P_LOCK_2->num_of_threads = num_of_threads;
         //(*temp)->level = (int*)malloc(sizeof(int) * num_of_threads);
         P_LOCK_2->level = (int*)calloc(num_of_threads, sizeof(int));
         if (P_LOCK_2->level == NULL)
@@ -44,8 +47,7 @@ void free_lock(void* lock)
 void wait_lock(void* lock)
 {
     const int thread_id = omp_get_thread_num();
-    const int num_of_threads = omp_get_num_threads();
-    for (int i = 1; i < num_of_threads; ++i)
+    for (int i = 1; i < P_LOCK->num_of_threads; ++i)
     {
         P_LOCK->level[thread_id] = i;
         P_LOCK->victim[i] = thread_id;
@@ -55,7 +57,7 @@ void wait_lock(void* lock)
         while (stay)
         {
             stay = false;
-            for (int k = 0; k < num_of_threads; ++k)
+            for (int k = 0; k < P_LOCK->num_of_threads; ++k)
             {
                 if (k == thread_id)
                     continue;

@@ -2,3 +2,4 @@
 experiment/**
 *.o
 build/**
+*.code-workspace

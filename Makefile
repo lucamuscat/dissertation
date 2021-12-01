@@ -44,3 +44,7 @@ increment_spin_lock_test: init_build_folder
 	$(CXX) ./locks/spin_lock.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -masm=intel -S -fverbose-asm -fno-asynchronous-unwind-tables -fno-exceptions
 	mv *.s build/asm/spin_lock/
 
+
+clean: 
+	rm -rf ./build
+	rm *.s *.o

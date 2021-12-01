@@ -16,7 +16,7 @@ FILTER_LOCK_INCREMENT_OUTPUT_NAME = filter_lock_inc.o
 
 CXX = gcc
 
-all: increment_filter_lock_test increment_kernel_lock_test increment_peterson_lock_test
+all: increment_filter_lock_test increment_kernel_lock_test increment_peterson_lock_test increment_spin_lock_test
 
 init_build_folder:
 	mkdir -p $(OUTPUT_DIR)
@@ -37,3 +37,10 @@ increment_peterson_lock_test: init_build_folder
 	$(CXX) ./locks/peterson_lock.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -o $(OUTPUT_DIR)/peterson_lock_inc.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
 	$(CXX) ./locks/peterson_lock.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -masm=intel -S -fverbose-asm -fno-asynchronous-unwind-tables -fno-exceptions
 	mv *.s build/asm/peterson/
+
+increment_spin_lock_test: init_build_folder
+	mkdir -p ./build/asm/spin_lock/
+	$(CXX) ./locks/spin_lock.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -o $(OUTPUT_DIR)/spin_lock_inc.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	$(CXX) ./locks/spin_lock.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -masm=intel -S -fverbose-asm -fno-asynchronous-unwind-tables -fno-exceptions
+	mv *.s build/asm/spin_lock/
+

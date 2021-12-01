@@ -1,2 +1,5 @@
 .vscode/**
 experiment/**
+*.o
+build/**
+*.code-workspace

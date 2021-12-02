@@ -14,7 +14,9 @@
 
 int main(int argc, char** argv)
 {
-    handle_args(argc, argv);
+    int num_of_threads = handle_args(argc, argv);
+    if (num_of_threads == -1)
+        return -1;
     void* lock;
     create_lock(&lock);
     double time = 0;
@@ -35,8 +37,13 @@ int main(int argc, char** argv)
         assert(diff_time > 0);
     }
     time /= ITERATIONS;
+    #ifdef SILENT
+    // Output csv results
+    printf("%s, %d, %ld", argv[0], num_of_threads, time);
+    #else
     DEBUG_LOG_F("===============%s===============", argv[0]);
     DEBUG_LOG_F("\nNumber of threads: %d, ", omp_get_max_threads());
     DEBUG_LOG_F("\nAverage Time (nanoseconds): %lf\n\n", time);
+    #endif
     return 0;
 }

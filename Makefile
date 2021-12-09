@@ -1,5 +1,5 @@
 ifdef SILENT
-DEBUG_FLAGS = -g
+DEBUG_FLAGS =
 else
 DEBUG_FLAGS = -DDEBUG -g
 endif

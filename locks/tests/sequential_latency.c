@@ -9,7 +9,7 @@
 
 #define CLOCK_ID CLOCK_REALTIME
 #define ITERATIONS 1000
-#define INNER_ITERATIONS 100000
+#define INNER_ITERATIONS 1000
 #define NAME_OF_LOCK "Lock"
 
 int main(int argc, char** argv)
@@ -37,9 +37,9 @@ int main(int argc, char** argv)
         assert(diff_time > 0);
     }
     time /= ITERATIONS;
-    #ifdef SILENT
+    #ifndef DEBUG
     // Output csv results
-    printf("%s, %d, %ld", argv[0], num_of_threads, time);
+    printf("%s, %d, %f\n", argv[0], num_of_threads, time);
     #else
     DEBUG_LOG_F("===============%s===============", argv[0]);
     DEBUG_LOG_F("\nNumber of threads: %d, ", omp_get_max_threads());

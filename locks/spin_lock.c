@@ -29,11 +29,11 @@ void free_lock(void* lock)
 void wait_lock(void* lock)
 {
     // If test & set returns 0 => the current thread locked the thread.
-    while (atomic_flag_test_and_set(&(P_LOCK->busy)));
+    while (atomic_flag_test_and_set_explicit(&(P_LOCK->busy), memory_order_acquire));
 }
 
 void unlock(void* lock)
 {
-    atomic_flag_clear(&(P_LOCK->busy));
+    atomic_flag_clear_explicit(&(P_LOCK->busy), memory_order_release);
 }
 #endif

@@ -20,9 +20,11 @@ FILTER_LOCK_INCREMENT_OUTPUT_NAME = filter_lock_inc.o
 
 CXX = gcc
 
-all: increment_filter_lock_test increment_kernel_lock_test increment_peterson_lock_test increment_spin_lock_test sequential_latency_tests
+all: increment_counter_tests sequential_latency_tests
 
 sequential_latency_tests: sequential_latency_filter_lock_test sequential_latency_peterson_lock_test sequential_latency_spin_lock_test sequential_latency_kernel_lock_test
+
+increment_counter_tests: increment_filter_lock_test increment_kernel_lock_test increment_peterson_lock_test increment_spin_lock_test
 
 init_build_folder:
 	mkdir -p $(OUTPUT_DIR)

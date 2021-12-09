@@ -4,6 +4,7 @@
 #include "increment_counter_utils.h"
 #include "../../lock.h"
 #include "../../globals.h"
+#include "../test_utils.h"
 
 #ifndef TEST_ITERATIONS
 #define TEST_ITERATIONS 1000
@@ -11,15 +12,9 @@
 
 int main(int argc, char* argv[])
 {
-    if (argc != 2)
-    {
-        puts("Missing args");
+    int number_of_threads = handle_args(argc, argv);
+    if (number_of_threads == -1)
         return -1;
-    }
-
-    char* pEnd;
-    const long int number_of_threads = strtol(argv[1], &pEnd, 10);
-    omp_set_num_threads(number_of_threads);
     for (size_t i = 0; i < TEST_ITERATIONS; ++i)
     {
         DEBUG_LOG_F("\n============\nIteration: %ld\n============\n", i);

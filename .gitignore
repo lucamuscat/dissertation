@@ -3,3 +3,4 @@ experiment/**
 *.o
 build/**
 *.code-workspace
+**/downloads/**

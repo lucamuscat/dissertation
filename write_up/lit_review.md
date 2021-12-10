@@ -88,3 +88,16 @@ $\text{Modified Data Sharing Ratio} = \frac{\text{EXT\_SNOOP.ALL\_AGENTS.HITM}}{
 > in one cache line. Modified data sharing causes L2 cache misses. When it happens unintentionally (aka
 > false sharing) it usually causes demand misses that have high penalty. When false sharing is removed
 > code performance can dramatically improve.
+
+# PAPI performance measurement library.
+
+# Art of Multiprocessor Programming - Herlihy
+* A text book that helps with obtaining a fundemental understanding of the theoretical and practical side of parallel programming.
+
+# The Performance of Spin Lock Alternatives for Shared-Memory MultiProcessors - [@anderson1990performance]
+This paper examines if efficient algorithms for spin locks exist given hardware support for atomic instructions. Anderson shows that the simple approaches to spin locks have poor performance due to amount of bandwidth consumed in communication channels.
+
+Andreson's benchmark simulates the performance of an application with a small critical section which shows spin lock latency and performance for small and large amounts of contention. Anderson also notes that similar results have been measured using a fixed delay between lock accesses.
+
+# Is Parallel Programming Hard, And, If So, What Can You Do About It?
+This book focuses on shared-memory programming with an emphasis on low level software, such as OS kernels and low-level libraries. The topics covered in this book range from the use of POSIX threads and locks all the way to advanced synchronization techniques, such as non-blocking synchronization, memory barriers, and so on.

@@ -54,3 +54,37 @@ Mellor-Crummey and Scott cover five different spin lock algorithms, one of them 
 * `cat /proc/cpuinfo` retrives CPU info
 ## P-States 
 > The processor P-state is the capability of running the processor at different voltage and/or frequency levels. Generally, P0 is the highest state resulting in maximum performance, while P1, P2, and so on, will save power but at some penalty to CPU performance.
+
+# [Lock Scaling Analysis on Intel® Xeon® Processors](https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/xeon-lock-scaling-analysis-paper.pdf)
+
+* Benchmarks the relative contended performance of the Xeon Phi E5-2600 over X5600
+* Keeps the number of threads per socket fixed (6 threads)
+* Mentions the importance that locking algorithms should scale.
+* > If software persists in operating in modes where all the threads that hardware makes available are simultaneously attempting to use the same hardware resources, the observed scaling will degrade.
+* Makes use of two important parameters when running their benchmarks, which are:
+    * > The time that each thread spends in the critical section (critical section time). This latency represents how much work is done by a thread each time it acquires the lock.
+    * > The time each thread waits, after leaving the critical section, before attempting to enter the critical section again (re-entry time). This latency represents how much work, that is not relevant to the critical shared resources, is being done by each thread, while it does not own the critical section resource.
+* Their critical section time scales from 10ns to 500ns (same with re-entry time).
+* Intel showed that when the critical section time exceeds 300ns, the Intel Xeon processor E5-2600 transfers spinlock ownership at a slower rate (8-12% slower). There is also a sharper variation when the critical section falls in the 200-300ns interval.
+* > In general, this analysis should apply to any locking algorithm that involves multiple threads polling a shared address waiting for a particular value to be written to that address. When such a lock algorithm takes the work interval close to zero, one can expect performance degradation and unpredictability.
+* > When predictable performance is desired, such a lock algorithm needs reasonably long critical section and re-entry times. In a software implementation that takes either of those down to very small values, results become unpredictable and a tightly contended lock is guaranteed not to scale properly.
+* > __A micro-benchmark that aims to study lock performance cannot give a reasonable
+    > account of how a given lock algorithm will behave on real software, if the study of the
+    > micro-benchmark does not include a study of the sensitivity to these two work intervals
+    > and does not factor in whether the spread of latencies it has evaluated are representa-
+    > tive of the application of interest.__
+
+# Intel® 64 and IA-32 Architectures Optimization Reference Manual
+## Memory Sub-system - Bus Characterization
+* B-71 - $\text{Bus Utilization = }\frac{\text{BUS\_TRANS\_ANY.ALL\_AGENTS} * 2}{\text{CPU\_CLK\_UNHALTED.BUS}} * 100$
+## B.8.10.2 Modified Cache Lines Eviction
+$\text{L2 Modified Lines Eviction Rate} = \frac{\text{L2\_M\_LINES\_OUT.SELF.ANY}}{\text{INST\_RETIRED.ANY}}$
+> When a new cache line is brought from memory, an existing cache line, possibly modified, is evicted from
+    >the L2 cache to make space for the new line. Frequent evictions of modified lines from the L2 cache
+    >increase the latency of the L2 cache misses and consume bus bandwidth.
+## B.8.9.1 Modified Data Sharing
+$\text{Modified Data Sharing Ratio} = \frac{\text{EXT\_SNOOP.ALL\_AGENTS.HITM}}{\text{INST\_RETIRED.ANY}}$
+> Frequent occurrences of modified data sharing may be due to two threads using and modifying data laid
+> in one cache line. Modified data sharing causes L2 cache misses. When it happens unintentionally (aka
+> false sharing) it usually causes demand misses that have high penalty. When false sharing is removed
+> code performance can dramatically improve.

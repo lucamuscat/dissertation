@@ -1,11 +1,11 @@
 #!/bin/bash
 MAX_THREADS=$(getconf _NPROCESSORS_ONLN)
 FILES=$(ls ./build/*seq_lat.o)
-OUTPUT_FILE_NAME="seq_lat_results.csv"
+OUTPUT_FILE_NAME="papi_seq_lat_results.csv"
 
 output=""
 if [ ! -f "$OUTPUT_FILE_NAME" ]; then
-    output="lock_name, number_of_threads, average_time_ns"
+    output="lock_name, number_of_threads, average_total_instructions, average_total_cycles"
 fi
 
 for file in $FILES

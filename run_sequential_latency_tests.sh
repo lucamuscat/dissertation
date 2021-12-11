@@ -5,7 +5,7 @@ OUTPUT_FILE_NAME="seq_lat_results.csv"
 
 output=""
 if [ ! -f "$OUTPUT_FILE_NAME" ]; then
-    output="lock_name, number_of_threads, average_time_ns"
+    output="lock_name, number_of_threads, average_cycles"
 fi
 
 for file in $FILES

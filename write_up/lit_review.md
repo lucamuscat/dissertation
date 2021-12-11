@@ -99,5 +99,5 @@ This paper examines if efficient algorithms for spin locks exist given hardware 
 
 Andreson's benchmark simulates the performance of an application with a small critical section which shows spin lock latency and performance for small and large amounts of contention. Anderson also notes that similar results have been measured using a fixed delay between lock accesses.
 
-# Is Parallel Programming Hard, And, If So, What Can You Do About It?
-This book focuses on shared-memory programming with an emphasis on low level software, such as OS kernels and low-level libraries. The topics covered in this book range from the use of POSIX threads and locks all the way to advanced synchronization techniques, such as non-blocking synchronization, memory barriers, and so on.
+# Is Parallel Programming Hard, And, If So, What Can You Do About It [@mckenney2017parallel]?
+This book focuses on shared-memory programming with an emphasis on low level software, such as OS kernels and low-level libraries. The topics covered in this book range from the use of POSIX threads and locks all the way to advanced synchronization techniques, such as non-blocking synchronization, memory barriers, and read copy update semantics (among other things). McKenney dedications a section of the book to performance estimation, where he mentions different ways where errors may creep up in microbenchmark readings.

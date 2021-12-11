@@ -40,7 +40,7 @@ increment_%_test: init_build_folder
 
 sequential_latency_%_test: init_build_folder
 	mkdir -p ./build/asm/sequential_latency/$*/
-	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) ./locks/$*.c  -lrt $(LIBRARIES)  -o $(OUTPUT_DIR)/$*_seq_lat.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) /usr/local/lib/libpapi.a ./locks/$*.c  -lrt $(LIBRARIES)  -o $(OUTPUT_DIR)/$*_seq_lat.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
 	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) ./locks/$*.c  -lrt $(LIBRARIES) $(ASM_FLAGS)
 	mv *.s build/asm/sequential_latency/$*
 

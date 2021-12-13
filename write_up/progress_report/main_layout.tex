@@ -1,0 +1,85 @@
+% Layout Author: Luca Muscat
+% Website: www.github.com/lucamuscat
+% Repository: www.github.com/lucamuscat/LaTex-Layout
+
+\documentclass[a4paper, 12pt, titlepage]{article}
+
+%--------------- Preambles ---------------
+\usepackage[none]{hyphenat}
+\usepackage{tikz}
+\usepackage{aeguill}
+\usepackage{setspace}
+\usepackage{listings}
+\usepackage[newfloat]{minted}
+\usepackage[justification=centering]{caption}
+\usepackage[margin=0.78in]{geometry}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{hyperref}
+
+\setlength{\footnotesep}{\baselineskip}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newenvironment{code}{\captionsetup{type=listing}}{}
+% \sourcecode{Directory/NameOfFile}{Caption}{Label}
+% #1: Code Snippet
+% #2: Caption
+% #3: Reference Label
+\newcommand{\sourcecode}[3]{
+    \begin{code}
+      \inputminted[linenos,numbersep=5pt,gobble=0,frame=lines,framesep=2mm,]{python}{#1}
+        \caption{#2}
+        \label{lst: #3}
+    \end{code}
+  }
+
+\newcommand{\explainline}[2]{
+  \textbf{Line #1} & #2 \\ \\
+}
+
+% \image{Scale}{Image Path}{Caption}{Reference Label}
+% #1 - Scale
+% #2 - Image path
+% #3 - Caption
+% #4 - Reference Label
+\newcommand{\image}[4]{
+  \begin{figure}[!h]
+    \centerline{\includegraphics[scale=#1]{#2}}
+    \captionof{figure}{#3}
+    \label{fig: #4}
+  \end{figure}
+}
+%---------------  End   ---------------
+
+\begin{document}
+
+%---------------Header---------------
+%Good Syntax styles: trac, abap
+\title{Assignment}
+\author{Author}
+
+\titleformat{\section}{\Large\bfseries\filcenter}{}{0em}{}
+\titleformat{\subsection}{\normalsize\bfseries\filcenter}{}{0em}{}
+\titleformat{\subsubsection}{\small\bfseries}{}{0em}{}
+\maketitle
+
+\pagebreak
+\tableofcontents
+\pagebreak
+%---------------   End  ----------------
+
+%--------------- Content ---------------
+\begin{onehalfspacing}
+
+
+\bibliography{references}
+\bibliographystyle{ieeetr}
+\end{onehalfspacing}
+% ---------------   End  ----------------
+\end{document}

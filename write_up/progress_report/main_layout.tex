@@ -49,7 +49,7 @@
 % #3 - Caption
 % #4 - Reference Label
 \newcommand{\image}[4]{
-  \begin{figure}[!h]
+  \begin{figure}[H]
     \centerline{\includegraphics[scale=#1]{#2}}
     \captionof{figure}{#3}
     \label{fig: #4}
@@ -130,6 +130,15 @@ Performance of each queue mentioned in the paper was collected using the followi
 \end{enumerate}
 
 Fog and McKenney offer insights into how to reduce the number of errors and interventions when micro-benchmarking \cite{fog1996optimizing,fog2020optimizing, mckenney2017parallel}. Some measures to prevent errors are: keeping the CPU clock frequency stable (Stinner described methods of configuring and reading multiple CPU parameters \cite{stinnerpstate}), ignoring the first few iterations due to the cache and the branch predictor being cold\cite{fog1996optimizing}, avoiding symmetric multi-threading (aka. hyper-threading) \cite{fog2020optimizing} and detecting kernel interferences \cite[Chapter~11.7]{mckenney2017parallel}, 
+
+\section{Goals}
+So far, I have gone over several resources such as \cite{herlihy2020art,mckenney2017parallel,fog2020optimizing, fog1996optimizing} to get a decent enough understanding of multi-threaded programming concepts to be able to implement algorithms based on intuition. I have also implemented several locks (such as the TAS lock, TTAS lock\cite{anderson1990performance, graunke1990synchronization,herlihy2020art,mellor1991algorithms}, peterson lock, and the filter lock \cite{herlihy2020art}) together with a testing environment that allows for patching together several lock implementations and tests with a minimal amount of repeated code. The tests created so far are:
+\begin{enumerate}
+  \item Counting Test: A shared variable is protected by each lock and incremented a number of times. If the shared variable does not match the expected value, the test will fail. The goal of this test is to detect race conditions. Although it is not an exhaustive test by any means, it is still able to detect faulty implementations and race conditions.
+  \item Sequential Latency Test: The term sequential latency refers to the amount of time for a process to execute a single operation in the absence of any contention \cite[Section~6.3.1]{valois1995lock}\cite[Seection~4.3, Table~1]{mellor1991algorithms}. According to Valois, sequential latency serves as a good indicator of the number of steps taken in an operation \cite[Section~6.3.1]{valois1995lock}. Figure \ref{} shows the current findings.
+\end{enumerate}
+
+\image{1}{./sequential_latency.png}{Sequential latency of each lock according to the number of cores}{seq_lat}
 
 \bibliography{references}
 \bibliographystyle{ieeetr}

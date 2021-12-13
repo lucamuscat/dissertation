@@ -56,7 +56,6 @@ Mellor-Crummey and Scott cover five different spin lock algorithms, one of them 
 > The processor P-state is the capability of running the processor at different voltage and/or frequency levels. Generally, P0 is the highest state resulting in maximum performance, while P1, P2, and so on, will save power but at some penalty to CPU performance.
 
 # [Lock Scaling Analysis on Intel® Xeon® Processors](https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/xeon-lock-scaling-analysis-paper.pdf)
-
 * Benchmarks the relative contended performance of the Xeon Phi E5-2600 over X5600
 * Keeps the number of threads per socket fixed (6 threads)
 * Mentions the importance that locking algorithms should scale.
@@ -90,6 +89,7 @@ $\text{Modified Data Sharing Ratio} = \frac{\text{EXT\_SNOOP.ALL\_AGENTS.HITM}}{
 > code performance can dramatically improve.
 
 # PAPI performance measurement library.
+PAPI is a performance measurement library that offer abstractions to accessing hardware counters [http://icl.cs.utk.edu/papi/]. PAPI offers both a low and a high level API [http://icl.cs.utk.edu/papi/docs/] that offer varying levels of granularity of control over several different types of measurements. Utility commands are provided to aid with the adoption of this tool; most notably, it comes with a script that measures the latency of each of its performance measuring functions. PAPI follows a modular design philosophy, this is evident in its 'Components' [http://icl.cs.utk.edu/papi/docs/d9/dc0/component_readme.html] feature where users are able to install adapters for hardware counters that are not supported out of the box (for instance, GPU hardware counters, CPU temperature counters, and so on).
 
 # Art of Multiprocessor Programming - Herlihy
 * A text book that helps with obtaining a fundemental understanding of the theoretical and practical side of parallel programming.
@@ -101,3 +101,33 @@ Andreson's benchmark simulates the performance of an application with a small cr
 
 # Is Parallel Programming Hard, And, If So, What Can You Do About It [@mckenney2017parallel]?
 This book focuses on shared-memory programming with an emphasis on low level software, such as OS kernels and low-level libraries. The topics covered in this book range from the use of POSIX threads and locks all the way to advanced synchronization techniques, such as non-blocking synchronization, memory barriers, and read copy update semantics (among other things). McKenney dedications a section of the book to performance estimation, where he mentions different ways where errors may creep up in microbenchmark readings.
+
+# A Methodology to Characterize Critical Section Bottlenecks in DSM Multiprocessors [@sahelices2009methodology]
+This paper introduces a new methodology for tuning performance and critical sections inside of parallel programs. The authors characterize critical sections according to lock contention and degree of data sharing. By measuring the latency (time between acquiring the lock and releasing it), the authors were able to determine a number of inefficiencies caused by data sharing patterns and the chosen data layout. Notably, benchmarks were using a multiprocessor simulator (RSIM); allowing the authors to take fine grained and accurate statistics.
+
+# Implementing Lock-Free Queues [@valois1994implementing]
+Valois covers multiple lock-free queue implementations using linked lists, noting that most of the algorithms can be implemented using the Compare and Swap atomic primitive. Valois notes that the algorithms that make use of the CAS atomic primitive suffer from the ABA problem. 
+
+Valois proposed the safe read protocol, which was a solution to the ABA problem that did not require stronger versions of CAS (such as DCAS) primitive. A new lock free queue that made use of  arrays and CAS was also proposed. The novel lock-free queue outperformed most lock-based queues both sequentially and under contention. Valois measures the performance of each lock-free queue with and without protection against the ABA problem, noting that even with the overhead, lock-free queues are still competitive with their lock-based counterparts.
+
+Most notably, Valois measured the performance of each queue affected by random delay. Valois did this by simulating a delay of a random amount of cycles following an exponential distribution with a mean of 1000 cycles and a 10% chance of occuring. The results showed that the response time of the lock-free implementations were approximately 17% of that of the spin lock protected queues, highlighting the superiority of lock-based algorithms. The massive difference in performance was attributed to the blocking nature of the spin lock, noting that a delayed spin lock not only affected the current operation, but also the other pending critical sections.
+
+Valois also concludes that spin lock algorithms require some type of backoff mechanism in order to decrease the degraded performance caused due to interconnect saturation.
+
+Performance analysis was conducted on a parallel architecture simulator called Proteus. The simulator was a work around to the infeasability of obtaining the necessary hardware and resources needed to obtain readings. Further exasperating this issue, not all machines used architectures that supported CAS primitives; most machines did not have good instrumentation facilities either. Porting code over to other architectures would have proved to be very time consuming.
+
+Fortunately, these are mostly issues of the past, as hardware is more accessible and instrumentation facilities have matured over the last few decades.
+
+(Compared sequential latency using histograms)
+# [Performance Analysis Methodology](https://www.brendangregg.com/methodology.html)
+Gregg describes several performance 'Anti-Methodologies' and 'Methodologies'. Anti-Methodologies are methods of benchmarking performance that do not lead to accurate or correct results. This is an article that anyone in the field of performance analysis should read, as it reveals methodical and structured ways of carrying out performance analysis. 
+
+
+# Wait-Free Queues With Multiple Enqueuers and Dequeuers [@kogan2011wait]
+Kogan et. al propose a novel and efficient wait-free queue that is on based link-lists and thread helping (ie. threads helping other threads by completing their intended operation for them). Similar to the filter and the bakery locks[quote herlihy], the queue is required to read and write to _n_ distinct locations, where n is the maximum number of concurrent threads. This is one of the unfortunate drawbacks of implementing a deadlock-free algorithm. The proposed queue heavily relies on Read Modify Write atomic primitives in order to function correctly and to remain in a consistent state.
+
+The proposed wait-free queue assumes that the garbage collector is responsible for preventing the ABA problem. Since a wait-free garbage collector does not exist, Kogan et al propose that the hazard pointer technique can be used to solve the ABA problem.
+
+Performance of each queue mentioned in the paper was collected using the following methodology:
++ `enqueue-dequeue` pairs: Starting with an empty queue, each thread iteratively performs an enqueue followed by a dequeue.
++ `50% enqueues`: The queue is intialized with 1000 elements, each thread does a 'coin toss' to decide 

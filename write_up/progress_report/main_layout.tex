@@ -61,8 +61,8 @@
 
 %---------------Header---------------
 %Good Syntax styles: trac, abap
-\title{Assignment}
-\author{Author}
+\title{A comparative study of lock-based & lock-free concurrent queueing algorithms and their performance \\ Progress Report}
+\author{Luca Muscat \\ luca.muscat.19@um.edu.mt \\ Supervisor: Prof. Kevin Vella}
 
 \titleformat{\section}{\Large\bfseries\filcenter}{}{0em}{}
 \titleformat{\subsection}{\normalsize\bfseries\filcenter}{}{0em}{}
@@ -73,10 +73,63 @@
 \tableofcontents
 \pagebreak
 %---------------   End  ----------------
-
+\section{Introduction}
 %--------------- Content ---------------
 \begin{onehalfspacing}
+The aim of this thesis is to compare the performance between lock-based (busy waiting) \cite{anderson1990performance, herlihy2020art,graunke1990synchronization} and lock-free \cite{herlihy2020art,valois1995lock} concurrent queueing algorithms. This will be done by following specific methodologies to measuring the performance of each queueing algorithm under different conditions. The goal of measuring performance under different conditions is to highlight the costs and benefits of each queueing algorithm's progress and safety guarantees (a safety property states that a concurrent algorithm will always remain in a certain state, whilst a progress guarantee determines if a thread is blocking or non blocking \cite{herlihy2020art,mckenney2017parallel}). A section of this thesis will also be dedicated to analyzing different locking algorithms and their performance, the aim of which is also to measure the costs of certain guarantees and the effects that back off algorithms have at mitigating performance degradation under contention \cite{anderson1990performance,graunke1990synchronization,valois1994implementing}. If access to hardware that support certain performance event counters is feasible, this paper will also look into metrics such as data sharing, cache misses and cache line invalidations\cite{intelmanual,intelmanualoptimization,sahelices2009methodology}  to provide more empirical evidence to specific claims.
 
+\section{Literature Review}
+Herlihy and Shavit provide a fundamental introduction to parallel computing and shared memory multiprocessor programming in the "Art of Multiprocessor Programming" \cite{herlihy2020art}. The material covered in this text book ranges from intuitive explanations of basic concepts such as mutual exclusion and read modify write operations, all the way to rigorous definitions and proofs of wait-free constructions and concurrent data structures.
+
+``Is Parallel Programming Hard, And, If So, What Can You Do About It '' focuses on shared-memory programming with an emphasis on low level software \cite{mckenney2017parallel}, such as the behaviour of OS kernels and low-level libraries. Mckenney covers concepts such as non-blocking synchronization, memory barriers, read copy update semantics, and other fundamental yet practical concepts required to be able to write multi-threaded programs. McKenney dedicates a section of the book to performance estimation, where different ways errors and interferences may creep up in micro-benchmark readings are highlighted, and suggestions to mitigate said interferences are given.
+
+Preshing shares several of his insights inside the world of lock-free programming through the ``Preshing on Programming'' blog \cite{preshing}. Some entries which are relevant to this dissertation are ``An Introduction to Lock-Free Programming''\cite{introlockfree} where the basics of lock free programming are covered in an easy to digest manner. Flow charts depicting when lock-free programming techniques together with commentary is provided in this article, moreover, concepts such as atomic read-modify-write operations, compare and swap (CAS) loops, and memory ordering are covered in brief detail. 
+
+``Roll your own lightweight mutex''\cite{preshingmutex} covers a simple mutex implementation using a type of semaphore informally known as the `Benaphore'\cite{haikubenaphore}.
+
+``Locks Aren't Slow; Lock Contention Is''\cite{preshinglockcontentionslow} offers insight into the performance of spin locks under contention. Preshing uses a custom implementation of the Mersenne Twister \cite{matsumoto1998mersenne} to simulate a critical section. The workload (ie. the amount of time that the lock is held for) and the number of threads used as variables whilst the lock frequency remained constant. The results show that high levels of contention on a lock is enough to degrade the performance of a parallel solution to the point where a sequential thread will perform better.
+
+Boyd-Wickizer et. al show that non-scalable locks, such as spin locks should not be used in operating systems where contention is hard to control. Several micro-benchmarks were implemented using a spin lock implementation offered by the linux kernel; as the contention increased, the performance of each benchmark dropped drastically. The spin lock was then re-implemented using scalable locks, such as the MCS lock \cite{mellor1991algorithms} and the CLH lock \cite{craig1993building,magnusson1994queue} improved performance on a large number of cores by at least 3.5 times, and in some cases, 16 times.
+
+Segall and Rudolph \cite{rudolph1984dynamic} an alternative to the test and set (TAS) spinning method called test-and-test-and-set (TTAS). TTAS reduces the amount of cache line invalidations caused by TAS spinning by checking if the flag being spinned on has changed before calling TAS.
+
+Anderson offers an improvement to the TTAS lock by implementing several spin locks based on CSMA network protocols \cite{anderson1990performance}. Anderson notes that spin locks using Ethernet's back off protocol tends to perform better under contention than a regular TTAS lock.
+
+Graunke and Thakkar also offer improvements to the TTAS lock by adding a delay after each failed test in order to reduce contention \cite{graunke1990synchronization}. The authors also proposed a novel queuing lock that outperformed all variations of the TAS lock when more than three processors are competing for access.
+
+Mellory Crummey and Scott propose a novel array based lock known as the MCS lock that outperforms both array based queueing locks proposed by Anderson and Graunke et al. \cite{mellor1991algorithms}. The authors also offer insight into existing spin locks such as TAS, TTAS, and the ticket lock, and describe their benefits and their caveats.
+
+Intel's lock scaling analysis on Intel Xeon processors \cite{intelxeonlockscaling} benchmarks the relative contended performance of the Xeon Phi E5-2600 over X5600. The most notable contribution of this paper is the methodology used to for the benchmarks. The authors claim that a microbenchmark that aims to study lock performance does not reflect behaviour on real software if the study does not factor in the length of the simulated critical section and the frequency of locking. The paper reaches the conclusion that when predictable performance is desired, the locking algorithm requires reasonably long critical sections and re-entry times.
+
+Sahelices et al. offer a new methodology for tuning performance and critical sections inside of parallel programs \cite{sahelices2009methodology}. Critical sections were characterized by lock contention and degree of data sharing, allowing the authors to identify a number of inefficiencies caused by data sharing patterns and data layouts. Interestingly, the benchmarks were conducted on a multiprocessor simulator called RSIM, that allowed the authors to take fine grained and accurate statistics.
+
+Gregg describes several performance 'Anti-Methodologies' and 'Methodologies' \cite{methodologygregg}. Anti-Methodologies are methods of benchmarking performance that do not lead to accurate or correct results. This is an article that anyone in the field of performance analysis should read, as it reveals methodical and structured methods of carrying out performance analysis.
+
+Intel's optimization reference manual \cite{intelmanualoptimization} suggests several potential metrics that may be derived from specific hardware counters. Notably, equations for calculating bus utilization, L2 Modified Lines Eviction Rate, and Modified Data Sharing Ratio are all provided.
+
+
+Valois covered multiple lock-free queue implementations that utilized linked lists, noting that most of the algorithms could be implemented using the Compare and Swap atomic primitive. Valois noted that CAS based algorithms suffer from the ABA problem. \cite{valois1994implementing}
+
+Valois proposed the safe read protocol, which was a solution to the ABA problem that did not require stronger versions of CAS (such as DCAS) primitive \cite{valois1994implementing, valois1995lock}. A new lock free queue that made use of arrays and CAS was also proposed. The novel lock-free queue outperformed most lock-based queues both sequentially and under contention. Valois measured the performance of each lock-free queue with and without protection against the ABA problem, noting that even with the overhead, lock-free queues are still competitive with their lock-based counterparts.
+
+Most notably, Valois measured the performance of each queue affected by random delay. Valois did this by simulating a delay of a random amount of cycles following an exponential distribution with a mean of 1000 cycles and a 10\% chance of occurring. The results showed that the response time of the lock-free implementations were approximately 17\% of that of the spin lock protected queues, highlighting the superiority of lock-based algorithms. The massive difference in performance was attributed to the blocking nature of the spin lock, noting that a delayed spin lock not only affected the current operation, but also the other pending critical sections.
+
+Valois also concluded that spin lock algorithms require some type of back off mechanism in order to decrease the degraded performance caused due to interconnect saturation.
+
+Performance analysis was conducted on a parallel architecture simulator called Proteus. The simulator was a work around to the infeasability of obtaining the necessary hardware and resources needed to obtain readings. Further exasperating this issue, not all machines used architectures that supported CAS primitives; most machines did not have good instrumentation facilities either. Porting code over to other architectures would have proved to be very time consuming \cite{valois1994implementing, valois1995lock}. 
+
+Fortunately, these are mostly issues of the past, as hardware is more accessible and instrumentation facilities have matured over the last few decades.
+
+Kogan et. al propose a novel and efficient wait-free queue that is on based link-lists and thread helping (ie. threads helping other threads by completing their intended operation for them)\cite{kogan2011wait}. Similar to the filter and the bakery locks, the queue is required to read and write to n distinct locations, where n is the maximum number of concurrent threads\cite{herlihy2020art}.
+The proposed wait-free queue assumes that a garbage collector is responsible for preventing the ABA problem. Since a wait-free garbage collector does not exist, Kogan et al propose that the hazard pointer technique could be used to solve the ABA problem.
+
+Performance of each queue mentioned in the paper was collected using the following methodology:
+\begin{enumerate}
+  \item enqueue-dequeue pairs: Starting with an empty queue, each thread iteratively performs an enqueue followed by a dequeue.
+  \item 50\% enqueues: The queue is initialized with 1000 elements, each thread does a 'coin toss' to decide
+\end{enumerate}
+
+Fog and McKenney offer insights into how to reduce the number of errors and interventions when micro-benchmarking \cite{fog1996optimizing,fog2020optimizing, mckenney2017parallel}. Some measures to prevent errors are: keeping the CPU clock frequency stable (Stinner described methods of configuring and reading multiple CPU parameters \cite{stinnerpstate}), ignoring the first few iterations due to the cache and the branch predictor being cold\cite{fog1996optimizing}, avoiding symmetric multi-threading (aka. hyper-threading) \cite{fog2020optimizing} and detecting kernel interferences \cite[Chapter~11.7]{mckenney2017parallel}, 
 
 \bibliography{references}
 \bibliographystyle{ieeetr}

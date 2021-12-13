@@ -4,3 +4,10 @@ experiment/**
 build/**
 *.code-workspace
 **/downloads/**
+**/*.aux
+**/*.bbl
+**/*.blg
+**/*.log
+**/*.out
+**/*.toc
+*.pdf

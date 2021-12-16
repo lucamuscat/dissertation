@@ -1,0 +1,10 @@
+@startgantt
+printscale weekly with calendar date
+weeks starts on Sunday and must have at least 1 days
+project starts on 2022-02-04
+[Phase A\n  Locks] lasts 2 weeks
+then [Phase B - Queues] ends at 2022-03-25
+then [Phase C - Write up] ends at 2022-05-20
+[Submit draft to supervisor] happens at 2022-04-25
+[Submit final version of FYP] happens at 2022-05-20
+@endgantt

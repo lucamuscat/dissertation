@@ -68,10 +68,12 @@
 \titleformat{\subsection}{\normalsize\bfseries\filcenter}{}{0em}{}
 \titleformat{\subsubsection}{\small\bfseries}{}{0em}{}
 \maketitle
-
 \pagebreak
+\pagenumbering{roman}
 \tableofcontents
 \pagebreak
+\pagenumbering{arabic}
+
 %---------------   End  ----------------
 \section{Introduction}
 %--------------- Content ---------------
@@ -90,14 +92,22 @@
 % Mention that a subset of the algorithms will be implemented.
 
 \begin{onehalfspacing}
-The aim of this thesis is to characterize and compare the performance of blocking \cite{anderson1990performance, herlihy2020art,graunke1990synchronization} and non-blocking \cite{herlihy2020art,valois1995lock} concurrent queueing algorithms. This will be done by gathering different metrics to measure the performance of each queueing algorithm under study under different conditions. The goal of measuring performance under different conditions is to highlight the costs and benefits of each queueing algorithm's progress and safety guarantees (a safety property states that a concurrent algorithm will always remain in a certain state, whilst a progress guarantee determines if a thread is blocking or non blocking \cite{herlihy2020art,mckenney2017parallel}). A section of this thesis will also be dedicated to analyzing different locking algorithms and their performance, the aim of which is also to measure the costs of certain guarantees and the effects that back off algorithms have at mitigating performance degradation under contention \cite{anderson1990performance,graunke1990synchronization,valois1994implementing}. If access to hardware that support certain performance event counters is feasible, this paper will also look into metrics such as data sharing, cache misses and cache line invalidations\cite{intelmanual,intelmanualoptimization,sahelices2009methodology}  to provide more empirical evidence to specific claims.
+The aim of this thesis is to characterize and compare the performance of blocking \cite{anderson1990performance, herlihy2020art,graunke1990synchronization} and non-blocking \cite{herlihy2020art,valois1995lock} concurrent queueing algorithms. This will be achieved by gathering different metrics to measure the performance of each queueing algorithm under study under different conditions. The goal of measuring performance under different conditions is to highlight the costs and benefits of each queueing algorithm's progress and safety guarantees. A section of this thesis will also be dedicated to analyzing different locking algorithms and their performance, the aim of which is also to measure the costs of certain guarantees. If access to hardware that support certain performance event counters is feasible, this paper will also look into metrics such as data sharing, cache misses and cache line invalidations\cite{intelmanual,intelmanualoptimization,sahelices2009methodology} to provide more empirical evidence to specific claims.
 
 \section{Literature Review}
+\subsection{Introductory Resources}
 Herlihy and Shavit provide a fundamental introduction to parallel computing and shared memory multiprocessor programming in the "Art of Multiprocessor Programming" \cite{herlihy2020art}. The material covered in this text book ranges from intuitive explanations of basic concepts such as mutual exclusion and read modify write operations, all the way to rigorous definitions and proofs of wait-free constructions and concurrent data structures.
 
 ``Is Parallel Programming Hard, And, If So, What Can You Do About It '' focuses on shared-memory programming with an emphasis on low level software \cite{mckenney2017parallel}, such as the behaviour of OS kernels and low-level libraries. Mckenney covers concepts such as non-blocking synchronization, memory barriers, read copy update semantics, and other fundamental yet practical concepts required to be able to write multi-threaded programs. McKenney dedicates a section of the book to performance estimation, where different ways errors and interferences may creep up in micro-benchmark readings are highlighted, and suggestions to mitigate said interferences are given.
+\subsection{Mutual Exclusion}
+Mutual exclusion introduces the concept of critical sections, where different threads do not overlap \cite[Chapter~2]{herlihy2020art}. 
 
-Preshing shares several of his insights inside the world of lock-free programming through the ``Preshing on Programming'' blog \cite{preshing}. Some entries which are relevant to this dissertation are ``An Introduction to Lock-Free Programming''\cite{introlockfree} where the basics of lock free programming are covered in an easy to digest manner. Flow charts depicting when lock-free programming techniques together with commentary is provided in this article, moreover, concepts such as atomic read-modify-write operations, compare and swap (CAS) loops, and memory ordering are covered in brief detail. 
+Any mutual exclusion protocol needs to determine what to do when it is unable to acquire a lock. There are three alternatives to this problem \cite[Chapter~7]{herlihy2020art}:
+\begin{itemize}
+  \item Busy waiting - Conditionally and actively polls an area in memory or a shared resource. Busy waiting locks are typically referred to as spin-locks.
+  \item Blocking - Yields control of the CPU to other processes.
+  \item Hybrid - Makes use of both busy waiting and blocking for optimal use of resources.
+\end{itemize}
 
 ``Roll your own lightweight mutex''\cite{preshingmutex} covers a simple mutex implementation using a type of semaphore informally known as the `Benaphore'\cite{haikubenaphore}.
 
@@ -105,23 +115,68 @@ Preshing shares several of his insights inside the world of lock-free programmin
 
 Boyd-Wickizer et. al show that non-scalable locks, such as spin locks should not be used in operating systems where contention is hard to control. Several micro-benchmarks were implemented using a spin lock implementation offered by the linux kernel; as the contention increased, the performance of each benchmark dropped drastically. The spin lock was then re-implemented using scalable locks, such as the MCS lock \cite{mellor1991algorithms} and the CLH lock \cite{craig1993building,magnusson1994queue} improved performance on a large number of cores by at least 3.5 times, and in some cases, 16 times.
 
-Segall and Rudolph \cite{rudolph1984dynamic} an alternative to the test and set (TAS) spinning method called test-and-test-and-set (TTAS). TTAS reduces the amount of cache line invalidations caused by TAS spinning by checking if the flag being spinned on has changed before calling TAS.
+Segall and Rudolph \cite{rudolph1984dynamic} propose an alternative to the test and set (TAS) spinning method called test-and-test-and-set (TTAS). TTAS reduces the amount of cache line invalidations caused by TAS spinning by checking if the flag being spinned on has changed before calling TAS.
 
 Anderson offers an improvement to the TTAS lock by implementing several spin locks based on CSMA network protocols \cite{anderson1990performance}. Anderson notes that spin locks using Ethernet's back off protocol tends to perform better under contention than a regular TTAS lock.
 
 Graunke and Thakkar also offer improvements to the TTAS lock by adding a delay after each failed test in order to reduce contention \cite{graunke1990synchronization}. The authors also proposed a novel queuing lock that outperformed all variations of the TAS lock when more than three processors are competing for access.
 
-Mellory Crummey and Scott propose a novel array based lock known as the MCS lock that outperforms both array based queueing locks proposed by Anderson and Graunke et al. \cite{mellor1991algorithms}. The authors also offer insight into existing spin locks such as TAS, TTAS, and the ticket lock, and describe their benefits and their caveats.
+Mellor-Crummey and Scott propose a novel array based lock known as the MCS lock that outperforms both array based queueing locks proposed by Anderson and Graunke et al. \cite{mellor1991algorithms}. The authors also offer insight into existing spin locks such as TAS, TTAS, and the ticket lock, and describe their benefits and their caveats.
+\subsection{Concurrent Objects}
+Herlihy and Wing define a concurrent object as a data object shared by concurrent processes \cite{herlihy1990linearizability}. 
 
-Intel's lock scaling analysis on Intel Xeon processors \cite{intelxeonlockscaling} benchmarks the relative contended performance of the Xeon Phi E5-2600 over X5600. The most notable contribution of this paper is the methodology used to for the benchmarks. The authors claim that a microbenchmark that aims to study lock performance does not reflect behaviour on real software if the study does not factor in the length of the simulated critical section and the frequency of locking. The paper reaches the conclusion that when predictable performance is desired, the locking algorithm requires reasonably long critical sections and re-entry times.
+Concurrent systems are modeled by a finite sequence of method invocations and response events \cite[Chapter~3.6]{herlihy2020art}. Herlihy provides the following formal definitions \cite[Chapter~3.6]{herlihy2020art}:
+\begin{itemize}
+  \item A method call in a history \emph{H} is a pair made up of an invocation that follows the next response (An invocation is the starting point of the method call, whilst the response may be seen as a point in the method where an object is returned).
+  \item An invocation is pending in \emph{H} if it does not follow a matching response.
+  \item A history \emph{H} is \emph{sequential} if the first event of \emph{H} is an invocation, and each invocation, possibly excluding the last, is immediately followed by a matching response.
+  \item A history \emph{H} is \emph{well formed} if all of its sub-histories are \emph{sequential}.
+  \item A thread sub-history, $H|A$  (``\emph{H at A}'') is the subsequence of all events in \emph{H} whose thread names are \emph{A}.
+  \item Two histories \emph{H} and \emph{H'} are equivalent if $\forall a:A \cdot H|A = H'|A$.
+\end{itemize}
 
-Sahelices et al. offer a new methodology for tuning performance and critical sections inside of parallel programs \cite{sahelices2009methodology}. Critical sections were characterized by lock contention and degree of data sharing, allowing the authors to identify a number of inefficiencies caused by data sharing patterns and data layouts. Interestingly, the benchmarks were conducted on a multiprocessor simulator called RSIM, that allowed the authors to take fine grained and accurate statistics.
+\subsubsection{Progress Conditions}
+There are two types of progress conditions, which are blocking and non blocking \cite[Chapter~3.7]{herlihy2020art}. An algorithm is blocking if an unexpected delay in one thread can prevent other threads from making progress, whilst a non-blocking one will at no point in time wait for another thread \cite[Chapter~3.7]{herlihy2020art}. Two types of blocking progress conditions are deadlock-free and starvation-free. These properties offer guarantees that every thread will eventually leave every critical section in a timely manner \cite[Chapter~3.7.1]{herlihy2020art}. There are different types of non-blocking progress conditions, which may either be dependent or independent of other threads. 
 
-Gregg describes several performance 'Anti-Methodologies' and 'Methodologies' \cite{methodologygregg}. Anti-Methodologies are methods of benchmarking performance that do not lead to accurate or correct results. This is an article that anyone in the field of performance analysis should read, as it reveals methodical and structured methods of carrying out performance analysis.
+A method is obstruction-free if, from any point after which it executes in isolation, it finishes in a finite number of steps (may be implemented using back-off algorithms whenever conflict is encountered)\cite{herlihy2020art,herlihy2003obstruction}. Obstruction-free algorithms are, by definition, dependent.
 
-Intel's optimization reference manual \cite{intelmanualoptimization} suggests several potential metrics that may be derived from specific hardware counters. Notably, equations for calculating bus utilization, L2 Modified Lines Eviction Rate, and Modified Data Sharing Ratio are all provided.
+A method is lock-free if it guarantees that infinitely often some method call finishes in a finite number of steps \cite{herlihy2020art}.
 
+A method is wait-free if it guarantees that a method call finishes in a bounded number of steps. This bound may also depend on the number of threads \cite{herlihy2020art}.
 
+\subsubsection{Correctness Conditions}
+
+Correctness conditions describe the pre and post conditions for a concurrent object's operations \cite{herlihy2020art}. Such pre and post conditions decide whether a concurrent history is legal \cite{herlihy1990linearizability}. Correctness conditions are usually based on two requirements: (1) When an operation takes effect, and (2) how the order of non concurrent operations should be preserved \cite{herlihy1990linearizability}.
+
+A subset of existing correctness conditions are:
+
+\begin{itemize}
+\item \emph{Sequential}: Sequential consistency requires that each process's method call takes effect in program order.
+\item \emph{Linearizable}: A concurrent computation is linearizable if it is ``equivalent'' (as previously formally defined) to a legal sequential computation \cite{herlihy1990linearizability}. A linearizable concurrent computation gives the illusion that a method call takes effect instantaneously some time between the method's invocation and response; the point in time where the method takes effect is also known as the linearizability point \cite{herlihy2020art,herlihy1990linearizability}. Linearizability is composable, meaning that if each object in a system satisfies a condition, the entire system also satisfies said condition \cite[Chapter~3.3.1]{herlihy2020art}. Linearizability is also a non-blocking property, which means that method call is never forced to wait \cite{herlihy1990linearizability}. A problem with linearizability is that the order of overlapping operations is non-deterministic.
+\item \emph{Serializable}: A history is serializable if it is equivalent to a history where transactions appear to happen sequentially (without interleaving) \cite[Section~3.3]{herlihy1990linearizability}. This correctness condition is typically used in databases and distributed systems \cite{guerraoui2019consensus}. Serializable consistency comes with the blocking progress condition and is a general case of linearizability \cite{herlihy1990linearizability}.
+\end{itemize}
+\subsubsection{Queues}
+\paragraph{Definition}
+Knuth defines a queue as a linear list for which all insertions are made at one end of the list and all deletions are made at the other end \cite{knuth1968art}. A queue typically comes with two main operations, which are enqueue (places an item at the head of the queue) and dequeue (removes and returns an item at the tail of the queue). Queues follow First in First out (FIFO) ordering (unlike the stack, which is Last in First out).
+\paragraph{Definition of a concurrent queue}
+A concurrent queue is a type of queue that remains consistent and correct when accessed simultaneously through different threads. Non-concurrent or ill-synchronized queues typically end up in an inconsistent state after being accessed through multiple threads (this may occur for a number of reasons, such as race conditions)\cite{yahav2003automatically}, this may lead to undefined and incorrect behaviour. Concurrent queues are often the basis of scheduling algorithms and many other concurrent algorithms \cite{yahav2003automatically}.
+\paragraph{Correctness conditions with respect to queues}
+The defacto correctness condition for a queue is linearizability, as it ensures that the semantics of the queue's operations are not altered \cite{mellor1987concurrent}. A queue cannot be sequentially consistent, as sequential consistency allows histories that don't lead to FIFO ordering. A queue may also be serializable, however, serializability constrains the degree of concurrency that can occur, making it too strong of a correctness condition.
+
+When talking about correctness conditions with respect to FIFO queues, restricting the order of method calls is only a subset of the applicable correctness conditions. Yahav and Sagiv\cite{yahav2003automatically} provide some examples of correctness conditions for concurrent FIFO queues, which are:
+\begin{itemize}
+  \item The linked list is always connected
+  \item Nodes are only inserted after the last node of the linked list
+  \item Nodes are only deleted from the beginning of the linked list
+  \item The head of the queue always points to the first node in the linked list
+  \item The tail of the queue always points to a node in the linked list.
+\end{itemize}
+
+\subsubsection{Lock-Free}
+\label{lock-free-queues}
+Preshing shares several of his insights inside the world of lock-free programming through the ``Preshing on Programming'' blog \cite{preshing}. Some entries which are relevant to this dissertation are ``An Introduction to Lock-Free Programming''\cite{introlockfree} where the basics of lock free programming are covered in an easy to digest manner. Flow charts depicting when lock-free programming techniques together with commentary is provided in this article, moreover, concepts such as atomic read-modify-write operations, compare and swap (CAS) loops, and memory ordering are covered in brief detail. 
+
+\paragraph{Valois's Queue}
 Valois covered multiple lock-free queue implementations that utilized linked lists, noting that most of the algorithms could be implemented using the Compare and Swap atomic primitive. Valois noted that CAS based algorithms suffer from the ABA problem. \cite{valois1994implementing}
 
 Valois proposed the safe read protocol, which was a solution to the ABA problem that did not require stronger versions of CAS (such as DCAS) primitive \cite{valois1994implementing, valois1995lock}. A new lock free queue that made use of arrays and CAS was also proposed. The novel lock-free queue outperformed most lock-based queues both sequentially and under contention. Valois measured the performance of each lock-free queue with and without protection against the ABA problem, noting that even with the overhead, lock-free queues are still competitive with their lock-based counterparts.
@@ -134,6 +189,16 @@ Performance analysis was conducted on a parallel architecture simulator called P
 
 Fortunately, these are mostly issues of the past, as hardware is more accessible and instrumentation facilities have matured over the last few decades.
 
+\paragraph{The Baskets Queue}
+Hoffman et. al propose a novel linearizable lock-free queue that takes advantage of the fact that the order of overlapping linearizable operations is non-deterministic \cite{hoffman2007baskets}. Each overlapping operation will be grouped together in a ``basket'' (list of nodes). Objects in a basket can be dequeued without order. A thread places an object into a basket when a compare and swap fails due to another thread being in progress.
+
+\paragraph{Lock-free queue using elimination}
+Shavit et. al introduce a novel lock-free queue using a technique known as elimination \cite{moir2005using}. Simply put, elimination works by allowing opposing operations such as enqueues and dequeues to exchange values without synchronizing on a shared data structure \cite{shavit1997elimination, moir2005using}. The results obtained suggests that as levels of concurrency increase, so does the throughput of the proposed data structure.
+
+\subsubsection{Wait-free}
+\label{wait-free-queues}
+\paragraph{Kogan and Petrank wait-free queue}
+\label{kp-queue}
 Kogan et. al propose a novel and efficient wait-free queue that is on based link-lists and thread helping (ie. threads helping other threads by completing their intended operation for them)\cite{kogan2011wait}. Similar to the filter and the bakery locks, the queue is required to read and write to n distinct locations, where n is the maximum number of concurrent threads\cite{herlihy2020art}.
 The proposed wait-free queue assumes that a garbage collector is responsible for preventing the ABA problem. Since a wait-free garbage collector does not exist, Kogan et al propose that the hazard pointer technique could be used to solve the ABA problem.
 
@@ -143,9 +208,17 @@ Performance of each queue mentioned in the paper was collected using the followi
   \item 50\% enqueues: The queue is initialized with 1000 elements, each thread does a 'coin toss' to decide
 \end{enumerate}
 
-Shavit et. al introduce a novel lock-free queue using a technique known as elimination \cite{moir2005using}. Simply put, elimination works by allowing opposing operations such as enqueues and dequeues to exchange values without synchronizing on a shared data structure \cite{shavit1997elimination, moir2005using}. The results obtained suggests that as levels of concurrency increase, so does the throughput of the proposed data structure.
 
+\subsection{Benchmarks and Performance Analysis Methodologies}
 Fog and McKenney offer insights into how to reduce the number of errors and interventions when micro-benchmarking \cite{fog1996optimizing,fog2020optimizing, mckenney2017parallel}. Some measures to prevent errors are: keeping the CPU clock frequency stable (Stinner described methods of configuring and reading multiple CPU parameters \cite{stinnerpstate}), ignoring the first few iterations due to the cache and the branch predictor being cold\cite{fog1996optimizing}, avoiding symmetric multi-threading (aka. hyper-threading) \cite{fog2020optimizing} and detecting kernel interferences \cite[Chapter~11.7]{mckenney2017parallel}.
+
+Intel's lock scaling analysis on Intel Xeon processors \cite{intelxeonlockscaling} benchmarks the relative contended performance of the Xeon Phi E5-2600 over X5600. The most notable contribution of this paper is the methodology used to for the benchmarks. The authors claim that a microbenchmark that aims to study lock performance does not reflect behaviour on real software if the study does not factor in the length of the simulated critical section and the frequency of locking. The paper reaches the conclusion that when predictable performance is desired, the locking algorithm requires reasonably long critical sections and re-entry times.
+
+Sahelices et al. offer a new methodology for tuning performance and critical sections inside of parallel programs \cite{sahelices2009methodology}. Critical sections were characterized by lock contention and degree of data sharing, allowing the authors to identify a number of inefficiencies caused by data sharing patterns and data layouts. Interestingly, the benchmarks were conducted on a multiprocessor simulator called RSIM, that allowed the authors to take fine grained and accurate statistics.
+
+Gregg describes several performance 'Anti-Methodologies' and 'Methodologies' \cite{methodologygregg}. Anti-Methodologies are methods of benchmarking performance that do not lead to accurate or correct results. This is an article that anyone in the field of performance analysis should read, as it reveals methodical and structured methods of carrying out performance analysis.
+
+Intel's optimization reference manual \cite{intelmanualoptimization} suggests several potential metrics that may be derived from specific hardware counters. Notably, equations for calculating bus utilization, L2 Modified Lines Eviction Rate, and Modified Data Sharing Ratio are all provided.
 
 \section{Goals}
 \subsection{Current Progress}
@@ -159,7 +232,7 @@ Different types of locks, such as the TAS lock, TTAS lock\cite{anderson1990perfo
 
 \subsection{Remaining Tasks}
 \subsubsection{Locks}
-Exponential back-off will be added to each lock. According to Anderson, exponential back-off should reduce performance degradation under high contention \cite{anderson1990performance}. The performance of each lock with and without exponential back-off will be compared. The MCS queue lock will also be implemented, as it is regarded to be a scalable lock \cite{boyd2012non,mellor1991algorithms, valois1995lock}.
+Exponential back-off will be added to a subset of locks. According to Anderson, exponential back-off should reduce performance degradation under high contention \cite{anderson1990performance}. The performance of each lock with and without exponential back-off will be compared. The MCS queue lock will also be implemented, as it is regarded to be a scalable lock \cite{boyd2012non,mellor1991algorithms, valois1995lock}.
 \subsubsection{Testing locks under contention}
 New tests need to be implemented in order to gain new insights into the implemented locking algorithms. The performance of locks under contention will be measured using a similar methodology used in the spin-lock benchmark conducted by Intel \cite{intelxeonlockscaling}. A small critical section will be emulated by enqueuing and dequeuing a thread local circular buffer, reading and possibly invalidating some cache lines in the process, simulating a realistic work load. The latency observed will be a function of both re-entry time (the time each thread waits, after leaving the critical section \cite{intelxeonlockscaling}) and the critical section. I have opted to use re-entry time and the length of the critical section as the variables of the experiment to replicate the findings in Intel's benchmarks \cite{intelxeonlockscaling}, and measure locks which have not been covered by said benchmark.
 
@@ -170,14 +243,46 @@ Each queue will also be measured for throughput under contention \cite{valois199
 
 Finally, each queue's throughput under contention with random delay will be measured. Valois uses this measurement \cite{valois1995lock} when comparing blocking and non-blocking queues. The difference in performance between the blocking and non-blocking queues was stark, and did a good job of highlighting the difference between blocking and non-blocking queueing algorithms. Blocking algorithms tend to not only delay their own critical section, but also the other threads waiting for access to the lock. In order to simulate random delay, a random number of page faults will with a 10\% chance of occurring during any enqueue or dequeue.
 
-% TODO: Mention that interferences haven't been removed yet
-% TODO: Create to be done section
-%   * Lock contention test
-%   * Queue sequential latency
-%   * Queue throughput under contention
-%   * Queue throughput under contention with random delay.
-% TODO: Mention deliverables
-% TODO: Gantt chart.
+The benchmarks that will be used to gather measurements on the implemented queues are the \emph{50\% enqueues} and the \emph{enqueue-dequeue pairs} (previously described in section \nameref{kp-queue}) benchmarks (these benchmarks are often used when measuring the performance of queues \cite{kogan2011wait,hoffman2007baskets,ladan2004optimistic}).
+
+A single lock queue and a queue with a head lock and a tail lock will be implemented using a subset of the previously mentioned locks. A subset of the lock-free and wait-free queues mentioned in sections \nameref{lock-free-queues} and \nameref{wait-free-queues} will also be implemented.
+
+\section{Deliverables}
+A PDF document containing the FYP write up will be provided, together with a zip file containing all of the code implemented. If permission is granted, after the submission and grading of the FYP, the github repository of this FYP will be made public. A gantt chart providing a visual explanation of the planned timeline.
+
+\section{Timeline}
+The work done in this FYP will be split into sections/milestones. The following is a textual explanation of said timeline:
+
+\begin{enumerate}
+  \item Phase A - Locks
+  \begin{enumerate}
+    \item 04-02-2022 to 11-02-2022: Finish implementing back-off variants on a subset of implemented spinlocks, together with a queue based lock (MCS lock). Performance of locks under contention test should also be implemented.
+    \item 11-02-2022 to 18-02-2022: Setup or obtain a linux based machine with the appropriate settings to reduce the operating system's interference with the results.
+  \item (OPTIONAL) 11-02-2022 to 18-02-2022: Configure necessary libraries and settings to obtain hardware counter readings.
+  \end{enumerate}
+  \item Phase B - Queues
+  \begin{enumerate}
+    \item 18-02-2022 - 25-02-2022: Implement single lock and head and tail lock queue using a subset of the previously implemented locks.
+    \item 25-02-2022 - 11-03-2022: Implement subset of non-blocking queues mentioned in sections \nameref{lock-free-queues} and \nameref{wait-free-queues} (at least one wait-free and one lock-free).
+    \item 12-03-2022 - 25-03-2022: Implement queue benchmarks. Fix bugs and optimize implementations if necessary and time permits.
+  \end{enumerate}
+  \item Phase C - Write up
+  \begin{enumerate}
+    \item 25-03-2022 - 29-03-2022: Gather readings and write necessary utility scripts to interpret results.
+    \item 30-03-2022 - 25-04-2022: Work on FYP write up.
+    \item [DEADLINE]25-04-2022: Submit draft to supervisor.
+    \item 25-04-2022 - 19-05-2022: Finalize draft and proof read.
+  \item [DEADLINE]20-05-2022: Submit final version of FYP.
+  \end{enumerate}
+\end{enumerate}
+
+\subsection{Gantt Chart}
+% \image{Scale}{Image Path}{Caption}{Reference Label}
+% #1 - Scale
+% #2 - Image path
+% #3 - Caption
+% #4 - Reference Label
+\image{0.5}{gantt_chart.png}{Gantt chart}{gantt}
 
 \bibliography{references}
 \bibliographystyle{ieeetr}

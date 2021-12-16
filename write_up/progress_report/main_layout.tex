@@ -78,18 +78,18 @@
 \section{Introduction}
 %--------------- Content ---------------
 
-% Define wait-free and lock-free
-% Define progress and safety
-% Liveness vs progress, put backoff in context.
-% What are the progress guarantees required for a queue
-% Conditions that reflect that the queue is working correctly
-% Progress - The state must be advance and progress
-% Investigate progress and conditions w.r.t to queues
-% Guide the structure of the lit review with sub sections (taxonomy, classify types of entity, in our case queue.)
-% Find a good citation for a queue, baby citations, is there someone who classifies a queue? a concurrent one? Start with this
-% Condense lines a bit more.
-% Start numbering from introduction, not TOC.
-% Mention that a subset of the algorithms will be implemented.
+% ✔ Define wait-free and lock-free
+% ✔ Define progress and safety
+% ✔ Liveness vs progress, put backoff in context.
+% ✔ What are the progress guarantees required for a queue
+% ✔ Conditions that reflect that the queue is working correctly
+% ✔ Progress - The state must be advance and progress
+% ✔ Investigate progress and conditions w.r.t to queues
+% ✔ Guide the structure of the lit review with sub sections (taxonomy, classify types of entity, in our case queue.)
+% ✔ Find a good citation for a queue, baby citations, is there someone who classifies a queue? a concurrent one? Start with this
+% ✔ Condense lines a bit more.
+% ✔ Start numbering from introduction, not TOC.
+% ✔ Mention that a subset of the algorithms will be implemented.
 
 \begin{singlespace}
 The aim of this thesis is to characterize and compare the performance of blocking \cite{anderson1990performance, herlihy2020art,graunke1990synchronization} and non-blocking \cite{herlihy2020art,valois1995lock} concurrent queueing algorithms. This will be achieved by gathering different metrics to measure the performance of each queueing algorithm under study under different conditions. The goal of measuring performance under different conditions is to highlight the costs and benefits of each queueing algorithm's progress and safety guarantees. A section of this thesis will also be dedicated to analyzing different locking algorithms and their performance, the aim of which is also to measure the costs of certain guarantees. If access to hardware that support certain performance event counters is feasible, this paper will also look into metrics such as data sharing, cache misses and cache line invalidations\cite{intelmanual,intelmanualoptimization,sahelices2009methodology} to provide more empirical evidence to specific claims.
@@ -245,9 +245,9 @@ Each queue will also be measured for throughput under contention \cite{valois199
 
 Finally, each queue's throughput under contention with random delay will be measured. Valois uses this measurement \cite{valois1995lock} when comparing blocking and non-blocking queues. The difference in performance between the blocking and non-blocking queues was stark, and did a good job of highlighting the difference between blocking and non-blocking queueing algorithms. Blocking algorithms tend to not only delay their own critical section, but also the other threads waiting for access to the lock. In order to simulate random delay, a random number of page faults will with a 10\% chance of occurring during any enqueue or dequeue.
 
-The benchmarks that will be used to gather measurements on the implemented queues are the \emph{50\% enqueues} and the \emph{enqueue-dequeue pairs} (previously described in section \nameref{kp-queue}) benchmarks (these benchmarks are often used when measuring the performance of queues \cite{kogan2011wait,hoffman2007baskets,ladan2004optimistic}).
+The benchmarks that will be used to gather measurements on the implemented queues are the \emph{50\% enqueues} and the \emph{enqueue-dequeue pairs} (previously described in section \ref{kp-queue}) benchmarks (these benchmarks are often used when measuring the performance of queues \cite{kogan2011wait,hoffman2007baskets,ladan2004optimistic}).
 
-A single lock queue and a queue with a head lock and a tail lock will be implemented using a subset of the previously mentioned locks. A subset of the lock-free and wait-free queues mentioned in sections \nameref{lock-free-queues} and \nameref{wait-free-queues} will also be implemented.
+A single lock queue and a queue with a head lock and a tail lock will be implemented using a subset of the previously mentioned locks. A subset of the lock-free and wait-free queues mentioned in sections \ref{lock-free-queues} and \ref{wait-free-queues} will also be implemented.
 
 \section{Deliverables}
 A PDF document containing the FYP write up will be provided, together with a zip file containing all of the code implemented. If permission is granted, after the submission and grading of the FYP, the github repository of this FYP will be made public. A gantt chart providing a visual explanation of the planned timeline.
@@ -265,7 +265,7 @@ The work done in this FYP will be split into sections/milestones. The following 
   \item Phase B - Queues
   \begin{enumerate}
     \item 18-02-2022 - 25-02-2022: Implement single lock and head and tail lock queue using a subset of the previously implemented locks.
-    \item 25-02-2022 - 11-03-2022: Implement subset of non-blocking queues mentioned in sections \nameref{lock-free-queues} and \nameref{wait-free-queues} (at least one wait-free and one lock-free).
+    \item 25-02-2022 - 11-03-2022: Implement subset of non-blocking queues mentioned in sections \ref{lock-free-queues} and \ref{wait-free-queues} (at least one wait-free and one lock-free).
     \item 12-03-2022 - 25-03-2022: Implement queue benchmarks. Fix bugs and optimize implementations if necessary and time permits.
   \end{enumerate}
   \item Phase C - Write up

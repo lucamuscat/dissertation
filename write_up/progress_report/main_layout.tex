@@ -197,8 +197,10 @@ Shavit et. al introduce a novel lock-free queue using a technique known as elimi
 
 \subsubsection{Wait-free}
 \label{wait-free-queues}
+
 \paragraph{Kogan and Petrank wait-free queue}
 \label{kp-queue}
+
 Kogan et. al propose a novel and efficient wait-free queue that is on based link-lists and thread helping (ie. threads helping other threads by completing their intended operation for them)\cite{kogan2011wait}. Similar to the filter and the bakery locks, the queue is required to read and write to n distinct locations, where n is the maximum number of concurrent threads\cite{herlihy2020art}.
 The proposed wait-free queue assumes that a garbage collector is responsible for preventing the ABA problem. Since a wait-free garbage collector does not exist, Kogan et al propose that the hazard pointer technique could be used to solve the ABA problem.
 
@@ -228,7 +230,7 @@ Different types of locks, such as the TAS lock, TTAS lock\cite{anderson1990perfo
   \item Sequential Latency Test: The term sequential latency refers to the amount of time for a process to execute a single operation in the absence of any contention \cite[Section~6.3.1]{valois1995lock}\cite[Section~4.3, Table~1]{mellor1991algorithms}. According to Valois, sequential latency serves as a good indicator of the number of steps taken in an operation \cite[Section~6.3.1]{valois1995lock}. Figure \ref{fig: seq_lat} shows the current findings.
 \end{enumerate}
 
-\image{1}{./sequential_latency.png}{Sequential latency of each lock depending on the number of cores. The filter lock is a starvation-free lock algorithm (starvation freedom implies deadlock freedom)\cite{herlihy2020art}. Any deadlock free algorithm has a linear bound to the number of writes and reads necessary \cite[Section~2.8]{herlihy2020art}, accurately reflecting results obtained. The results may be slightly skewed, as they were obtained on a virtualized system. Interference detection mechanisms are yet to be implemented and a properly configured machine (correct power settings, removal of competing processes) is yet to be setup.}{seq_lat}
+\image{0.75}{./sequential_latency.png}{Sequential latency of each lock depending on the number of cores. The filter lock is a starvation-free lock algorithm (starvation freedom implies deadlock freedom)\cite{herlihy2020art}. Any deadlock free algorithm has a linear bound to the number of writes and reads necessary \cite[Section~2.8]{herlihy2020art}, accurately reflecting results obtained. The results may be slightly skewed, as they were obtained on a virtualized system. Interference detection mechanisms are yet to be implemented and a properly configured machine (correct power settings, removal of competing processes) is yet to be setup.}{seq_lat}
 
 \subsection{Remaining Tasks}
 \subsubsection{Locks}
@@ -282,8 +284,7 @@ The work done in this FYP will be split into sections/milestones. The following 
 % #2 - Image path
 % #3 - Caption
 % #4 - Reference Label
-\image{0.5}{gantt_chart.png}{Gantt chart}{gantt}
-
+\image{0.8}{gantt_chart.png}{Gantt chart}{gantt}
 \bibliography{references}
 \bibliographystyle{ieeetr}
 \end{singlespace}

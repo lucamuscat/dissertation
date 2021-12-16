@@ -75,8 +75,22 @@
 %---------------   End  ----------------
 \section{Introduction}
 %--------------- Content ---------------
+
+% Define wait-free and lock-free
+% Define progress and safety
+% Liveness vs progress, put backoff in context.
+% What are the progress guarantees required for a queue
+% Conditions that reflect that the queue is working correctly
+% Progress - The state must be advance and progress
+% Investigate progress and conditions w.r.t to queues
+% Guide the structure of the lit review with sub sections (taxonomy, classify types of entity, in our case queue.)
+% Find a good citation for a queue, baby citations, is there someone who classifies a queue? a concurrent one? Start with this
+% Condense lines a bit more.
+% Start numbering from introduction, not TOC.
+% Mention that a subset of the algorithms will be implemented.
+
 \begin{onehalfspacing}
-The aim of this thesis is to compare the performance between lock-based (busy waiting) \cite{anderson1990performance, herlihy2020art,graunke1990synchronization} and lock-free \cite{herlihy2020art,valois1995lock} concurrent queueing algorithms. This will be done by following specific methodologies to measuring the performance of each queueing algorithm under different conditions. The goal of measuring performance under different conditions is to highlight the costs and benefits of each queueing algorithm's progress and safety guarantees (a safety property states that a concurrent algorithm will always remain in a certain state, whilst a progress guarantee determines if a thread is blocking or non blocking \cite{herlihy2020art,mckenney2017parallel}). A section of this thesis will also be dedicated to analyzing different locking algorithms and their performance, the aim of which is also to measure the costs of certain guarantees and the effects that back off algorithms have at mitigating performance degradation under contention \cite{anderson1990performance,graunke1990synchronization,valois1994implementing}. If access to hardware that support certain performance event counters is feasible, this paper will also look into metrics such as data sharing, cache misses and cache line invalidations\cite{intelmanual,intelmanualoptimization,sahelices2009methodology}  to provide more empirical evidence to specific claims.
+The aim of this thesis is to characterize and compare the performance of blocking \cite{anderson1990performance, herlihy2020art,graunke1990synchronization} and non-blocking \cite{herlihy2020art,valois1995lock} concurrent queueing algorithms. This will be done by gathering different metrics to measure the performance of each queueing algorithm under study under different conditions. The goal of measuring performance under different conditions is to highlight the costs and benefits of each queueing algorithm's progress and safety guarantees (a safety property states that a concurrent algorithm will always remain in a certain state, whilst a progress guarantee determines if a thread is blocking or non blocking \cite{herlihy2020art,mckenney2017parallel}). A section of this thesis will also be dedicated to analyzing different locking algorithms and their performance, the aim of which is also to measure the costs of certain guarantees and the effects that back off algorithms have at mitigating performance degradation under contention \cite{anderson1990performance,graunke1990synchronization,valois1994implementing}. If access to hardware that support certain performance event counters is feasible, this paper will also look into metrics such as data sharing, cache misses and cache line invalidations\cite{intelmanual,intelmanualoptimization,sahelices2009methodology}  to provide more empirical evidence to specific claims.
 
 \section{Literature Review}
 Herlihy and Shavit provide a fundamental introduction to parallel computing and shared memory multiprocessor programming in the "Art of Multiprocessor Programming" \cite{herlihy2020art}. The material covered in this text book ranges from intuitive explanations of basic concepts such as mutual exclusion and read modify write operations, all the way to rigorous definitions and proofs of wait-free constructions and concurrent data structures.
@@ -129,16 +143,41 @@ Performance of each queue mentioned in the paper was collected using the followi
   \item 50\% enqueues: The queue is initialized with 1000 elements, each thread does a 'coin toss' to decide
 \end{enumerate}
 
-Fog and McKenney offer insights into how to reduce the number of errors and interventions when micro-benchmarking \cite{fog1996optimizing,fog2020optimizing, mckenney2017parallel}. Some measures to prevent errors are: keeping the CPU clock frequency stable (Stinner described methods of configuring and reading multiple CPU parameters \cite{stinnerpstate}), ignoring the first few iterations due to the cache and the branch predictor being cold\cite{fog1996optimizing}, avoiding symmetric multi-threading (aka. hyper-threading) \cite{fog2020optimizing} and detecting kernel interferences \cite[Chapter~11.7]{mckenney2017parallel}, 
+Shavit et. al introduce a novel lock-free queue using a technique known as elimination \cite{moir2005using}. Simply put, elimination works by allowing opposing operations such as enqueues and dequeues to exchange values without synchronizing on a shared data structure \cite{shavit1997elimination, moir2005using}. The results obtained suggests that as levels of concurrency increase, so does the throughput of the proposed data structure.
+
+Fog and McKenney offer insights into how to reduce the number of errors and interventions when micro-benchmarking \cite{fog1996optimizing,fog2020optimizing, mckenney2017parallel}. Some measures to prevent errors are: keeping the CPU clock frequency stable (Stinner described methods of configuring and reading multiple CPU parameters \cite{stinnerpstate}), ignoring the first few iterations due to the cache and the branch predictor being cold\cite{fog1996optimizing}, avoiding symmetric multi-threading (aka. hyper-threading) \cite{fog2020optimizing} and detecting kernel interferences \cite[Chapter~11.7]{mckenney2017parallel}.
 
 \section{Goals}
-So far, I have gone over several resources such as \cite{herlihy2020art,mckenney2017parallel,fog2020optimizing, fog1996optimizing} to get a decent enough understanding of multi-threaded programming concepts to be able to implement algorithms based on intuition. I have also implemented several locks (such as the TAS lock, TTAS lock\cite{anderson1990performance, graunke1990synchronization,herlihy2020art,mellor1991algorithms}, peterson lock, and the filter lock \cite{herlihy2020art}) together with a testing environment that allows for patching together several lock implementations and tests with a minimal amount of repeated code. The tests created so far are:
+\subsection{Current Progress}
+Different types of locks, such as the TAS lock, TTAS lock\cite{anderson1990performance, graunke1990synchronization,herlihy2020art,mellor1991algorithms}, peterson lock, and the filter lock \cite{herlihy2020art} have been implemented together with a testing environment that aids in the rapid development of the code base. The tests created so far are:
 \begin{enumerate}
   \item Counting Test: A shared variable is protected by each lock and incremented a number of times. If the shared variable does not match the expected value, the test will fail. The goal of this test is to detect race conditions. Although it is not an exhaustive test by any means, it is still able to detect faulty implementations and race conditions.
-  \item Sequential Latency Test: The term sequential latency refers to the amount of time for a process to execute a single operation in the absence of any contention \cite[Section~6.3.1]{valois1995lock}\cite[Seection~4.3, Table~1]{mellor1991algorithms}. According to Valois, sequential latency serves as a good indicator of the number of steps taken in an operation \cite[Section~6.3.1]{valois1995lock}. Figure \ref{} shows the current findings.
+  \item Sequential Latency Test: The term sequential latency refers to the amount of time for a process to execute a single operation in the absence of any contention \cite[Section~6.3.1]{valois1995lock}\cite[Section~4.3, Table~1]{mellor1991algorithms}. According to Valois, sequential latency serves as a good indicator of the number of steps taken in an operation \cite[Section~6.3.1]{valois1995lock}. Figure \ref{fig: seq_lat} shows the current findings.
 \end{enumerate}
 
-\image{1}{./sequential_latency.png}{Sequential latency of each lock according to the number of cores}{seq_lat}
+\image{1}{./sequential_latency.png}{Sequential latency of each lock depending on the number of cores. The filter lock is a starvation-free lock algorithm (starvation freedom implies deadlock freedom)\cite{herlihy2020art}. Any deadlock free algorithm has a linear bound to the number of writes and reads necessary \cite[Section~2.8]{herlihy2020art}, accurately reflecting results obtained. The results may be slightly skewed, as they were obtained on a virtualized system. Interference detection mechanisms are yet to be implemented and a properly configured machine (correct power settings, removal of competing processes) is yet to be setup.}{seq_lat}
+
+\subsection{Remaining Tasks}
+\subsubsection{Locks}
+Exponential back-off will be added to each lock. According to Anderson, exponential back-off should reduce performance degradation under high contention \cite{anderson1990performance}. The performance of each lock with and without exponential back-off will be compared. The MCS queue lock will also be implemented, as it is regarded to be a scalable lock \cite{boyd2012non,mellor1991algorithms, valois1995lock}.
+\subsubsection{Testing locks under contention}
+New tests need to be implemented in order to gain new insights into the implemented locking algorithms. The performance of locks under contention will be measured using a similar methodology used in the spin-lock benchmark conducted by Intel \cite{intelxeonlockscaling}. A small critical section will be emulated by enqueuing and dequeuing a thread local circular buffer, reading and possibly invalidating some cache lines in the process, simulating a realistic work load. The latency observed will be a function of both re-entry time (the time each thread waits, after leaving the critical section \cite{intelxeonlockscaling}) and the critical section. I have opted to use re-entry time and the length of the critical section as the variables of the experiment to replicate the findings in Intel's benchmarks \cite{intelxeonlockscaling}, and measure locks which have not been covered by said benchmark.
+
+\subsubsection{Queues}
+A bounded and unbounded lock-based queue \cite[Section~10.2]{herlihy2020art} will be compared against various non-blocking queues. The aim of this comparison is to measure the cost of progress guarantees\cite{herlihy2020art, mckenney2017parallel} and the benefits they provide to scalability. The sequential latency of each queue's operations will be measured. The goal of this test is to observe if non-blocking queues can compete with blocking queues when under no contention.
+
+Each queue will also be measured for throughput under contention \cite{valois1995lock,michael1996simple,kogan2011wait}. This test will by conducted on a fixed number of cores, with the re-entry time varying (the lower the re-entry time, the higher the contention). Observing how the average latency of each queue operation under different levels of contention is the goal of this test.
+
+Finally, each queue's throughput under contention with random delay will be measured. Valois uses this measurement \cite{valois1995lock} when comparing blocking and non-blocking queues. The difference in performance between the blocking and non-blocking queues was stark, and did a good job of highlighting the difference between blocking and non-blocking queueing algorithms. Blocking algorithms tend to not only delay their own critical section, but also the other threads waiting for access to the lock. In order to simulate random delay, a random number of page faults will with a 10\% chance of occurring during any enqueue or dequeue.
+
+% TODO: Mention that interferences haven't been removed yet
+% TODO: Create to be done section
+%   * Lock contention test
+%   * Queue sequential latency
+%   * Queue throughput under contention
+%   * Queue throughput under contention with random delay.
+% TODO: Mention deliverables
+% TODO: Gantt chart.
 
 \bibliography{references}
 \bibliographystyle{ieeetr}

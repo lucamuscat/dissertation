@@ -91,7 +91,7 @@
 % Start numbering from introduction, not TOC.
 % Mention that a subset of the algorithms will be implemented.
 
-\begin{onehalfspacing}
+\begin{singlespace}
 The aim of this thesis is to characterize and compare the performance of blocking \cite{anderson1990performance, herlihy2020art,graunke1990synchronization} and non-blocking \cite{herlihy2020art,valois1995lock} concurrent queueing algorithms. This will be achieved by gathering different metrics to measure the performance of each queueing algorithm under study under different conditions. The goal of measuring performance under different conditions is to highlight the costs and benefits of each queueing algorithm's progress and safety guarantees. A section of this thesis will also be dedicated to analyzing different locking algorithms and their performance, the aim of which is also to measure the costs of certain guarantees. If access to hardware that support certain performance event counters is feasible, this paper will also look into metrics such as data sharing, cache misses and cache line invalidations\cite{intelmanual,intelmanualoptimization,sahelices2009methodology} to provide more empirical evidence to specific claims.
 
 \section{Literature Review}
@@ -286,6 +286,6 @@ The work done in this FYP will be split into sections/milestones. The following 
 
 \bibliography{references}
 \bibliographystyle{ieeetr}
-\end{onehalfspacing}
+\end{singlespace}
 % ---------------   End  ----------------
 \end{document}

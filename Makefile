@@ -1,12 +1,12 @@
 ifdef SILENT
-DEBUG_FLAGS =
+DEBUG_FLAGS = -O3
 else
 DEBUG_FLAGS = -DDEBUG -g
 endif
 ERROR_FLAGS = -Wall -Wextra
 
 ASM_FLAGS = -masm=intel -S -fverbose-asm -fno-asynchronous-unwind-tables -fno-exceptions
-LIBRARIES = -lpthread -fopenmp
+LIBRARIES = /usr/local/lib/libpapi.a -lpthread -fopenmp
 
 SRC_DIR = ./src
 LOCKS_DIR = $(SRC_DIR)/locks
@@ -21,6 +21,8 @@ SEQUENTIAL_LATENCY_TEST_FILES = $(LOCKS_TESTS_DIR)/sequential_latency.c $(TEST_U
 
 SEQUENTIAL_LATENCY_TEST_FILES = $(LOCKS_TESTS_DIR)/sequential_latency.c $(TEST_UTILS)
 FILTER_LOCK_INCREMENT_OUTPUT_NAME = filter_lock_inc.o
+
+LOCK_FILES != find $(LOCKS_DIR)/*.c
 
 CXX = gcc
 
@@ -44,9 +46,15 @@ increment_%_test: init_build_folder
 
 sequential_latency_%_test: init_build_folder
 	mkdir -p ./build/asm/sequential_latency/$*/
-	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) /usr/local/lib/libpapi.a $(LOCKS_DIR)/$*.c -lrt $(LIBRARIES) -o $(OUTPUT_DIR)/$*_seq_lat.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
-	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) $(LOCKS_DIR)/$*.c  -lrt $(LIBRARIES) $(ASM_FLAGS)
+	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) $(LOCKS_DIR)/$*.c $(LIBRARIES) -o $(OUTPUT_DIR)/$*_seq_lat.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) $(LOCKS_DIR)/$*.c $(LIBRARIES) $(ASM_FLAGS)
 	mv *.s build/asm/sequential_latency/$*
+
+QUEUES_DIR = $(SRC_DIR)/queues
+ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/enqueue_dequeue.c $(TEST_UTILS)
+
+enqueue_dequeue_blocking_%_test: init_build_folder
+	$(CXX) $(QUEUES_DIR)/blocking/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(LOCKS_DIR)/kernel_lock.c $(LIBRARIES) -o $(OUTPUT_DIR)/blocking_$*_kernel_lock $(DEBUG_FLAGS) $(ERROR_FLAGS)
 
 clean: 
 	rm -rf ./build

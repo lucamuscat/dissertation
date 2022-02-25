@@ -11,4 +11,5 @@ build/**
 **/*.out
 **/*.toc
 *.pdf
+*.s
 utils/.ipynb_checkpoints/interpret_results-checkpoint.ipynb

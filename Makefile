@@ -7,15 +7,16 @@ ERROR_FLAGS = -Wall -Wextra
 
 ASM_FLAGS = -masm=intel -S -fverbose-asm -fno-asynchronous-unwind-tables -fno-exceptions
 LIBRARIES = -lpthread -fopenmp
-TESTS_DIR = ./locks/tests
+LOCKS_DIR = ./src/locks
+LOCKS_TESTS_DIR = $(LOCKS_DIR)/tests
 OUTPUT_DIR = ./build
 
 FILTER_LOCK_DEPENDENCIES = ./locks/filter_lock.c
 
-INCREMENT_TEST_FILES = $(TESTS_DIR)/increment_counter/*.c $(TESTS_DIR)/test_utils.c
-SEQUENTIAL_LATENCY_TEST_FILES = $(TESTS_DIR)/sequential_latency.c .$(TESTS_DIR)/test_utils.c
+INCREMENT_TEST_FILES = $(LOCKS_TESTS_DIR)/increment_counter/*.c $(LOCKS_TESTS_DIR)/test_utils.c
+SEQUENTIAL_LATENCY_TEST_FILES = $(LOCKS_TESTS_DIR)/sequential_latency.c .$(LOCKS_TESTS_DIR)/test_utils.c
 
-SEQUENTIAL_LATENCY_TEST_FILES = $(TESTS_DIR)/sequential_latency.c $(TESTS_DIR)/test_utils.c
+SEQUENTIAL_LATENCY_TEST_FILES = $(LOCKS_TESTS_DIR)/sequential_latency.c $(LOCKS_TESTS_DIR)/test_utils.c
 FILTER_LOCK_INCREMENT_OUTPUT_NAME = filter_lock_inc.o
 
 CXX = gcc
@@ -30,18 +31,18 @@ init_build_folder:
 	mkdir -p $(OUTPUT_DIR)
 
 increment_kernel_lock_test: init_build_folder
-	$(CXX) ./locks/kernel_lock.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -o $(OUTPUT_DIR)/kernel_lock_inc.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	$(CXX) $(LOCKS_DIR)/kernel_lock.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -o $(OUTPUT_DIR)/kernel_lock_inc.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
 
 increment_%_test: init_build_folder
 	mkdir -p ./build/asm/increment/$*/
-	$(CXX) ./locks/$*.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -o $(OUTPUT_DIR)/$*_inc.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
-	$(CXX) ./locks/$*.c $(INCREMENT_TEST_FILES) $(LIBRARIES) $(ASM_FLAGS)
+	$(CXX) $(LOCKS_DIR)/$*.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -o $(OUTPUT_DIR)/$*_inc.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	$(CXX) $(LOCKS_DIR)/$*.c $(INCREMENT_TEST_FILES) $(LIBRARIES) $(ASM_FLAGS)
 	mv *.s build/asm/increment/$*
 
 sequential_latency_%_test: init_build_folder
 	mkdir -p ./build/asm/sequential_latency/$*/
-	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) /usr/local/lib/libpapi.a ./locks/$*.c  -lrt $(LIBRARIES)  -o $(OUTPUT_DIR)/$*_seq_lat.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
-	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) ./locks/$*.c  -lrt $(LIBRARIES) $(ASM_FLAGS)
+	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) /usr/local/lib/libpapi.a $(LOCKS_DIR)/$*.c -lrt $(LIBRARIES) -o $(OUTPUT_DIR)/$*_seq_lat.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) $(LOCKS_DIR)/$*.c  -lrt $(LIBRARIES) $(ASM_FLAGS)
 	mv *.s build/asm/sequential_latency/$*
 
 clean: 

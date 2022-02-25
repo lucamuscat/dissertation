@@ -1,7 +1,7 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "./test_utils.h"
+#include "test_utils.h"
 
 int handle_args(int argc, char* argv[])
 {

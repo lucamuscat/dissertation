@@ -7,16 +7,19 @@ ERROR_FLAGS = -Wall -Wextra
 
 ASM_FLAGS = -masm=intel -S -fverbose-asm -fno-asynchronous-unwind-tables -fno-exceptions
 LIBRARIES = -lpthread -fopenmp
-LOCKS_DIR = ./src/locks
+
+SRC_DIR = ./src
+LOCKS_DIR = $(SRC_DIR)/locks
 LOCKS_TESTS_DIR = $(LOCKS_DIR)/tests
+TEST_UTILS = $(SRC_DIR)/test_utils.c
 OUTPUT_DIR = ./build
 
 FILTER_LOCK_DEPENDENCIES = ./locks/filter_lock.c
 
-INCREMENT_TEST_FILES = $(LOCKS_TESTS_DIR)/increment_counter/*.c $(LOCKS_TESTS_DIR)/test_utils.c
-SEQUENTIAL_LATENCY_TEST_FILES = $(LOCKS_TESTS_DIR)/sequential_latency.c .$(LOCKS_TESTS_DIR)/test_utils.c
+INCREMENT_TEST_FILES = $(LOCKS_TESTS_DIR)/increment_counter/*.c $(TEST_UTILS)
+SEQUENTIAL_LATENCY_TEST_FILES = $(LOCKS_TESTS_DIR)/sequential_latency.c $(TEST_UTILS)
 
-SEQUENTIAL_LATENCY_TEST_FILES = $(LOCKS_TESTS_DIR)/sequential_latency.c $(LOCKS_TESTS_DIR)/test_utils.c
+SEQUENTIAL_LATENCY_TEST_FILES = $(LOCKS_TESTS_DIR)/sequential_latency.c $(TEST_UTILS)
 FILTER_LOCK_INCREMENT_OUTPUT_NAME = filter_lock_inc.o
 
 CXX = gcc
@@ -47,4 +50,4 @@ sequential_latency_%_test: init_build_folder
 
 clean: 
 	rm -rf ./build
-	rm *.s *.o
+	rm -f *.s *.o

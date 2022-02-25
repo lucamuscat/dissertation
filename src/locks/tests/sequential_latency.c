@@ -6,7 +6,7 @@
 #include <papi.h>
 #include "../lock.h"
 #include "../globals.h"
-#include "./test_utils.h"
+#include "../../test_utils.h"
 
 #define CLOCK_ID CLOCK_REALTIME
 #define ITERATIONS 1000

@@ -4,7 +4,7 @@
 #include "increment_counter_utils.h"
 #include "../../lock.h"
 #include "../../globals.h"
-#include "../test_utils.h"
+#include "../../../test_utils.h"
 
 #ifndef TEST_ITERATIONS
 #define TEST_ITERATIONS 1000

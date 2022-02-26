@@ -6,7 +6,8 @@ endif
 ERROR_FLAGS = -Wall -Wextra
 
 ASM_FLAGS = -masm=intel -S -fverbose-asm -fno-asynchronous-unwind-tables -fno-exceptions
-LIBRARIES = /usr/local/lib/libpapi.a -lpthread -fopenmp
+LIBRARIES = -fopenmp
+PAPI_LIB = /usr/local/lib/libpapi.a 
 
 SRC_DIR = ./src
 LOCKS_DIR = $(SRC_DIR)/locks
@@ -44,10 +45,12 @@ increment_%_test: init_build_folder
 	$(CXX) $(LOCKS_DIR)/$*.c $(INCREMENT_TEST_FILES) $(LIBRARIES) $(ASM_FLAGS)
 	mv *.s build/asm/increment/$*
 
+SEQUENTIAL_LATENCY_COMMON = $(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) $(LOCKS_DIR)/$*.c $(LIBRARIES)
+
 sequential_latency_%_test: init_build_folder
 	mkdir -p ./build/asm/sequential_latency/$*/
-	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) $(LOCKS_DIR)/$*.c $(LIBRARIES) -o $(OUTPUT_DIR)/$*_seq_lat.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
-	$(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) $(LOCKS_DIR)/$*.c $(LIBRARIES) $(ASM_FLAGS)
+	$(SEQUENTIAL_LATENCY_COMMON) $(PAPI_LIB) -o $(OUTPUT_DIR)/$*_seq_lat.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	$(SEQUENTIAL_LATENCY_COMMON) $(ASM_FLAGS)
 	mv *.s build/asm/sequential_latency/$*
 
 QUEUES_DIR = $(SRC_DIR)/queues

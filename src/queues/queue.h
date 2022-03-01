@@ -17,7 +17,7 @@ int enqueue(void* queue, void* in_item);
  * @param out_item Item in which the dequeued item will be stored.
  * @return Status
  */
-int dequeue(void* queue, void* out_item);
+int dequeue(void* queue, void** out_item);
 
 /**
  * @brief Initializes a queue.

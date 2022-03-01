@@ -1,3 +1,5 @@
+SHELL=bash
+
 ifdef SILENT
 DEBUG_FLAGS = -O3
 else
@@ -54,10 +56,14 @@ sequential_latency_%_test: init_build_folder
 	mv *.s build/asm/sequential_latency/$*
 
 QUEUES_DIR = $(SRC_DIR)/queues
+BLOCKING_DIR = $(QUEUES_DIR)/blocking
 ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/enqueue_dequeue.c $(TEST_UTILS)
 
 enqueue_dequeue_blocking_%_test: init_build_folder
-	$(CXX) $(QUEUES_DIR)/blocking/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(LOCKS_DIR)/kernel_lock.c $(LIBRARIES) -o $(OUTPUT_DIR)/blocking_$*_kernel_lock $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	for i in $(LOCK_FILES); \
+	do \
+		$(CXX) $(BLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $$i $(PAPI_LIB) $(LIBRARIES) -o $(OUTPUT_DIR)/blocking_$*_`basename $$i .c` $(DEBUG_FLAGS) $(ERROR_FLAGS); \
+	done
 
 clean: 
 	rm -rf ./build

@@ -6,8 +6,8 @@
 
 int create_lock(void** lock)
 {
-    omp_lock_t** temp = (omp_lock_t**)lock;
-    *temp = (omp_lock_t*)malloc(sizeof(omp_lock_t));
+    *lock = malloc(sizeof(omp_lock_t));
+    if (*lock == 0) return -1;
     omp_init_lock(*lock);
     return 0;
 }

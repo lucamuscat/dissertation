@@ -1,6 +1,7 @@
 #include <papi.h>
 #include <omp.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "../../test_utils.h"
 #include "../queue.h"
 
@@ -9,20 +10,24 @@
 int main(int argc, char** argv)
 {
     int num_of_threads = handle_args(argc, argv);
+    
+    if (num_of_threads == -1)
+        return num_of_threads;
+    
     void* queue;
-
+    void* item = malloc(sizeof(void*));
+    
     create_queue(&queue);
-
     long long diff;
     long long total_diff = 0;
 
     #pragma omp parallel shared(queue, total_diff) private(diff)
     {
-        void* dequeued_item;
+        void* dequeued_item = NULL;
         diff = PAPI_get_real_cyc();
         for (size_t i = 0; i < TOTAL_ENQUEUE_DEQUEUE_PAIRS_PER_THREAD; ++i)
         {
-            enqueue(queue, NULL);
+            enqueue(queue, &diff);
             dequeue(queue, dequeued_item);
         }
         diff = PAPI_get_real_cyc() - diff;

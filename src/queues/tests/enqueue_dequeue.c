@@ -15,9 +15,8 @@ int main(int argc, char** argv)
         return num_of_threads;
     
     void* queue;
-    void* item = malloc(sizeof(void*));
     
-    create_queue(&queue);
+    PASS((create_queue(&queue)));
     long long diff;
     long long total_diff = 0;
 
@@ -28,7 +27,7 @@ int main(int argc, char** argv)
         for (size_t i = 0; i < TOTAL_ENQUEUE_DEQUEUE_PAIRS_PER_THREAD; ++i)
         {
             enqueue(queue, &diff);
-            dequeue(queue, dequeued_item);
+            dequeue(queue, &dequeued_item);
         }
         diff = PAPI_get_real_cyc() - diff;
         #pragma omp critical

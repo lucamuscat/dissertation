@@ -57,6 +57,7 @@ sequential_latency_%_test: init_build_folder
 
 QUEUES_DIR = $(SRC_DIR)/queues
 BLOCKING_DIR = $(QUEUES_DIR)/blocking
+NONBLOCKING_DIR = $(QUEUES_DIR)/non-blocking
 ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/enqueue_dequeue.c $(TEST_UTILS)
 
 enqueue_dequeue_blocking_%_test: init_build_folder
@@ -64,6 +65,9 @@ enqueue_dequeue_blocking_%_test: init_build_folder
 	do \
 		$(CXX) $(BLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $$i $(PAPI_LIB) $(LIBRARIES) -o $(OUTPUT_DIR)/blocking_$*_`basename $$i .c` $(DEBUG_FLAGS) $(ERROR_FLAGS); \
 	done
+
+enqueue_dequeue_nonblocking_%_test: init_build_folder
+	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(LIBRARIES) -o $(OUTPUT_DIR)/nonblocking_$* $(DEBUG_FLAGS) $(ERROR_FLAGS)
 
 clean: 
 	rm -rf ./build

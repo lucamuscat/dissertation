@@ -1,6 +1,8 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#include <stdio.h>
+
 /**
  * @brief Enqueue an item inside the queue.
  * 
@@ -29,5 +31,14 @@ int create_queue(void** out_queue);
 
 // A randomly poke method might come in handy in the future:
 // https://youtu.be/_qaKkHuHYE0?t=1073
+
+#define P_PASS(x) if(x == NULL) {\
+    perror("Error:"); \
+    exit(EXIT_FAILURE); \
+}
+
+#define PASS(x) if(x != 0) {\
+    return x; \
+}
 
 #endif

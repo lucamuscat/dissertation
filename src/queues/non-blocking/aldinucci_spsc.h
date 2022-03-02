@@ -31,7 +31,8 @@ bool spsc_enqueue(void* queue, void* in_item)
     {
         asm("sfence"); // WMB
         temp->buffer[temp->write++] = in_item;
-        temp->write %= CIRCULAR_BUFFER_SIZE;
+        if (temp->write == CIRCULAR_BUFFER_SIZE)
+            temp->write = 0;
         return true;
     }
     return false;
@@ -44,7 +45,8 @@ bool spsc_dequeue(void* queue, void** out_item) \
         return false;
     *out_item = temp->buffer[temp->read];
     temp->buffer[temp->read++] = NULL;
-    temp->read %= CIRCULAR_BUFFER_SIZE;
+    if (temp->read == CIRCULAR_BUFFER_SIZE)
+        temp->read = 0;
     return true;
 }
 

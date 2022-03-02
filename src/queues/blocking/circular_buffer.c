@@ -35,7 +35,10 @@ bool enqueue(void* queue, void* in_item)
     if (temp->buffer[temp->write] == NULL)
     {
         temp->buffer[temp->write++] = in_item;
-        temp->write %= CIRCULAR_BUFFER_SIZE;
+        if (temp->write == CIRCULAR_BUFFER_SIZE)
+        {
+            temp->write = 0;
+        }
         unlock(temp->mutex);
         return true;
     }
@@ -53,9 +56,10 @@ bool dequeue(void* queue, void** out_item)
         return true;
     }
     out_item = temp->buffer[temp->read++];
-    // Swap with an if statement, as %= might not be atomic when naturally
-    // aligned.
-    temp->read %= CIRCULAR_BUFFER_SIZE;
+    if (temp->read == CIRCULAR_BUFFER_SIZE)
+    {
+        temp->read = 0;
+    }
     unlock(temp->mutex);
     return false;
 }

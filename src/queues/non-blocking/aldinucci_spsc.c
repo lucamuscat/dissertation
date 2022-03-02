@@ -12,5 +12,5 @@ bool dequeue(void* queue, void** out_item)
 
 bool create_queue(void** out_queue)
 {
-    return create_queue(out_queue);
+    return create_spsc_queue(out_queue);
 }

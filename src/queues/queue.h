@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+#define CIRCULAR_BUFFER_SIZE 64
+
 /**
  * @brief Enqueue an item inside the queue.
  * 

@@ -3,7 +3,6 @@
 #include "../queue.h"
 #include "../../locks/lock.h"
 
-#define N 64
 #define EMPTY 1
 #define FULL 1
 
@@ -24,7 +23,7 @@ int create_queue(void** out_queue)
     P_QUEUE(*out_queue)->read = 0;
     P_QUEUE(*out_queue)->write = 0;
     // Initialize buffer with 0s (nulls)
-    P_QUEUE(*out_queue)->buffer = (void**)calloc(N, sizeof(void*));
+    P_QUEUE(*out_queue)->buffer = (void**)calloc(CIRCULAR_BUFFER_SIZE, sizeof(void*));
     P_QUEUE(*out_queue)->mutex = NULL;
     int status = create_lock(P_QUEUE(out_queue)->mutex);
     assert((status != -1));
@@ -39,7 +38,7 @@ int enqueue(void* queue, void* in_item)
     if (temp->buffer[temp->write] == NULL)
     {
         temp->buffer[temp->write++] = in_item;
-        temp->write %= N;
+        temp->write %= CIRCULAR_BUFFER_SIZE;
         unlock(temp->mutex);
         return 0;
     }
@@ -57,7 +56,7 @@ int dequeue(void* queue, void** out_item)
         return FULL;
     }
     out_item = temp->buffer[temp->read++];
-    temp->read %= N;
+    temp->read %= CIRCULAR_BUFFER_SIZE;
     unlock(temp->mutex);
     return 0;
 }

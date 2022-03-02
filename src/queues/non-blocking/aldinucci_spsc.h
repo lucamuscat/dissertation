@@ -6,27 +6,27 @@
 #include<stdlib.h>
 #include "../queue.h"
 
-typedef struct queue
+typedef struct aldinucci_spsc
 {
     void** buffer;
     // The original paper assumes that variables are naturally aligned.
     int read __attribute__((aligned(sizeof(int))));
     int write __attribute__((aligned(sizeof(int))));
-} queue;
+} aldinucci_spsc;
 
-int _create_queue(void** out_queue)
+int create_spsc_queue(void** out_queue)
 {
-    queue** temp = (queue**)out_queue;
-    *temp = (queue*)calloc(1, sizeof(queue));
+    aldinucci_spsc** temp = (aldinucci_spsc**)out_queue;
+    *temp = (aldinucci_spsc*)calloc(1, sizeof(aldinucci_spsc));
     P_PASS(*temp);
     (*temp)->buffer = (void**)calloc(CIRCULAR_BUFFER_SIZE, sizeof(void*));
     P_PASS((void*)(*temp)->buffer);
     return 0;
 }
 
-int _enqueue(void* queue, void* in_item)
+int spsc_enqueue(void* queue, void* in_item)
 {
-    struct queue* temp = queue;
+    struct aldinucci_spsc* temp = queue;
     if (temp->buffer[temp->write] == NULL)
     {
         asm("sfence"); // WMB
@@ -37,9 +37,9 @@ int _enqueue(void* queue, void* in_item)
     return -1;
 }
 
-int _dequeue(void* queue, void** out_item) \
+int spsc_dequeue(void* queue, void** out_item) \
 {
-    struct queue* temp = queue;
+    struct aldinucci_spsc* temp = queue;
     if (temp->buffer[temp->read] == NULL)
         return -1;
     *out_item = temp->buffer[temp->read];

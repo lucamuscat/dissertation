@@ -19,16 +19,13 @@ typedef struct circular_buffer
 //TODO: Need to add better error checking
 int create_queue(void** out_queue)
 {
-    *out_queue = malloc(sizeof(circular_buffer));
-    P_QUEUE(*out_queue)->read = 0;
-    P_QUEUE(*out_queue)->write = 0;
+    *out_queue = calloc(1, sizeof(circular_buffer));
+    P_PASS(*out_queue);
     // Initialize buffer with 0s (nulls)
     P_QUEUE(*out_queue)->buffer = (void**)calloc(CIRCULAR_BUFFER_SIZE, sizeof(void*));
-    P_QUEUE(*out_queue)->mutex = NULL;
-    int status = create_lock(P_QUEUE(out_queue)->mutex);
-    assert((status != -1));
+    PASS(create_lock(P_QUEUE(out_queue)->mutex));
     assert((P_QUEUE(*out_queue)->mutex != NULL));
-    return status;
+    return 0;
 }
 
 int enqueue(void* queue, void* in_item)

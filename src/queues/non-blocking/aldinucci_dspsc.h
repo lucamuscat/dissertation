@@ -16,7 +16,7 @@ typedef struct dspsc_queue
     void* cache;
 } dspsc_queue;
 
-int create_dspsc(void** out_queue)
+bool create_dspsc(void** out_queue)
 {
     node* dummy_node = (node*)calloc(1, sizeof(node));
     P_PASS(dummy_node);
@@ -30,7 +30,7 @@ int create_dspsc(void** out_queue)
     (*temp)->tail = dummy_node;
     (*temp)->cache = cache;
 
-    return 0;
+    return true;
 }
 
 int dspsc_enqueue(void* queue, void* in_data)
@@ -42,18 +42,18 @@ int dspsc_enqueue(void* queue, void* in_data)
     n->data = in_data;
     n->next = NULL;
     asm("sfence");
-    return 0;
+    return true;
 }
 
 int dspsc_dequeue(void* queue, void** out_data)
 {
     dspsc_queue* temp = queue;
     if (!temp->head->next)
-        return -1;
+        return false;
     node* n = temp->head;
     *out_data = (temp->head->next)->data;
     temp->head = temp->head->next;
     if (!spsc_enqueue(temp->cache, n)) free(n);
-    return 0;
+    return true;
 }
 #endif

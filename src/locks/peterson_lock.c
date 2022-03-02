@@ -12,12 +12,12 @@ typedef struct peterson_lock_t
 
 #define P_LOCK ((peterson_lock_t*)lock)
 
-int create_lock(void** lock)
+bool create_lock(void** lock)
 {
     peterson_lock_t** temp = (peterson_lock_t**)lock;
     *temp = (peterson_lock_t*)malloc(sizeof(peterson_lock_t));
     (*temp)->flag = calloc(2, sizeof(bool));
-    return 0;
+    return true;
 }
 
 #define P_LOCK ((peterson_lock_t*)lock)

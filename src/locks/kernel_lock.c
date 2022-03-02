@@ -4,12 +4,12 @@
 
 #include "lock.h"
 
-int create_lock(void** lock)
+bool create_lock(void** lock)
 {
     *lock = malloc(sizeof(omp_lock_t));
-    if (*lock == 0) return -1;
+    if (*lock == 0) return false;
     omp_init_lock(*lock);
-    return 0;
+    return true;
 }
 
 void wait_lock(void* lock)

@@ -1,7 +1,9 @@
 #ifndef LOCK_H
 #define LOCK_H
 
-int create_lock(void** lock);
+#include <stdbool.h>
+
+bool create_lock(void** lock);
 void free_lock(void*);
 
 // Code design question: Should all the methods be grouped in a single header

@@ -2,6 +2,7 @@
 #define QUEUE_H
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #define CIRCULAR_BUFFER_SIZE 64
 
@@ -12,7 +13,7 @@
  * @param in_item Item which will be enqueued inside of the queue.
  * @return Status
  */
-int enqueue(void* queue, void* in_item);
+bool enqueue(void* queue, void* in_item);
 
 /**
  * @brief Dequeue an item from the queue.
@@ -21,7 +22,7 @@ int enqueue(void* queue, void* in_item);
  * @param out_item Item in which the dequeued item will be stored.
  * @return Status
  */
-int dequeue(void* queue, void** out_item);
+bool dequeue(void* queue, void** out_item);
 
 /**
  * @brief Initializes a queue.
@@ -29,17 +30,22 @@ int dequeue(void* queue, void** out_item);
  * @param out_queue Pointer to the queue that is to be initialized
  * @return Status
  */
-int create_queue(void** out_queue);
+bool create_queue(void** out_queue);
 
 // A randomly poke method might come in handy in the future:
 // https://youtu.be/_qaKkHuHYE0?t=1073
 
+/**
+ * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
+ * callocs succeed.
+ */
 #define P_PASS(x) if(x == NULL) {\
     perror("Error:"); \
     exit(EXIT_FAILURE); \
 }
 
-#define PASS(x) if(x != 0) {\
+/// Return x if it is false.
+#define PASS(x) if(!x) {\
     return x; \
 }
 

@@ -13,13 +13,13 @@ typedef struct spin_lock_t
     atomic_flag busy;
 } spin_lock_t;
 
-int create_lock(void** lock)
+bool create_lock(void** lock)
 {
     *lock = malloc(sizeof(spin_lock_t));
     if (*lock == NULL)
-        return errno;
+        return false;
     atomic_flag_clear(&P_LOCK->busy);
-    return 0;
+    return true;
 }
 void free_lock(void* lock)
 {

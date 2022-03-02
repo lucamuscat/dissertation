@@ -14,17 +14,17 @@ typedef struct aldinucci_spsc
     int write __attribute__((aligned(sizeof(int))));
 } aldinucci_spsc;
 
-int create_spsc_queue(void** out_queue)
+bool create_spsc_queue(void** out_queue)
 {
     aldinucci_spsc** temp = (aldinucci_spsc**)out_queue;
     *temp = (aldinucci_spsc*)calloc(1, sizeof(aldinucci_spsc));
     P_PASS(*temp);
     (*temp)->buffer = (void**)calloc(CIRCULAR_BUFFER_SIZE, sizeof(void*));
     P_PASS((void*)(*temp)->buffer);
-    return 0;
+    return true;
 }
 
-int spsc_enqueue(void* queue, void* in_item)
+bool spsc_enqueue(void* queue, void* in_item)
 {
     struct aldinucci_spsc* temp = queue;
     if (temp->buffer[temp->write] == NULL)
@@ -32,20 +32,20 @@ int spsc_enqueue(void* queue, void* in_item)
         asm("sfence"); // WMB
         temp->buffer[temp->write++] = in_item;
         temp->write %= CIRCULAR_BUFFER_SIZE;
-        return 0;
+        return true;
     }
-    return -1;
+    return false;
 }
 
-int spsc_dequeue(void* queue, void** out_item) \
+bool spsc_dequeue(void* queue, void** out_item) \
 {
     struct aldinucci_spsc* temp = queue;
     if (temp->buffer[temp->read] == NULL)
-        return -1;
+        return false;
     *out_item = temp->buffer[temp->read];
     temp->buffer[temp->read++] = NULL;
     temp->read %= CIRCULAR_BUFFER_SIZE;
-    return 0;
+    return true;
 }
 
 #endif

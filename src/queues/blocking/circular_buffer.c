@@ -17,7 +17,7 @@ typedef struct circular_buffer
 } circular_buffer;
 
 //TODO: Need to add better error checking
-int create_queue(void** out_queue)
+bool create_queue(void** out_queue)
 {
     *out_queue = calloc(1, sizeof(circular_buffer));
     P_PASS(*out_queue);
@@ -25,10 +25,10 @@ int create_queue(void** out_queue)
     P_QUEUE(*out_queue)->buffer = (void**)calloc(CIRCULAR_BUFFER_SIZE, sizeof(void*));
     PASS(create_lock(P_QUEUE(out_queue)->mutex));
     assert((P_QUEUE(*out_queue)->mutex != NULL));
-    return 0;
+    return true;
 }
 
-int enqueue(void* queue, void* in_item)
+bool enqueue(void* queue, void* in_item)
 {
     circular_buffer* temp = (circular_buffer*)queue;
     wait_lock(temp->mutex);
@@ -37,23 +37,25 @@ int enqueue(void* queue, void* in_item)
         temp->buffer[temp->write++] = in_item;
         temp->write %= CIRCULAR_BUFFER_SIZE;
         unlock(temp->mutex);
-        return 0;
+        return true;
     }
     unlock(temp->mutex);
-    return FULL;
+    return false;
 }
 
-int dequeue(void* queue, void** out_item)
+bool dequeue(void* queue, void** out_item)
 {
     circular_buffer* temp = (circular_buffer*)queue;
     wait_lock(temp->mutex);
     if (temp->buffer[temp->read] == NULL)
     {
         unlock(temp->mutex);
-        return FULL;
+        return true;
     }
     out_item = temp->buffer[temp->read++];
+    // Swap with an if statement, as %= might not be atomic when naturally
+    // aligned.
     temp->read %= CIRCULAR_BUFFER_SIZE;
     unlock(temp->mutex);
-    return 0;
+    return false;
 }

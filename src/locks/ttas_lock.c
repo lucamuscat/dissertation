@@ -12,13 +12,13 @@ typedef struct ttas_lock_t
 #define P_LOCK ((ttas_lock_t*)lock)
 
 
-int create_lock(void** lock)
+bool create_lock(void** lock)
 {
     *lock = malloc(sizeof(ttas_lock_t));
     if (*lock == NULL)
-        return errno;
+        return false;
     atomic_init(&P_LOCK->busy, 0);
-    return 0;
+    return true;
 }
 
 void free_lock(void* lock){/**/}

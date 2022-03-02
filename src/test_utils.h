@@ -1,10 +1,6 @@
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
 
-#include <time.h>
-
-typedef struct timespec timespec;
-
 /**
 
  * @brief Processes the number of threads provided in the command line argument.

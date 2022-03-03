@@ -55,7 +55,7 @@ bool dequeue(void* queue, void** out_item)
         unlock(temp->mutex);
         return true;
     }
-    out_item = temp->buffer[temp->read++];
+    *out_item = temp->buffer[temp->read++];
     if (temp->read == CIRCULAR_BUFFER_SIZE)
     {
         temp->read = 0;

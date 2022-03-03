@@ -5,9 +5,9 @@
 #include "../../test_utils.h"
 #include "../queue.h"
 
-#define TOTAL_ENQUEUE_DEQUEUE_PAIRS_PER_THREAD 1000000
-#define TOTAL_RERUNS 100000
-#define NANO_TO_SEC 1000000000
+#define TOTAL_ENQUEUE_DEQUEUE_PAIRS_PER_THREAD 100000LL
+#define TOTAL_RERUNS 100000LL
+#define NANO_TO_MINUTE 1000000000*60
 
 int main(int argc, char** argv)
 {
@@ -20,8 +20,8 @@ int main(int argc, char** argv)
 
     
     PASS((create_queue(&queue)));
-    long long total_cycle_diff = 0;
-    long long total_ns_diff = 0;
+    double total_cycle_diff = 0;
+    double total_ns_diff = 0;
     long long total_run_time_ns = PAPI_get_real_nsec();
     
     #pragma omp parallel shared(queue, total_cycle_diff, total_ns_diff)
@@ -29,8 +29,8 @@ int main(int argc, char** argv)
         long long cycle_diff;
         long long ns_diff;
         void* dequeued_item = NULL;
-        long long inner_total_diff = 0LL;
-        long long inner_total_ns_diff = 0LL;
+        double inner_total_diff = 0.0;
+        double inner_total_ns_diff = 0.0;
         for (size_t j = 0; j < TOTAL_RERUNS; ++j)
         {
             cycle_diff = PAPI_get_real_cyc();
@@ -40,10 +40,8 @@ int main(int argc, char** argv)
                 enqueue(queue, &cycle_diff);
                 dequeue(queue, &dequeued_item);
             }
-            cycle_diff = PAPI_get_real_cyc() - cycle_diff;
-            ns_diff = PAPI_get_real_nsec() - ns_diff;
-            inner_total_diff += cycle_diff / TOTAL_ENQUEUE_DEQUEUE_PAIRS_PER_THREAD;
-            inner_total_ns_diff += ns_diff / TOTAL_ENQUEUE_DEQUEUE_PAIRS_PER_THREAD;
+            inner_total_diff += (((double)PAPI_get_real_cyc()) - cycle_diff)/TOTAL_ENQUEUE_DEQUEUE_PAIRS_PER_THREAD;
+            inner_total_ns_diff += (((double)PAPI_get_real_nsec()) - ns_diff)/TOTAL_ENQUEUE_DEQUEUE_PAIRS_PER_THREAD;
         }
         #pragma omp critical
         {
@@ -53,12 +51,12 @@ int main(int argc, char** argv)
 
     }
 
-    total_run_time_ns = total_run_time_ns - PAPI_get_real_nsec();
+    total_run_time_ns = PAPI_get_real_nsec() - total_run_time_ns;
     
-    long long average_cycles = total_cycle_diff / num_of_threads;
-
-    printf("Total runtime: %lld", total_run_time_ns / NANO_TO_SEC);
-    printf("Average Per Thread: %lld cycles\n", average_cycles);
+    double average_cycles = total_cycle_diff / num_of_threads;
+    double average_ns = total_ns_diff / num_of_threads;
+    
+    printf("%s, %f, %f, %lld\n", argv[0], average_cycles, average_ns, total_run_time_ns);
 
     return 0;
 }

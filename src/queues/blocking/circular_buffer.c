@@ -10,7 +10,7 @@
 
 typedef struct circular_buffer
 {
-    void** mutex;
+    void* mutex;
     void** buffer;
     int read;
     int write;
@@ -23,7 +23,7 @@ bool create_queue(void** out_queue)
     P_PASS(*out_queue);
     // Initialize buffer with 0s (nulls)
     P_QUEUE(*out_queue)->buffer = (void**)calloc(CIRCULAR_BUFFER_SIZE, sizeof(void*));
-    PASS(create_lock(P_QUEUE(out_queue)->mutex));
+    PASS(create_lock(&P_QUEUE(*out_queue)->mutex));
     assert((P_QUEUE(*out_queue)->mutex != NULL));
     return true;
 }

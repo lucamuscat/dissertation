@@ -49,4 +49,8 @@ bool create_queue(void** out_queue);
     return x; \
 }
 
+#define PASS_LOG(x, message) if(!x) {\
+    printf(message); \
+}
+
 #endif

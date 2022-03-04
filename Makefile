@@ -8,7 +8,7 @@ endif
 ERROR_FLAGS = -Wall -Wextra
 
 ASM_FLAGS = -masm=intel -S -fverbose-asm -fno-asynchronous-unwind-tables -fno-exceptions
-LIBRARIES = -fopenmp
+LIBRARIES = -lm -lpthread
 PAPI_LIB = /usr/local/lib/libpapi.a 
 
 SRC_DIR = ./src
@@ -25,15 +25,15 @@ SEQUENTIAL_LATENCY_TEST_FILES = $(LOCKS_TESTS_DIR)/sequential_latency.c $(TEST_U
 SEQUENTIAL_LATENCY_TEST_FILES = $(LOCKS_TESTS_DIR)/sequential_latency.c $(TEST_UTILS)
 FILTER_LOCK_INCREMENT_OUTPUT_NAME = filter_lock_inc.o
 
-LOCK_FILES != find $(LOCKS_DIR)/*.c
+LOCK_FILES = $(LOCKS_DIR)/pthread_lock.c $(LOCKS_DIR)/spin_lock.c $(LOCKS_DIR)/ttas_lock.c
 
 CXX = gcc
 
-all: increment_counter_tests sequential_latency_tests
+all: sequential_latency_tests
 
-sequential_latency_tests: sequential_latency_filter_lock_test sequential_latency_peterson_lock_test sequential_latency_spin_lock_test sequential_latency_kernel_lock_test sequential_latency_ttas_lock_test
+sequential_latency_tests: sequential_latency_spin_lock_test sequential_latency_kernel_lock_test sequential_latency_ttas_lock_test
 
-increment_counter_tests: increment_filter_lock_test increment_kernel_lock_test increment_peterson_lock_test increment_spin_lock_test increment_ttas_lock_test
+increment_counter_tests: increment_filter_lock_test increment_kernel_lock_test increment_spin_lock_test increment_ttas_lock_test
 
 init_build_folder:
 	mkdir -p $(OUTPUT_DIR)

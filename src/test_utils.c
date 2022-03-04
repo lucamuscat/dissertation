@@ -14,6 +14,5 @@ int handle_args(int argc, char* argv[])
     char* pEnd;
     const int decimal = 10;
     const long int number_of_threads = strtol(argv[1], &pEnd, decimal);
-    omp_set_num_threads(number_of_threads);
     return number_of_threads;
 }

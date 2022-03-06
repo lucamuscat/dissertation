@@ -60,7 +60,7 @@ BLOCKING_DIR = $(QUEUES_DIR)/blocking
 NONBLOCKING_DIR = $(QUEUES_DIR)/non-blocking
 ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/enqueue_dequeue.c $(TEST_UTILS)
 
-enqueue_dequeue_blocking_tests: enqueue_dequeue_blocking_circular_buffer_test
+enqueue_dequeue_blocking_tests: enqueue_dequeue_blocking_circular_buffer_test enqueue_dequeue_blocking_linked_queue_test
 
 enqueue_dequeue_blocking_%_test: init_build_folder
 	for i in $(LOCK_FILES); \

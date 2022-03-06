@@ -23,7 +23,6 @@ typedef struct thread_args
     double* total_ns_diff;
     pthread_mutex_t* mutex;
     pthread_t tid;
-    
 } __attribute__((aligned(CACHE_LINE_SIZE))) thread_args;
 
 void* thread_fn(void* in_args)
@@ -105,7 +104,7 @@ int main(int argc, char** argv)
     double average_cycles = total_cycle_diff / num_of_threads;
     double average_ns = total_ns_diff / num_of_threads;
     
-    printf("%s, %d, %f, %f, %lld\n", argv[0], num_of_threads, average_cycles, average_ns, total_run_time_ns);
+    printf("\"%s\", %d, %f, %f, %lld\n", get_queue_name(), num_of_threads, average_cycles, average_ns, total_run_time_ns);
 
     return 0;
 }

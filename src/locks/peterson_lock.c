@@ -45,3 +45,8 @@ void unlock(void* lock)
     P_LOCK->flag[me] = false;
     asm("mfence");
 }
+
+char* get_lock_name()
+{
+    return "Peterson";
+}

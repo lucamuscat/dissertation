@@ -36,4 +36,11 @@ void unlock(void* lock)
 {
     atomic_flag_clear_explicit(&(P_LOCK->busy), memory_order_release);
 }
+
+
+char* get_lock_name()
+{
+    return "TAS";
+}
+
 #endif

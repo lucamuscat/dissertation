@@ -67,3 +67,10 @@ bool dequeue(void* in_queue, void** out_data)
     unlock(temp->dequeue_lock);
     return true;
 }
+
+char* get_queue_name()
+{
+    char* buffer = (char*)malloc(sizeof(char) * 64);
+    snprintf(buffer, 64, "%s %s", "Linked Queue", get_lock_name());
+    return buffer;
+}

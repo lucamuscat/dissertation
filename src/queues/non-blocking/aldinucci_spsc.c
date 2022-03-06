@@ -14,3 +14,8 @@ bool create_queue(void** out_queue)
 {
     return create_spsc_queue(out_queue);
 }
+
+char* get_queue_name()
+{
+    return "Aldinucci SPSC";
+}

@@ -15,3 +15,8 @@ bool dequeue(void* queue, void** out_data)
 {
     return dspsc_dequeue(queue, out_data);
 }
+
+char* get_queue_name()
+{
+    return "Aldinucci DSPSC";
+}

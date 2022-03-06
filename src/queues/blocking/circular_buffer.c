@@ -63,3 +63,10 @@ bool dequeue(void* queue, void** out_item)
     unlock(temp->mutex);
     return false;
 }
+
+char* get_queue_name()
+{
+    char* buffer = (char*)malloc(sizeof(char) * 64);
+    snprintf(buffer, 64, "%s %s", "Circular Buffer", get_lock_name());
+    return buffer;
+}

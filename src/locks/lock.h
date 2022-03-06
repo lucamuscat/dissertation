@@ -17,4 +17,12 @@ void free_lock(void*);
 void wait_lock(void* lock);
 void unlock(void* lock);
 
+/**
+ * @brief Get the name of the lock currently being used. This will be used in each
+ * tests' output.
+ *
+ * @return char* 
+ */
+char* get_lock_name();
+
 #endif

@@ -36,6 +36,13 @@ bool create_queue(void** out_queue);
 // https://youtu.be/_qaKkHuHYE0?t=1073
 
 /**
+ * @brief Get the name of the queue currently being tested.
+ * 
+ * @return char* 
+ */
+char* get_queue_name();
+
+/**
  * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
  * callocs succeed.
  */

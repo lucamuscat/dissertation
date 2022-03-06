@@ -76,3 +76,8 @@ void unlock(void* lock)
     FULL_BARRIER;
     P_LOCK->level[omp_get_thread_num()] = 0;
 }
+
+char* get_lock_name()
+{
+    return "Filter";
+}

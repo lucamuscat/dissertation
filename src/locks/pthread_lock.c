@@ -28,3 +28,9 @@ void free_lock(void* lock)
 {
     pthread_mutex_destroy(lock);
 }
+
+
+char* get_lock_name()
+{
+    return "Pthread Lock";
+}

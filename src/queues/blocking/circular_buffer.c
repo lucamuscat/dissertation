@@ -2,6 +2,7 @@
 #include <assert.h>
 #include "../queue.h"
 #include "../../locks/lock.h"
+#include "../../test_utils.h"
 
 #define EMPTY 1
 #define FULL 1

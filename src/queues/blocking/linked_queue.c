@@ -1,5 +1,6 @@
 #include "../queue.h"
 #include "../../locks/lock.h"
+#include "../../test_utils.h"
 
 #include <stdlib.h>
 
@@ -11,10 +12,10 @@ typedef struct node
 
 typedef struct queue
 {
-    void* enqueue_lock __attribute__((aligned(CACHE_LINE_SIZE)));
-    void* dequeue_lock __attribute__((aligned(CACHE_LINE_SIZE)));
-    node* read __attribute__((aligned(CACHE_LINE_SIZE))); // Head
-    node* write __attribute__((aligned(CACHE_LINE_SIZE))); // Tail/Rear
+    void* enqueue_lock CACHE_ALIGNED;
+    void* dequeue_lock CACHE_ALIGNED;
+    node* read CACHE_ALIGNED; // Head
+    node* write CACHE_ALIGNED; // Tail/Rear
 } queue;
 
 bool create_node(void* data, node** out_node)

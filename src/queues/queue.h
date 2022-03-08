@@ -42,22 +42,4 @@ bool create_queue(void** out_queue);
  */
 char* get_queue_name();
 
-/**
- * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
- * callocs succeed.
- */
-#define P_PASS(x) if(x == NULL) {\
-    perror("Error:"); \
-    exit(EXIT_FAILURE); \
-}
-
-/// Return x if it is false.
-#define PASS(x) if(!x) {\
-    return x; \
-}
-
-#define PASS_LOG(x, message) if(!x) {\
-    printf(message); \
-}
-
 #endif

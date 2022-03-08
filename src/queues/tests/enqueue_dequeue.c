@@ -8,11 +8,13 @@
 #include "../../test_utils.h"
 #include "../queue.h"
 
-#define TEST_ITERATIONS 10000000
-#define TEST_RERUNS 25
+#define TEST_ITERATIONS 100000
+#define TEST_RERUNS 1
 #define NANO_TO_MINUTE 1000000000*60
+#define RANDOM_RANGE 5
 
 static pthread_barrier_t barrier;
+static int* random_delays_ns;
 
 typedef struct thread_args
 {
@@ -36,13 +38,17 @@ void* thread_fn(void* in_args)
     for (size_t j = 0; j < TEST_RERUNS; ++j)
     {
         pthread_barrier_wait(&barrier);
+        //TODO: Use PAPI_TOT_CYC instead of PAPI_REF_CYC
         cycle_diff = PAPI_get_real_cyc();
         ns_diff = PAPI_get_real_nsec();
         for (size_t i = 0; i < args->num_of_iterations; ++i)
         {
             enqueue(args->queue, &cycle_diff);
+            DELAY(random_delays_ns[i]);
             dequeue(args->queue, &dequeued_item);
+            DELAY(random_delays_ns[i]);
         }
+        // FIXME: Remove delay from ns_diff and cycle_diff
         cycle_diff = PAPI_get_real_cyc() - cycle_diff;
         ns_diff = PAPI_get_real_nsec() - ns_diff;
         inner_total_diff += ((double)cycle_diff) / args->num_of_iterations;
@@ -57,11 +63,20 @@ void* thread_fn(void* in_args)
 
 int main(int argc, char** argv)
 {
-    int num_of_threads = handle_args(argc, argv);
-    
-    if (num_of_threads == -1)
-        return num_of_threads;
-    
+    if (argc != 3)
+    {
+        fprintf(stderr, "Missing args, arg1 - Thread count, arg2 - reentrancy delay (ns)\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char* pEnd;
+    char* pEnd2;
+    int num_of_threads = strtol(argv[1], &pEnd, 10);
+    int delay_ns = strtol(argv[2], &pEnd2, 10);
+
+    if (delay_ns < RANDOM_RANGE)
+        delay_ns = RANDOM_RANGE;
+
     void* queue;
     PASS_LOG(create_queue(&queue), "Failed to create queue");
 
@@ -77,6 +92,9 @@ int main(int argc, char** argv)
     // iterations.
     const int iterations_per_thread = (int)floor(((double)TEST_ITERATIONS) / num_of_threads);
     const int final_thread_iterations = TEST_ITERATIONS - (iterations_per_thread * (num_of_threads - 1));
+
+    random_delays_ns = generate_random_numbers(TEST_ITERATIONS, delay_ns - RANDOM_RANGE, delay_ns + RANDOM_RANGE);
+
     assert((iterations_per_thread * (num_of_threads - 1) + final_thread_iterations) == TEST_ITERATIONS);
     assert(sizeof(thread_args) == CACHE_LINE_SIZE);
 
@@ -108,7 +126,7 @@ int main(int argc, char** argv)
     double average_cycles = total_cycle_diff / num_of_threads;
     double average_ns = total_ns_diff / num_of_threads;
     
-    printf("\"%s\", %d, %f, %f, %lld\n", get_queue_name(), num_of_threads, average_cycles, average_ns, total_run_time_ns);
+    printf("\"%s\", %d, %f, %f, %d, %lld\n", get_queue_name(), num_of_threads, average_cycles, average_ns, delay_ns, total_run_time_ns);
 
     return 0;
 }

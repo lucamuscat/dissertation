@@ -7,7 +7,7 @@ DEBUG_FLAGS = -DDEBUG -g
 endif
 ERROR_FLAGS = -Wall -Wextra
 
-ASM_FLAGS = -masm=intel -S -fverbose-asm -fno-asynchronous-unwind-tables -fno-exceptions
+ASM_FLAGS = -masm=intel -S -fno-exceptions -fno-dwarf2-cfi-asm -fno-asynchronous-unwind-tables -fno-exceptions
 LIBRARIES = -lm -lpthread
 PAPI_LIB = /usr/local/lib/libpapi.a 
 
@@ -70,6 +70,11 @@ enqueue_dequeue_blocking_%_test: init_build_folder
 
 enqueue_dequeue_nonblocking_%_test: init_build_folder
 	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(LIBRARIES) -o $(OUTPUT_DIR)/nonblocking_$* $(DEBUG_FLAGS) $(ERROR_FLAGS)
+
+COMMON_DELAY = $(CXX) $(QUEUES_DIR)/tests/delay_test.c -lm $(TEST_UTILS) $(DEBUG_FLAGS) 
+delay_test: init_build_folder
+	$(COMMON_DELAY) $(PAPI_LIB) -o $(OUTPUT_DIR)/delay_test $(ERROR_FLAGS)
+	$(COMMON_DELAY) $(ASM_FLAGS)
 
 clean: 
 	rm -rf ./build

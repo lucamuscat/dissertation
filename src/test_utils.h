@@ -1,6 +1,8 @@
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
 
+#define CPU_GHZ 2.6
+
 /**
 
  * @brief Processes the number of threads provided in the command line argument.
@@ -11,6 +13,18 @@
  */
 int handle_args(int argc, char* argv[]);
 
+/**
+ * @brief Generate a random number 
+ * 
+ * @param min The minimum value that can be generated
+ * @param max The maximum value that can be generated
+ * @return int Randomly generated integer.
+ */
+int bounded_random(int min, int max);
+
+int* generate_random_numbers(int n, int min, int max);
+
+void _delay(size_t ns);
 
 /**
  * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
@@ -33,5 +47,11 @@ int handle_args(int argc, char* argv[]);
 // https://github.com/chaoran/fast-wait-free-queue/blob/d41ec16e5169c864e5fdbe05e1988358bd335fa0/align.h#L10
 #define CACHE_LINE_SIZE 64
 #define CACHE_ALIGNED __attribute__((aligned(CACHE_LINE_SIZE)))
+
+/**
+ * @brief Delay for NS nano seconds. For some reason, multiplying NS*CPU_GHZ
+ * inside of _delay causes the delay to last at least two times longer.
+ */
+#define DELAY(NS) _delay(NS*CPU_GHZ);
 
 #endif

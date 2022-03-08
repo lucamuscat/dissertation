@@ -11,9 +11,8 @@
 #define TEST_ITERATIONS 10000000
 #define TEST_RERUNS 25
 #define NANO_TO_MINUTE 1000000000*60
-#define CACHE_LINE_SIZE 64
 
-//static pthread_barrier_t barrier;
+static pthread_barrier_t barrier;
 
 typedef struct thread_args
 {
@@ -36,7 +35,7 @@ void* thread_fn(void* in_args)
     
     for (size_t j = 0; j < TEST_RERUNS; ++j)
     {
-        //pthread_barrier_wait(&barrier);
+        pthread_barrier_wait(&barrier);
         cycle_diff = PAPI_get_real_cyc();
         ns_diff = PAPI_get_real_nsec();
         for (size_t i = 0; i < args->num_of_iterations; ++i)
@@ -81,9 +80,10 @@ int main(int argc, char** argv)
     assert((iterations_per_thread * (num_of_threads - 1) + final_thread_iterations) == TEST_ITERATIONS);
     assert(sizeof(thread_args) == CACHE_LINE_SIZE);
 
-    //PASS_LOG(pthread_barrier_init(&barrier, NULL, num_of_threads) == 0, "Failed to create pthread_barrier");
+    PASS_LOG(pthread_barrier_init(&barrier, NULL, num_of_threads) == 0, "Failed to create pthread_barrier");
 
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
+    size_t total_iterations = 0;
     for (int i = 0; i < num_of_threads; ++i)
     {
         args[i].mutex = &mutex;
@@ -91,9 +91,13 @@ int main(int argc, char** argv)
         args[i].total_cycle_diff = &total_cycle_diff;
         args[i].total_ns_diff = &total_ns_diff;
         args[i].num_of_iterations = i < num_of_threads - 1 ? iterations_per_thread : final_thread_iterations;
+        total_iterations += args[i].num_of_iterations;
         pthread_create(&args[i].tid, NULL, thread_fn, args);
     }
 
+    // Sanity check; Ensure that the total iterations match up.
+    assert(total_iterations == TEST_ITERATIONS);
+    
     for (int i = 0; i < num_of_threads; ++i)
     {
         pthread_join(args[i].tid, NULL);

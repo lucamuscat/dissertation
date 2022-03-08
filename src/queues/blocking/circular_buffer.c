@@ -8,6 +8,14 @@
 
 #define P_QUEUE(x) ((circular_buffer*) x)
 
+/* Potential scalability issues as the circular buffer is shared across each thread.
+ * One possible improvement would be to make sure that each field takes its own
+ * cacheline.
+ * Another potential improvement could be to keep a private copy of the cache line
+ * and update the global context (act locally).
+
+ * Currently unscalable, as writes are shared. 
+*/
 typedef struct circular_buffer
 {
     void* mutex;
@@ -16,7 +24,6 @@ typedef struct circular_buffer
     int write;
 } circular_buffer;
 
-//TODO: Need to add better error checking
 bool create_queue(void** out_queue)
 {
     *out_queue = calloc(1, sizeof(circular_buffer));
@@ -28,6 +35,7 @@ bool create_queue(void** out_queue)
     return true;
 }
 
+// Should I add a semaphore that waits when its full for enq, or empty for deq?
 bool enqueue(void* queue, void* in_item)
 {
     circular_buffer* temp = (circular_buffer*)queue;

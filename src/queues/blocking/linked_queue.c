@@ -11,10 +11,10 @@ typedef struct node
 
 typedef struct queue
 {
-    void* enqueue_lock;
-    void* dequeue_lock;
-    node* read; // Head
-    node* write; // Tail/Rear
+    void* enqueue_lock __attribute__((aligned(CACHE_LINE_SIZE)));
+    void* dequeue_lock __attribute__((aligned(CACHE_LINE_SIZE)));
+    node* read __attribute__((aligned(CACHE_LINE_SIZE))); // Head
+    node* write __attribute__((aligned(CACHE_LINE_SIZE))); // Tail/Rear
 } queue;
 
 bool create_node(void* data, node** out_node)

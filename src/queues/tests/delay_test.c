@@ -1,7 +1,14 @@
+/**
+ * @file delay_test.c
+ * @brief Measures the accuracy of the DELAY macro. Make sure that CPU frequency
+ * scaling and turbo boost are disabled on the CPU before running.
+ */
+
 #include <papi.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+
 #include "../../test_utils.h"
 
 #define TEST_ITERATIONS 10000000

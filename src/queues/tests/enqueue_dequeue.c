@@ -1,3 +1,8 @@
+/**
+ * @file enqueue_dequeue.c
+ * @brief Measure the performance of a queue's enqueue-dequeue pairs
+ */
+
 #include <papi.h>
 #include <omp.h>
 #include <stdio.h>
@@ -37,6 +42,7 @@ void* thread_fn(void* in_args)
     
     for (size_t j = 0; j < TEST_RERUNS; ++j)
     {
+        // Make sure that each thread executes the test at the same time.
         pthread_barrier_wait(&barrier);
         //TODO: Use PAPI_TOT_CYC instead of PAPI_REF_CYC
         cycle_diff = PAPI_get_real_cyc();
@@ -63,16 +69,8 @@ void* thread_fn(void* in_args)
 
 int main(int argc, char** argv)
 {
-    if (argc != 3)
-    {
-        fprintf(stderr, "Missing args, arg1 - Thread count, arg2 - reentrancy delay (ns)\n");
-        exit(EXIT_FAILURE);
-    }
-
-    char* pEnd;
-    char* pEnd2;
-    int num_of_threads = strtol(argv[1], &pEnd, 10);
-    int delay_ns = strtol(argv[2], &pEnd2, 10);
+    int num_of_threads, delay_ns;
+    handle_queue_args(argc, argv, &num_of_threads, &delay_ns);
 
     if (delay_ns < RANDOM_RANGE)
         delay_ns = RANDOM_RANGE;
@@ -83,9 +81,7 @@ int main(int argc, char** argv)
     pthread_mutex_t mutex;
     PASS_LOG(pthread_mutex_init(&mutex, NULL) == 0, "Failed to create pthread_mutex");
 
-    double total_cycle_diff = 0;
-    double total_ns_diff = 0;
-    long long total_run_time_ns = PAPI_get_real_nsec();
+    double total_cycle_diff = 0, total_ns_diff = 0;
 
     // Ensure that exactly TEST_ITERATIONS iterations occur, as integer division
     // might cause truncation and either increase or reduce the total number of
@@ -102,6 +98,7 @@ int main(int argc, char** argv)
 
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
     size_t total_iterations = 0;
+    long long total_run_time_ns = PAPI_get_real_nsec();
     for (int i = 0; i < num_of_threads; ++i)
     {
         args[i].mutex = &mutex;
@@ -110,7 +107,7 @@ int main(int argc, char** argv)
         args[i].total_ns_diff = &total_ns_diff;
         args[i].num_of_iterations = i < num_of_threads - 1 ? iterations_per_thread : final_thread_iterations;
         total_iterations += args[i].num_of_iterations;
-        pthread_create(&args[i].tid, NULL, thread_fn, args);
+        pthread_create(&args[i].tid, NULL, thread_fn, &args[i]);
     }
 
     // Sanity check; Ensure that the total iterations match up.

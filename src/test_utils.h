@@ -26,6 +26,19 @@ int* generate_random_numbers(int n, int min, int max);
 
 void _delay(size_t ns);
 
+// TODO: Make usage of ints or size_t's more consistent.
+void handle_queue_args(int argc, char** argv, int* out_num_of_thread, int* delay_ns);
+
+/**
+ * @brief Get the number of iterations each thread has to run.
+ * 
+ * @param num_of_threads The total number of threads that will be used in the test.
+ * @param thread_num A zero-based id for the thread being evaluated.
+ * @param total_iterations Total number of iterations in the test.
+ * @return int Number of iterations for the thread.
+ */
+int iterations_per_thread(int num_of_threads, int thread_num, int total_iterations);
+
 /**
  * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
  * callocs succeed.

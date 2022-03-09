@@ -59,6 +59,8 @@ QUEUES_DIR = $(SRC_DIR)/queues
 BLOCKING_DIR = $(QUEUES_DIR)/blocking
 NONBLOCKING_DIR = $(QUEUES_DIR)/non-blocking
 ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/enqueue_dequeue.c $(TEST_UTILS)
+P_ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/p_enqueue_dequeue.c $(TEST_UTILS)
+
 
 enqueue_dequeue_blocking_tests: enqueue_dequeue_blocking_circular_buffer_test enqueue_dequeue_blocking_linked_queue_test
 
@@ -70,6 +72,12 @@ enqueue_dequeue_blocking_%_test: init_build_folder
 
 enqueue_dequeue_nonblocking_%_test: init_build_folder
 	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(LIBRARIES) -o $(OUTPUT_DIR)/nonblocking_$* $(DEBUG_FLAGS) $(ERROR_FLAGS)
+
+p_enqueue_dequeue_blocking_%_test: init_build_folder
+	for i in $(LOCK_FILES); \
+	do \
+		$(CXX) $(BLOCKING_DIR)/$*.c $(P_ENQUEUE_DEQUEUE_TEST_FILES) $$i $(PAPI_LIB) $(LIBRARIES) -o $(OUTPUT_DIR)/p_blocking_$*_`basename $$i .c` $(DEBUG_FLAGS) $(ERROR_FLAGS); \
+	done
 
 COMMON_DELAY = $(CXX) $(QUEUES_DIR)/tests/delay_test.c -lm $(TEST_UTILS) $(DEBUG_FLAGS) 
 delay_test: init_build_folder

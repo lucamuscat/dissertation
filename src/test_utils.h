@@ -55,6 +55,7 @@ int iterations_per_thread(int num_of_threads, int thread_num, int total_iteratio
 
 #define PASS_LOG(x, message) if(!x) {\
     printf(message); \
+    exit(EXIT_FAILURE); \
 }
 
 // https://github.com/chaoran/fast-wait-free-queue/blob/d41ec16e5169c864e5fdbe05e1988358bd335fa0/align.h#L10

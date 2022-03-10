@@ -73,7 +73,7 @@ int main(int argc, char const* argv[])
     assert(p >= 0);
     assert(p <= 1);
 
-    double** random_probabilities = (double**)malloc(sizeof(double) * num_of_threads);
+    double** random_probabilities = (double**)malloc(sizeof(double*) * num_of_threads);
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
 
     void* queue;

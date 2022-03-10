@@ -2,6 +2,12 @@
  * @file p_enqueue_dequeue.c
  * @brief Each queue will have probabilities p, and (1-p) to enqueue and dequeue
  * respectively.
+ * @warning Make sure that the turbo boost and CPU frequency scaling are turned off.
+ * Failure to do so will cause the DELAY macro to misbehave and the PAPI_get_real_cyc()
+ * function to not match the actual total cycles.
+ *
+ * Low values of p may cause the system to run out of memory if TEST_ITERATIONS
+ * is set to a high value.
  */
 
 #include <stdlib.h>
@@ -31,6 +37,7 @@ typedef struct thread_args
 
 void* thread_fn(void* in_args)
 {
+    PASS_LOG(PAPI_register_thread() == PAPI_OK, "Failed to register thread");
     thread_args* args = in_args;
     int dummy = 10;
     int output = 0;
@@ -48,7 +55,8 @@ void* thread_fn(void* in_args)
     pthread_mutex_lock(&mutex);
     total_elapsed_time_ns += ((double)elapsed_time) / args->iterations;
     pthread_mutex_unlock(&mutex);
-    return 0;
+    PASS_LOG(PAPI_unregister_thread() == PAPI_OK, "Failed to unregister thread");
+    return NULL;
 }
 
 int main(int argc, char const* argv[])
@@ -62,7 +70,14 @@ int main(int argc, char const* argv[])
         return EXIT_FAILURE;
     }
 
-    PAPI_library_init(PAPI_VER_CURRENT);
+    int retval;
+    if ((retval = PAPI_library_init(PAPI_VER_CURRENT)) != PAPI_VER_CURRENT)
+    {
+        PAPI_perror("");
+        return EXIT_FAILURE;
+    }
+
+    PASS_LOG(PAPI_thread_init((unsigned long (*)(void)) (pthread_self)) == PAPI_OK, "PAPI_thread_init failed");
     srand48(0);
 
     char* pEnd[3] = { "" };
@@ -103,7 +118,7 @@ int main(int argc, char const* argv[])
         pthread_join(args[i].tid, NULL);
     }
 
-    printf("%s, %ld, %f, %d", get_queue_name(), num_of_threads, total_elapsed_time_ns / num_of_threads, delay_ns);
+    printf("\"%s\", %ld, %f, %d\n", get_queue_name(), num_of_threads, total_elapsed_time_ns / num_of_threads, delay_ns);
 
     return EXIT_SUCCESS;
 }

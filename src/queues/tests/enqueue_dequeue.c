@@ -1,6 +1,9 @@
 /**
  * @file enqueue_dequeue.c
  * @brief Measure the performance of a queue's enqueue-dequeue pairs
+ * @warning Make sure that the turbo boost and CPU frequency scaling are turned off.
+ * Failure to do so will cause the DELAY macro to misbehave and the PAPI_get_real_cyc()
+ * function to not match the actual total cycles.
  */
 
 #include <papi.h>

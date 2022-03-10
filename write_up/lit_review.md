@@ -91,6 +91,12 @@ $\text{Modified Data Sharing Ratio} = \frac{\text{EXT\_SNOOP.ALL\_AGENTS.HITM}}{
 # PAPI performance measurement library.
 PAPI is a performance measurement library that offer abstractions to accessing hardware counters [http://icl.cs.utk.edu/papi/]. PAPI offers both a low and a high level API [http://icl.cs.utk.edu/papi/docs/] that offer varying levels of granularity of control over several different types of measurements. Utility commands are provided to aid with the adoption of this tool; most notably, it comes with a script that measures the latency of each of its performance measuring functions. PAPI follows a modular design philosophy, this is evident in its 'Components' [http://icl.cs.utk.edu/papi/docs/d9/dc0/component_readme.html] feature where users are able to install adapters for hardware counters that are not supported out of the box (for instance, GPU hardware counters, CPU temperature counters, and so on).
 
+`papi_native_avail` can be used to find all the native hardware counters on the system. The names are a one-to-one mapping of what you would find inside intel's manuals; if a counter does not show up in the command, that means that it does not exist on the system.
+
+## [New Features in the PAPI 5.0 Release](https://web.eece.maine.edu/~vweaver/papers/papi/papi_v5_changes.pdf) §13.17
+> PAPI is full of assumptions that MHz is fixed. The PAPI get virt cycles() and PAPI get real cycles()
+> calls just multiply time by MHz for example.
+
 # Art of Multiprocessor Programming - Herlihy
 * A text book that helps with obtaining a fundemental understanding of the theoretical and practical side of parallel programming.
 

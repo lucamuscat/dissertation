@@ -64,6 +64,7 @@ bool dequeue(void* in_queue, void** out_data)
         return false;
     }
     *out_data = temp->read->next->value;
+    free(temp->read);
     temp->read = temp->read->next;
     unlock(temp->dequeue_lock);
     return true;

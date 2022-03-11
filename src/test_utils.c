@@ -50,7 +50,7 @@ __attribute__((always_inline)) inline void _delay(size_t ns)
         __asm__("nop");
 }
 
-void handle_queue_args(int argc, char** argv, int* out_num_of_thread, int* delay_ns)
+void handle_queue_args(int argc, char** argv, size_t* out_num_of_thread, size_t* out_delay_ns)
 {
     if (argc != 3)
     {
@@ -60,8 +60,8 @@ void handle_queue_args(int argc, char** argv, int* out_num_of_thread, int* delay
 
     char* pEnd;
     char* pEnd2;
-    *out_num_of_thread = strtol(argv[1], &pEnd, 10);
-    *delay_ns = strtol(argv[2], &pEnd2, 10);
+    *out_num_of_thread = strtoul(argv[1], &pEnd, 10);
+    *out_delay_ns = strtoul(argv[2], &pEnd2, 10);
 }
 
 inline int iterations_per_thread(int num_of_threads, int thread_num, int total_iterations)

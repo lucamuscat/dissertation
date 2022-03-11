@@ -72,7 +72,7 @@ void* thread_fn(void* in_args)
 
 int main(int argc, char** argv)
 {
-    int num_of_threads, delay_ns;
+    size_t num_of_threads, delay_ns;
     handle_queue_args(argc, argv, &num_of_threads, &delay_ns);
 
     if (delay_ns < RANDOM_RANGE)

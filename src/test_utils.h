@@ -39,6 +39,10 @@ void handle_queue_args(int argc, char** argv, int* out_num_of_thread, int* delay
  */
 int iterations_per_thread(int num_of_threads, int thread_num, int total_iterations);
 
+double mean(double* values, size_t N);
+
+double stdev(double* values, size_t N);
+
 /**
  * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
  * callocs succeed.

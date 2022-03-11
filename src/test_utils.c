@@ -69,7 +69,31 @@ inline int iterations_per_thread(int num_of_threads, int thread_num, int total_i
     assert(num_of_threads > 0);
     const int iterations_per_thread = (int)floor(((double)total_iterations) / num_of_threads);
     const int final_thread_iterations = total_iterations - (iterations_per_thread * (num_of_threads - 1));
+    assert((iterations_per_thread * (num_of_threads - 1) + final_thread_iterations) == total_iterations);
     if (thread_num == num_of_threads - 1)
         return final_thread_iterations;
     return iterations_per_thread;
+}
+
+double mean(double* values, size_t N)
+{
+    double acc = values[0];
+    for (size_t i = 1; i < N; ++i)
+    {
+        acc += values[i];
+    }
+    return acc / (double)N;
+}
+
+double stdev(double* values, size_t N)
+{
+    double avg = mean(values, N);
+    double acc = 0.0;
+    for (size_t i = 0; i < N; ++i)
+    {
+        double temp = ((double)values[i]) - avg;
+        acc += temp * temp;
+    }
+    acc /= N;
+    return sqrt(acc);
 }

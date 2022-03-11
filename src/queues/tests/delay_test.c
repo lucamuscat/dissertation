@@ -16,29 +16,6 @@
 #define RERUNS 3
 #define CPU_GHZ 2.6
 
-double mean(double* values, size_t N)
-{
-    double acc = values[0];
-    for (size_t i = 1; i < N; ++i)
-    {
-        acc += values[i];
-    }
-    return acc / (double)N;
-}
-
-double stdev(double* values, size_t N)
-{
-    double avg = mean(values, N);
-    double acc = 0.0;
-    for (size_t i = 0; i < N; ++i)
-    {
-        double temp = ((double)values[i]) - avg;
-        acc += temp * temp;
-    }
-    acc /= N;
-    return sqrt(acc);
-}
-
 int main(int argc, char** argv)
 {
     if (argc != 2)

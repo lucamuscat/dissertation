@@ -97,3 +97,37 @@ double stdev(double* values, size_t N)
     acc /= N;
     return sqrt(acc);
 }
+
+double sum_2d(double** values, size_t N_x, size_t N_y)
+{
+    double sum = 0.0;
+    for (size_t i = 0; i < N_x; ++i)
+    {
+        for (size_t j = 0; j < N_y; ++j)
+        {
+            sum += values[i][j];
+        }
+    }
+    return sum;
+}
+
+double mean_2d(double** values, size_t N_x, size_t N_y)
+{
+    return sum_2d(values, N_x, N_y) / (N_x * N_y);
+}
+
+double stdev_2d(double** values, size_t N_x, size_t N_y)
+{
+    double average = mean_2d(values, N_x, N_y);
+    double acc = 0.0;
+    for (size_t i = 0; i < N_x; ++i)
+    {
+        for (size_t j = 0; j < N_y; ++j)
+        {
+            acc += (values[i][j] - average) * (values[i][j] - average);
+        }
+    }
+
+    acc /= N_x * N_y;
+    return sqrt(acc);
+}

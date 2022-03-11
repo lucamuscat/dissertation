@@ -27,7 +27,7 @@ int* generate_random_numbers(int n, int min, int max);
 void _delay(size_t ns);
 
 // TODO: Make usage of ints or size_t's more consistent.
-void handle_queue_args(int argc, char** argv, int* out_num_of_thread, int* delay_ns);
+void handle_queue_args(int argc, char** argv, size_t* out_num_of_thread, size_t* delay_ns);
 
 /**
  * @brief Get the number of iterations each thread has to run.
@@ -40,14 +40,17 @@ void handle_queue_args(int argc, char** argv, int* out_num_of_thread, int* delay
 int iterations_per_thread(int num_of_threads, int thread_num, int total_iterations);
 
 double mean(double* values, size_t N);
-
 double stdev(double* values, size_t N);
+
+double mean_2d(double** values, size_t N_x, size_t N_y);
+double stdev_2d(double** values, size_t N_x, size_t N_y);
 
 /**
  * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
  * callocs succeed.
  */
 #define P_PASS(x) if(x == NULL) {\
+    fprintf(stderr, "%s, %d", __FILE__, __LINE__); \
     perror("Error:"); \
     exit(EXIT_FAILURE); \
 }

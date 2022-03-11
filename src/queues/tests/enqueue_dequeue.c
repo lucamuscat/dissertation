@@ -60,13 +60,14 @@ void* thread_fn(void* in_args)
         // FIXME: Remove delay from ns_diff and cycle_diff
         cycle_diff = PAPI_get_real_cyc() - cycle_diff;
         ns_diff = PAPI_get_real_nsec() - ns_diff;
-        inner_total_diff += ((double)cycle_diff) / args->num_of_iterations;
-        inner_total_ns_diff += ((double)ns_diff) / args->num_of_iterations;
+
+        // We're working with concurrent queues.
+        // So might aswell concurrently empty it.
+        while (dequeue(args->queue, &dequeued_item));
+        assert(*((int*)dequeued_item) == enqueued_item);
     }
-    pthread_mutex_lock(args->mutex);
-    *args->total_cycle_diff += inner_total_diff / TEST_RERUNS;
-    *args->total_ns_diff += inner_total_ns_diff / TEST_RERUNS;
-    pthread_mutex_unlock(args->mutex);
+    // Make sure to synchronize all changes to args
+    atomic_thread_fence(memory_order_seq_cst);
     return 0;
 }
 

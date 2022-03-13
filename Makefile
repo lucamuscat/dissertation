@@ -79,7 +79,7 @@ p_enqueue_dequeue_blocking_%_test: init_build_folder
 		$(CXX) $(BLOCKING_DIR)/$*.c $(P_ENQUEUE_DEQUEUE_TEST_FILES) $$i $(PAPI_LIB) $(LIBRARIES) -o $(OUTPUT_DIR)/p_blocking_$*_`basename $$i .c` $(DEBUG_FLAGS) $(ERROR_FLAGS); \
 	done
 
-COMMON_DELAY = $(CXX) $(QUEUES_DIR)/tests/delay_test.c -lm $(TEST_UTILS) $(DEBUG_FLAGS) 
+COMMON_DELAY = $(CXX) $(QUEUES_DIR)/tests/delay_test.c $(TEST_UTILS) -lm  $(DEBUG_FLAGS) 
 delay_test: init_build_folder
 	$(COMMON_DELAY) $(PAPI_LIB) -o $(OUTPUT_DIR)/delay_test $(ERROR_FLAGS)
 	$(COMMON_DELAY) $(ASM_FLAGS)

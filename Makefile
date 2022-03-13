@@ -31,7 +31,7 @@ CXX = gcc
 
 all: sequential_latency_tests
 
-sequential_latency_tests: sequential_latency_spin_lock_test sequential_latency_kernel_lock_test sequential_latency_ttas_lock_test
+sequential_latency_tests: sequential_latency_spin_lock_test sequential_latency_ttas_lock_test sequential_latency_pthread_lock_test
 
 increment_counter_tests: increment_filter_lock_test increment_kernel_lock_test increment_spin_lock_test increment_ttas_lock_test
 

@@ -33,7 +33,12 @@ void wait_lock(void* lock)
     while (P_LOCK->flag[j] && P_LOCK->victim == i) {}; // wait
 }
 
-void free_lock(void* lock){/**/}
+void destroy_lock(void** in_lock)
+{
+    peterson_lock_t** lock = (peterson_lock_t**)in_lock;
+    free((*lock)->flag);
+    free(*lock);
+}
 
 void unlock(void* lock)
 {

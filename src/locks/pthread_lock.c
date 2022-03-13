@@ -24,11 +24,10 @@ void unlock(void* lock)
     pthread_mutex_unlock(lock);
 }
 
-void free_lock(void* lock)
+void destroy_lock(void** lock)
 {
-    pthread_mutex_destroy(lock);
+    pthread_mutex_destroy((void*)lock);
 }
-
 
 char* get_lock_name()
 {

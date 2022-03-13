@@ -21,9 +21,9 @@ bool create_lock(void** lock)
     atomic_flag_clear(&P_LOCK->busy);
     return true;
 }
-void free_lock(void* lock)
+void destroy_lock(void** lock)
 {
-    //free(lock);
+    free(*lock);
 }
 
 void wait_lock(void* lock)

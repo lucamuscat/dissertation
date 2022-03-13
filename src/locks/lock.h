@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 bool create_lock(void** lock);
-void free_lock(void*);
+void destroy_lock(void** lock);
 
 // Code design question: Should all the methods be grouped in a single header
 // ex. wait_lock_atomic, wait_lock_stm, wait_lock_membar

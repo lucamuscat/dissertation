@@ -30,6 +30,6 @@ bool counter_test(int num_of_threads)
     }
     DEBUG_LOG_F("Counter: %d", counter);
     assert(counter == (ITERATIONS * INCREMENT_VALUE * num_of_threads));
-    free_lock(lock);
+    destroy_lock(lock);
     return true;
 }

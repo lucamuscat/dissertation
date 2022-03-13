@@ -37,11 +37,12 @@ bool create_lock(void** lock)
     return errno;
 }
 
-void free_lock(void* lock)
+void destroy_lock(void** in_lock)
 {
-    free(P_LOCK->level);
-    free(P_LOCK->victim);
-    free(P_LOCK);
+    filter_lock_t** lock = (filter_lock_t**)in_lock;
+    free((*lock)->level);
+    free((*lock)->victim);
+    free(*lock);
 }
 
 void wait_lock(void* lock)

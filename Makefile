@@ -1,9 +1,9 @@
 SHELL=bash
 
-ifdef SILENT
-DEBUG_FLAGS = -O3
-else
+ifdef DEBUG
 DEBUG_FLAGS = -DDEBUG -g
+else
+DEBUG_FLAGS = -O3
 endif
 ERROR_FLAGS = -Wall -Wextra
 
@@ -60,7 +60,6 @@ BLOCKING_DIR = $(QUEUES_DIR)/blocking
 NONBLOCKING_DIR = $(QUEUES_DIR)/non-blocking
 ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/enqueue_dequeue.c $(TEST_UTILS)
 P_ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/p_enqueue_dequeue.c $(TEST_UTILS)
-
 
 enqueue_dequeue_blocking_tests: enqueue_dequeue_blocking_circular_buffer_test enqueue_dequeue_blocking_linked_queue_test
 

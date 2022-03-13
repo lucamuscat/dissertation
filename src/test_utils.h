@@ -46,6 +46,72 @@ double mean_2d(double** values, size_t N_x, size_t N_y);
 double stdev_2d(double** values, size_t N_x, size_t N_y);
 
 /**
+ * @brief An abstraction for taking readings from PAPI
+ * 
+ */
+typedef struct readings_t
+{
+    double* cycles;
+    double* nano_seconds;
+    size_t index;
+} readings_t;
+
+/**
+ * @brief Create and initialize a readings_t object.
+ * @param in_out_readings: Pointer to readings object to be initialized.
+ * @param N: Number of readings that will be taken.
+ */
+void create_readings(readings_t** readings, size_t N);
+
+/**
+ * @brief Sets the cycles and nano_seconds fields of readings_t to the result
+ * of PAPI_get_real_cyc() and PAPI_get_real_nsec()
+ *
+ * @param readings: A readings_t object that has already been initialized. The contents
+ * of the object will be overwritten with the new readings.
+ */
+void start_readings(readings_t* readings);
+
+/**
+ * @brief Calculate the elapsed time of a reading.
+ * @param readings: A readings_t object that has already been initalized. The contents
+ * of the object will be updated with the elapsed readings.
+ * @param num_of_iterations: Number of iterations that were recorded. The total
+ * time will be divided by this value to get the average time per iteration.
+ */
+void delta_readings(readings_t* readings, size_t num_of_iterations);
+
+/**
+ * @brief Calculate the mean and the standard deviation of multiple readings_t
+ * objects.
+ *
+ * @param readings A 2d array of size N_x by N_y; typically, N_x represents the
+ * number of threads, and N_y represents the number of reruns.
+ * @param N_x Number of columns in readings; this is typically the number of threads
+ * used when taking readings.
+ * @param N_y Number of rows in the readings; this is typically the number of reruns.
+ * @return readings_t* Returns a reading_t where the first element of each field
+ * represents the mean, and the second element represents the standard deviation.
+ *
+ * Eg. result->cycles[0] = Mean Cycles, result->cycles[1] = Standard Deviation of mean cycles.
+ */
+readings_t* aggregate_readings(readings_t** readings, size_t N_x, size_t N_y);
+
+/**
+ * @brief Display the mean and the standard deviation of the readings obtained.
+ * Readings must be aggregated before being displayed. 
+ * @param readings Aggregated readings to be displayed.
+ */
+void display_readings(readings_t* aggregated_readings);
+
+/**
+ * @brief Free resources taken up by a readings_t object.
+ * 
+ * @param readings readings_t object to be freed.
+ */
+void destroy_readings(readings_t** readings);
+
+/**
  * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
  * callocs succeed.
  */

@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <papi.h>
 #include "test_utils.h"
 
 // TODO: Find a way to find the current CPU clock frequency on runtime
-
 int handle_args(int argc, char* argv[])
 {
     if (argc != 2)
@@ -130,4 +130,70 @@ double stdev_2d(double** values, size_t N_x, size_t N_y)
 
     acc /= N_x * N_y;
     return sqrt(acc);
+}
+
+void create_readings(readings_t** readings, size_t N)
+{
+    *readings = (readings_t*)malloc(sizeof(readings_t));
+    P_PASS(*readings);
+    (*readings)->cycles = calloc(N, sizeof(double));
+    P_PASS((*readings)->cycles);
+    (*readings)->nano_seconds = calloc(N, sizeof(double));
+    P_PASS((*readings)->nano_seconds);
+    (*readings)->index = 0;
+}
+
+void start_readings(readings_t* readings)
+{
+    readings->cycles[readings->index] = (double)PAPI_get_real_cyc();
+    readings->nano_seconds[readings->index] = (double)PAPI_get_real_nsec();
+}
+
+// TODO: Add some functionality to remove delay from readings.
+void delta_readings(readings_t* readings, size_t num_of_iterations)
+{
+    const size_t index = readings->index;
+    double* cycles = readings->cycles;
+    double* nano_seconds = readings->nano_seconds;
+    cycles[index] = (PAPI_get_real_cyc() - cycles[index]) / num_of_iterations;
+    nano_seconds[index] = (PAPI_get_real_nsec() - nano_seconds[index]) / num_of_iterations;
+    readings->index++;
+}
+
+void destroy_readings(readings_t** readings)
+{
+    free((*readings)->cycles);
+    free((*readings)->nano_seconds);
+    free(readings);
+}
+
+readings_t* aggregate_readings(readings_t** readings, size_t N_x, size_t N_y)
+{
+    readings_t* result;
+    create_readings(&result, 2);
+    double** cycles = (double**)malloc(sizeof(double*) * N_x);
+    double** nano_seconds = (double**)malloc(sizeof(double*) * N_x);
+    for (size_t i = 0; i < N_x; ++i)
+    {
+        cycles[i] = readings[i]->cycles;
+        nano_seconds[i] = readings[i]->nano_seconds;
+    }
+
+    result->cycles[0] = mean_2d(cycles, N_x, N_y);
+    result->cycles[1] = stdev_2d(cycles, N_x, N_y);
+    result->nano_seconds[0] = mean_2d(nano_seconds, N_x, N_y);
+    result->nano_seconds[1] = stdev_2d(nano_seconds, N_x, N_y);
+    return result;
+}
+
+void display_readings(readings_t* aggregated_readings)
+{
+    const double mean_cycles = readings->cycles[0];
+    const double stdev_cycles = readings->cycles[1];
+    const double mean_nano_seconds = readings->nano_seconds[0];
+    const double stdev_nano_seconds = readings->nano_seconds[1];
+
+    printf("%f, %f, ", mean_cycles, mean_nano_seconds);
+    printf("%f, %f, ", stdev_cycles, stdev_nano_seconds);
+    printf("%f, %f, ", stdev_cycles / mean_cycles, stdev_nano_seconds / mean_nano_seconds);
 }

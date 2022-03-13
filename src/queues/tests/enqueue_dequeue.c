@@ -27,7 +27,6 @@ static int* random_delays_ns;
 
 typedef struct thread_args
 {
-    pthread_mutex_t* mutex;
     void* queue;
     size_t num_of_iterations;
     pthread_t tid;
@@ -37,13 +36,9 @@ typedef struct thread_args
 
 /*
  * TODO:
-    1. Place the mean cycle and nanosecond time inside of an array (instead of
-    aggregating it);
-
-    2. Calculate the standard deviation of all of the means from all of the
-    threads
-
-    3. Measure misaligned memory access counters.
+    1. Measure misaligned memory access counters.
+ *
+ * Should I be measuring the mean, or the median? 
 */
 void* thread_fn(void* in_args)
 {
@@ -71,7 +66,7 @@ void* thread_fn(void* in_args)
         args->nsec_readings[i] = (PAPI_get_real_nsec() - ns_diff) / args->num_of_iterations;
 
         // We're working with concurrent queues.
-        // So might aswell concurrently empty it.
+        // So might aswell concurrently empty them.
         while (dequeue(args->queue, &dequeued_item));
         assert(*((int*)dequeued_item) == enqueued_item);
     }
@@ -91,9 +86,6 @@ int main(int argc, char** argv)
     void* queue;
     PASS_LOG(create_queue(&queue), "Failed to create queue");
 
-    pthread_mutex_t mutex;
-    PASS_LOG(pthread_mutex_init(&mutex, NULL) == 0, "Failed to create pthread_mutex");
-
     random_delays_ns = generate_random_numbers(TEST_ITERATIONS, delay_ns - RANDOM_RANGE, delay_ns + RANDOM_RANGE);
 
     assert(sizeof(thread_args) == CACHE_LINE_SIZE);
@@ -108,14 +100,11 @@ int main(int argc, char** argv)
 
     for (size_t i = 0; i < num_of_threads; ++i)
     {
-        args[i].mutex = &mutex;
         args[i].queue = queue;
-
         args[i].cycles_readings = (double*)malloc(sizeof(double) * TEST_RERUNS);
         args[i].nsec_readings = (double*)malloc(sizeof(double) * TEST_RERUNS);
         P_PASS(args[i].cycles_readings);
         P_PASS(args[i].nsec_readings);
-        
         args[i].num_of_iterations = iterations_per_thread(num_of_threads, i, TEST_ITERATIONS);
         accumulated_iterations += args[i].num_of_iterations;
         pthread_create(&args[i].tid, NULL, thread_fn, &args[i]);
@@ -149,6 +138,16 @@ int main(int argc, char** argv)
     printf("%f, %f, %f, %f, ", average_cycles, average_nsecs, stdev_cycles, stdev_nsecs);
     printf("%f, %f, ", stdev_cycles / average_cycles, stdev_nsecs / average_nsecs);
     printf("%lld\n", total_run_time_ns);
+
+    pthread_barrier_destroy(&barrier);
+    for (size_t i = 0; i < num_of_threads; ++i)
+    {
+        free(cycles[i]);
+        free(nanoseconds[i]);
+    }
+    free(cycles);
+    free(nanoseconds);
+    free(args);
 
     return 0;
 }

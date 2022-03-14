@@ -1,26 +1,33 @@
+/**
+ * @file linked_queue.c
+ * @brief Two-lock concurrent queue as described in Michael & Scott's "Simple, Fast
+ * and Practical Non-Blocking and Blocking Concurrent Queue Algorithms"
+ *
+ */
+
 #include "../queue.h"
 #include "../../locks/lock.h"
 #include "../../test_utils.h"
 
 #include <stdlib.h>
 
-typedef struct node
+typedef struct node_t
 {
     void* value;
-    struct node* next;
-} node;
+    struct node_t* next;
+} node_t;
 
 typedef struct queue
 {
-    void* enqueue_lock CACHE_ALIGNED;
-    void* dequeue_lock CACHE_ALIGNED;
-    node* read CACHE_ALIGNED; // Head
-    node* write CACHE_ALIGNED; // Tail/Rear
+    void* head_lock;
+    void* tail_lock;
+    node_t* head; // Head
+    node_t* tail; // Tail/Rear
 } queue;
 
-bool create_node(void* data, node** out_node)
+bool create_node(void* data, node_t** out_node)
 {
-    *out_node = malloc(sizeof(node));
+    *out_node = malloc(sizeof(node_t));
     P_PASS(out_node);
     (*out_node)->next = NULL;
     (*out_node)->value = data;
@@ -32,12 +39,12 @@ bool create_queue(void** out_queue)
     *out_queue = calloc(1, sizeof(queue));
     P_PASS(*out_queue);
     queue** temp = (queue**)out_queue;
-    node* sentinel;
+    node_t* sentinel;
     PASS(create_node(NULL, &sentinel));
-    PASS(create_lock(&(*temp)->enqueue_lock));
-    PASS(create_lock(&(*temp)->dequeue_lock));
-    (*temp)->read = sentinel;
-    (*temp)->write = sentinel;
+    PASS(create_lock(&(*temp)->head_lock));
+    PASS(create_lock(&(*temp)->tail_lock));
+    (*temp)->head = sentinel;
+    (*temp)->tail = sentinel;
 
     return true;
 }
@@ -45,28 +52,31 @@ bool create_queue(void** out_queue)
 bool enqueue(void* in_queue, void* in_data)
 {
     queue* temp = in_queue;
-    node* node;
-    wait_lock(temp->enqueue_lock);
-    create_node(in_data, &node);
-    temp->write->next = node;
-    temp->write = node;
-    unlock(temp->enqueue_lock);
+    node_t* node; // New node
+    create_node(in_data, &node); // New node
+    node->next = NULL; // Set next pointer to null
+    wait_lock(temp->tail_lock); // Acquire enq lock
+    temp->tail->next = node; // Link node at the end of the linked list
+    temp->tail = node; // Swing tail to node
+    unlock(temp->tail_lock); // Release
     return true;
 }
 
 bool dequeue(void* in_queue, void** out_data)
 {
     queue* temp = in_queue;
-    wait_lock(temp->dequeue_lock);
-    if (temp->read->next == NULL)
+    wait_lock(temp->head_lock);
+    node_t* node = temp->head;
+    node_t* new_head = node->next;
+    if (new_head == NULL)
     {
-        unlock(temp->dequeue_lock);
+        unlock(temp->head_lock);
         return false;
     }
-    *out_data = temp->read->next->value;
-    free(temp->read);
-    temp->read = temp->read->next;
-    unlock(temp->dequeue_lock);
+    *out_data = new_head->value;
+    temp->head = new_head;
+    unlock(temp->head_lock);
+    free(node);
     return true;
 }
 

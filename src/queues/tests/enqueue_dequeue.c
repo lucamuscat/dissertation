@@ -7,7 +7,6 @@
  */
 
 #include <papi.h>
-#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -17,8 +16,8 @@
 #include "../../test_utils.h"
 #include "../queue.h"
 
-#define TEST_ITERATIONS 100000
-#define TEST_RERUNS 5
+#define TEST_ITERATIONS 1000000
+#define TEST_RERUNS 1000
 #define NANO_TO_MINUTE 1000000000*60
 #define RANDOM_RANGE 5
 
@@ -30,8 +29,7 @@ typedef struct thread_args
     void* queue;
     size_t num_of_iterations;
     pthread_t tid;
-    double* cycles_readings;
-    double* nsec_readings;
+    readings_t* readings;
 } CACHE_ALIGNED /* Align to cache to avoid false sharing */ thread_args;
 
 /*
@@ -43,8 +41,6 @@ typedef struct thread_args
 void* thread_fn(void* in_args)
 {
     thread_args* args = in_args;
-    long long cycle_diff;
-    long long ns_diff;
     void* dequeued_item = NULL;
     int enqueued_item = 0;
     
@@ -52,8 +48,7 @@ void* thread_fn(void* in_args)
     {
         // Make sure that each thread executes the test at the same time.
         pthread_barrier_wait(&barrier);
-        cycle_diff = PAPI_get_real_cyc();
-        ns_diff = PAPI_get_real_nsec();
+        start_readings(args->readings);
         for (size_t j = 0; j < args->num_of_iterations; ++j)
         {
             enqueue(args->queue, &enqueued_item);
@@ -61,14 +56,10 @@ void* thread_fn(void* in_args)
             dequeue(args->queue, &dequeued_item);
             DELAY(random_delays_ns[j]);
         }
-        // FIXME: Remove delay from ns_diff and cycle_diff
-        args->cycles_readings[i] = (PAPI_get_real_cyc() - cycle_diff) / args->num_of_iterations;
-        args->nsec_readings[i] = (PAPI_get_real_nsec() - ns_diff) / args->num_of_iterations;
+        delta_readings(args->readings, args->num_of_iterations);
 
-        // We're working with concurrent queues.
-        // So might aswell concurrently empty them.
-        while (dequeue(args->queue, &dequeued_item));
-        assert(*((int*)dequeued_item) == enqueued_item);
+        while (dequeue(args->queue, &dequeued_item))
+            assert(*((int*)dequeued_item) == enqueued_item);
     }
     // Make sure to synchronize all changes to args
     atomic_thread_fence(memory_order_seq_cst);
@@ -101,10 +92,7 @@ int main(int argc, char** argv)
     for (size_t i = 0; i < num_of_threads; ++i)
     {
         args[i].queue = queue;
-        args[i].cycles_readings = (double*)malloc(sizeof(double) * TEST_RERUNS);
-        args[i].nsec_readings = (double*)malloc(sizeof(double) * TEST_RERUNS);
-        P_PASS(args[i].cycles_readings);
-        P_PASS(args[i].nsec_readings);
+        create_readings(&args[i].readings, TEST_RERUNS);
         args[i].num_of_iterations = iterations_per_thread(num_of_threads, i, TEST_ITERATIONS);
         accumulated_iterations += args[i].num_of_iterations;
         pthread_create(&args[i].tid, NULL, thread_fn, &args[i]);
@@ -120,34 +108,27 @@ int main(int argc, char** argv)
 
     total_run_time_ns = PAPI_get_real_nsec() - total_run_time_ns;
 
-    double** cycles = (double**)malloc(sizeof(double*) * num_of_threads);
-    double** nanoseconds = (double**)malloc(sizeof(double*) * num_of_threads);
-
+    readings_t** temp = (readings_t**)malloc(sizeof(readings_t*) * num_of_threads);
+    
     for (size_t i = 0; i < num_of_threads; ++i)
     {
-        cycles[i] = args[i].cycles_readings;
-        nanoseconds[i] = args[i].nsec_readings;
+        temp[i] = args[i].readings;
     }
-    
-    double average_cycles = mean_2d(cycles, num_of_threads, TEST_RERUNS);
-    double stdev_cycles = stdev_2d(cycles, num_of_threads, TEST_RERUNS);
-    double average_nsecs = mean_2d(nanoseconds, num_of_threads, TEST_RERUNS);
-    double stdev_nsecs = stdev_2d(nanoseconds, num_of_threads, TEST_RERUNS);
+
+    readings_t* readings = aggregate_readings(temp, num_of_threads, TEST_RERUNS);
 
     printf("\"%s\", %zu, %zu, ", get_queue_name(), num_of_threads, delay_ns);
-    printf("%f, %f, %f, %f, ", average_cycles, average_nsecs, stdev_cycles, stdev_nsecs);
-    printf("%f, %f, ", stdev_cycles / average_cycles, stdev_nsecs / average_nsecs);
-    printf("%lld\n", total_run_time_ns);
+    display_readings(readings);
+    printf(", %lld\n", total_run_time_ns);
 
+    // for (size_t i = 0; i < num_of_threads; ++i)
+    // {
+    //     destroy_readings(&temp[i]);
+    // }
+    //free(temp);
+    //destroy_readings(&readings);
     pthread_barrier_destroy(&barrier);
-    for (size_t i = 0; i < num_of_threads; ++i)
-    {
-        free(cycles[i]);
-        free(nanoseconds[i]);
-    }
-    free(cycles);
-    free(nanoseconds);
-    free(args);
+    //free(args);
 
     return 0;
 }

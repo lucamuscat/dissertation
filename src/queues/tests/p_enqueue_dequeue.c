@@ -15,11 +15,13 @@
 #include <papi.h>
 #include <pthread.h>
 #include <assert.h>
+#include <stdatomic.h>
 
 #include "../../test_utils.h"
 #include "../queue.h"
 
 #define TEST_ITERATIONS 100000
+#define TEST_RERUNS 25
 
 double total_elapsed_time_ns = 0.0;
 pthread_barrier_t barrier;
@@ -27,35 +29,41 @@ pthread_mutex_t mutex;
 
 typedef struct thread_args
 {
-    void* queue CACHE_ALIGNED;
+    void* queue;
     double p;
     int delay_ns;
     int iterations;
     double* random_probabilities;
+    readings_t* readings;
     pthread_t tid;
-} thread_args;
+} CACHE_ALIGNED thread_args;
 
 void* thread_fn(void* in_args)
 {
     PASS_LOG(PAPI_register_thread() == PAPI_OK, "Failed to register thread");
     thread_args* args = in_args;
-    int dummy = 10;
-    int output = 0;
-    pthread_barrier_wait(&barrier);
-    long long elapsed_time = PAPI_get_real_nsec();
-    for (int i = 0; i < args->iterations; ++i)
+    int enqueued_item = 10;
+    void* dequeued_item = 0;
+    for (size_t i = 0; i < TEST_RERUNS; ++i)
     {
-        if (args->random_probabilities[i] < args->p)
-            enqueue(args->queue, (void**)&dummy);
-        else
-            dequeue(args->queue, (void*)&output);
-        DELAY(args->delay_ns);
+        pthread_barrier_wait(&barrier);
+        start_readings(args->readings);
+        for (int j = 0; j < args->iterations; ++j)
+        {
+            if (args->random_probabilities[j] < args->p)
+                enqueue(args->queue, (void**)&enqueued_item);
+            else
+                dequeue(args->queue, (void*)&dequeued_item);
+            DELAY(args->delay_ns);
+        }
+        delta_readings(args->readings, args->iterations);
+        // Empty the queue before the next test run.
+        while (dequeue(args->queue, (void**)&dequeued_item))
+            assert(*((int*)dequeued_item) == enqueued_item);
+        
     }
-    elapsed_time = PAPI_get_real_nsec() - elapsed_time;
-    pthread_mutex_lock(&mutex);
-    total_elapsed_time_ns += ((double)elapsed_time) / args->iterations;
-    pthread_mutex_unlock(&mutex);
     PASS_LOG(PAPI_unregister_thread() == PAPI_OK, "Failed to unregister thread");
+    atomic_thread_fence(memory_order_seq_cst);
     return NULL;
 }
 
@@ -104,7 +112,7 @@ int main(int argc, char const* argv[])
         {
             random_probabilities[i][j] = drand48();
         }
-
+        create_readings(&args[i].readings, TEST_RERUNS);
         args[i].iterations = thread_iterations;
         args[i].queue = queue;
         args[i].p = p;
@@ -118,7 +126,18 @@ int main(int argc, char const* argv[])
         pthread_join(args[i].tid, NULL);
     }
 
-    printf("\"%s\", %ld, %f, %d\n", get_queue_name(), num_of_threads, total_elapsed_time_ns / num_of_threads, delay_ns);
+    readings_t** temp = (readings_t**)malloc(sizeof(readings_t*) * num_of_threads);
+
+    for (size_t i = 0; i < num_of_threads; ++i)
+    {
+        temp[i] = args[i].readings;
+    }
+
+    readings_t* readings = aggregate_readings(temp, num_of_threads, TEST_RERUNS);
+
+    printf("\"%s\", %ld, %d, ", get_queue_name(), num_of_threads, delay_ns);
+    display_readings(readings);
+    puts("");
 
     return EXIT_SUCCESS;
 }

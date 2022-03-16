@@ -40,6 +40,28 @@ int* generate_random_numbers(int n, int min, int max)
     return result;
 }
 
+__attribute__((always_inline)) inline void calibrate_delay(delay_t* delay, size_t expected_delay_ns)
+{
+    const size_t RERUNS = 5;
+    const size_t TEST_ITERATIONS = 10000000;
+    readings_t* delay_readings;
+    create_readings(&delay_readings, RERUNS);
+    for (size_t j = 0; j < RERUNS; ++j)
+    {
+        start_readings(delay_readings);
+        for (size_t i = 0; i < TEST_ITERATIONS; ++i)
+        {
+            DELAY(expected_delay_ns);
+        }
+        delta_readings(delay_readings, TEST_ITERATIONS);
+    }
+    readings_t* aggreated_readings = aggregate_readings(delay_readings, RERUNS);
+    double mean_ns = aggreated_readings->nano_seconds[0];
+    double error_ns = (fabs((double)expected_delay_ns - mean_ns) / expected_delay_ns);
+    delay->delay_ns = expected_delay_ns;
+    delay->num_of_nops = expected_delay_ns * CPU_GHZ * (1 - error_ns);
+}
+
 /**
  * @brief Do not use. Use the DELAY macro instead.
  * 
@@ -168,7 +190,29 @@ void destroy_readings(readings_t** readings)
     free(readings);
 }
 
-readings_t* aggregate_readings(readings_t** readings, size_t N_x, size_t N_y)
+readings_t* aggregate_readings(readings_t* readings, size_t N)
+{
+    readings_t* result;
+    create_readings(&result, N);
+    double* cycles = (double*)malloc(sizeof(double) * N);
+    double* nano_seconds = (double*)malloc(sizeof(double) * N);
+
+    for (size_t i = 0; i < N; ++i)
+    {
+        cycles[i] = *readings->cycles;
+        nano_seconds[i] = *readings->nano_seconds;
+    }
+
+    result->cycles[0] = mean(cycles, N);
+    result->cycles[1] = stdev(cycles, N);
+    result->nano_seconds[0] = mean(nano_seconds, N);
+    result->nano_seconds[1] = stdev(nano_seconds, N);
+    free(cycles);
+    free(nano_seconds);
+    return result;
+}
+
+readings_t* aggregate_readings_2d(readings_t** readings, size_t N_x, size_t N_y)
 {
     readings_t* result;
     create_readings(&result, 2);

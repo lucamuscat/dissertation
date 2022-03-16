@@ -16,6 +16,9 @@
 #define RERUNS 3
 #define CPU_GHZ 2.6
 
+// TODO: Measure the standard deviation of readings at different test iterations
+// and arrange the time taken of the test to remain constant, irrespective
+// of the delay.
 int main(int argc, char** argv)
 {
     if (argc != 2)
@@ -28,31 +31,35 @@ int main(int argc, char** argv)
     const size_t delay_ns = strtoul(argv[1], &pEnd, 10);
 
     PAPI_library_init(PAPI_VER_CURRENT);
+    delay_t delay = { 0, 0 };
 
-    puts("Warming up...");
-    for (size_t i = 0; i < PRERUN; ++i)
-    {
-        DELAY(delay_ns);
-    }
+    puts("Calibrating Delay...");
+    calibrate_delay(&delay, delay_ns);
 
     puts("Starting test");
 
-    double readings[RERUNS];
+    readings_t* readings;
+    create_readings(&readings, RERUNS);
 
     for (size_t j = 0; j < RERUNS; ++j)
     {
-        long long elapsed = PAPI_get_real_nsec();
+        start_readings(readings);
         for (size_t i = 0; i < TEST_ITERATIONS; ++i)
         {
-            DELAY(delay_ns);
+            DELAY_OPS(delay.num_of_nops);
         }
-        readings[j] = ((double)PAPI_get_real_nsec() - elapsed)/TEST_ITERATIONS;
+        delta_readings(readings, TEST_ITERATIONS);
     }
-    double avg = mean(readings, RERUNS);
-    double standard_deviation = stdev(readings, RERUNS);
-    //printf("First: %fns\n", readings[0]);
-    printf("Average Delay Time: %fns\n", avg);
-    printf("Stdev: +-%f (%f%%)\n", standard_deviation, (standard_deviation / avg) * 100);
+
+    readings_t* aggregated_readings = aggregate_readings(readings, RERUNS);
+    double mean_ns = aggregated_readings->nano_seconds[0];
+    double stdev_ns = aggregated_readings->nano_seconds[1];
+    double mean_cycles = aggregated_readings->cycles[0];
+    //double stdev_cycles = aggregated_readings->cycles[1];
+
+    printf("Average Cycles: %f\n", mean_cycles);
+    printf("Average Delay Time: %fns\n", mean_ns);
+    printf("Stdev: +-%f (%f%%)\n", stdev_ns, (stdev_ns / mean_ns) * 100);
     printf("Expected Delay Time: %ldns\n", delay_ns);
     return 0;
 }

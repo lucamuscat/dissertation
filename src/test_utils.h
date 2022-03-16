@@ -24,8 +24,6 @@ int bounded_random(int min, int max);
 
 int* generate_random_numbers(int n, int min, int max);
 
-void _delay(size_t ns);
-
 // TODO: Make usage of ints or size_t's more consistent.
 void handle_queue_args(int argc, char** argv, size_t* out_num_of_thread, size_t* delay_ns);
 
@@ -55,6 +53,16 @@ typedef struct readings_t
     double* nano_seconds;
     size_t index;
 } readings_t;
+
+typedef struct delay_t
+{
+    size_t delay_ns;
+    size_t num_of_nops;
+} delay_t;
+
+
+void _delay(size_t ns);
+void calibrate_delay(delay_t* out_delay, size_t expected_delay_ns);
 
 /**
  * @brief Create and initialize a readings_t object.
@@ -95,7 +103,9 @@ void delta_readings(readings_t* readings, size_t num_of_iterations);
  *
  * Eg. result->cycles[0] = Mean Cycles, result->cycles[1] = Standard Deviation of mean cycles.
  */
-readings_t* aggregate_readings(readings_t** readings, size_t N_x, size_t N_y);
+readings_t* aggregate_readings_2d(readings_t** readings, size_t N_x, size_t N_y);
+
+readings_t* aggregate_readings(readings_t*, size_t N);
 
 /**
  * @brief Display the mean and the standard deviation of the readings obtained.
@@ -140,5 +150,7 @@ void destroy_readings(readings_t** readings);
  * inside of _delay causes the delay to last at least two times longer.
  */
 #define DELAY(NS) _delay(NS*CPU_GHZ);
+
+#define DELAY_OPS(OPS) _delay(OPS);
 
 #endif

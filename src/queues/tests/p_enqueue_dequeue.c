@@ -21,17 +21,15 @@
 #include "../queue.h"
 
 #define TEST_ITERATIONS 100000
-#define TEST_RERUNS 25
+#define TEST_RERUNS 5
 
-double total_elapsed_time_ns = 0.0;
+delay_t delay;
 pthread_barrier_t barrier;
-pthread_mutex_t mutex;
 
 typedef struct thread_args
 {
     void* queue;
     double p;
-    int delay_ns;
     int iterations;
     double* random_probabilities;
     readings_t* readings;
@@ -54,9 +52,10 @@ void* thread_fn(void* in_args)
                 enqueue(args->queue, (void**)&enqueued_item);
             else
                 dequeue(args->queue, (void*)&dequeued_item);
-            DELAY(args->delay_ns);
+            DELAY_OPS(delay.num_of_nops);
         }
         delta_readings(args->readings, args->iterations);
+        adjust_readings_for_delay(args->readings, &delay);
         // Empty the queue before the next test run.
         while (dequeue(args->queue, (void**)&dequeued_item))
             assert(*((int*)dequeued_item) == enqueued_item);
@@ -86,13 +85,14 @@ int main(int argc, char const* argv[])
     }
 
     PASS_LOG(PAPI_thread_init((unsigned long (*)(void)) (pthread_self)) == PAPI_OK, "PAPI_thread_init failed");
-    srand48(0);
 
     char* pEnd[3] = { "" };
     size_t num_of_threads = strtoul(argv[1], &pEnd[0], 10);
-    int delay_ns = strtol(argv[2], &pEnd[1], 10);
+    size_t delay_ns = strtoul(argv[2], &pEnd[1], 10);
     double p = strtod(argv[3], &pEnd[2]);
 
+    calibrate_delay(&delay, delay_ns);
+    
     assert(p >= 0);
     assert(p <= 1);
 
@@ -101,7 +101,6 @@ int main(int argc, char const* argv[])
 
     void* queue;
     PASS_LOG(create_queue(&queue), "Failed to create queue");
-    PASS_LOG(pthread_mutex_init(&mutex, NULL) == 0, "Failed to create mutex");
     PASS_LOG(pthread_barrier_init(&barrier, NULL, num_of_threads) == 0, "Failed to create barrier");
 
     for (size_t i = 0; i < num_of_threads; ++i)
@@ -117,7 +116,6 @@ int main(int argc, char const* argv[])
         args[i].queue = queue;
         args[i].p = p;
         args[i].random_probabilities = random_probabilities[i];
-        args[i].delay_ns = delay_ns;
         pthread_create(&args[i].tid, NULL, thread_fn, (void*)&args[i]);
     }
 
@@ -133,9 +131,9 @@ int main(int argc, char const* argv[])
         temp[i] = args[i].readings;
     }
 
-    readings_t* readings = aggregate_readings(temp, num_of_threads, TEST_RERUNS);
+    readings_t* readings = aggregate_readings_2d(temp, num_of_threads, TEST_RERUNS);
 
-    printf("\"%s\", %ld, %d, ", get_queue_name(), num_of_threads, delay_ns);
+    printf("\"%s\", %ld, %zu, ", get_queue_name(), num_of_threads, delay_ns);
     display_readings(readings);
     puts("");
 

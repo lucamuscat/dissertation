@@ -73,7 +73,7 @@ void create_readings(readings_t** readings, size_t N);
 
 /**
  * @brief Sets the cycles and nano_seconds fields of readings_t to the result
- * of PAPI_get_real_cyc() and PAPI_get_real_nsec()
+ * of PAPI_get_real_cyc() and PAPI_get_real_nsec(). Not thread safe.
  *
  * @param readings: A readings_t object that has already been initialized. The contents
  * of the object will be overwritten with the new readings.
@@ -81,13 +81,15 @@ void create_readings(readings_t** readings, size_t N);
 void start_readings(readings_t* readings);
 
 /**
- * @brief Calculate the elapsed time of a reading.
+ * @brief Calculate the elapsed time of a reading. Not thread safe
  * @param readings: A readings_t object that has already been initalized. The contents
  * of the object will be updated with the elapsed readings.
  * @param num_of_iterations: Number of iterations that were recorded. The total
  * time will be divided by this value to get the average time per iteration.
  */
 void delta_readings(readings_t* readings, size_t num_of_iterations);
+
+void adjust_readings_for_delay(readings_t* readings, delay_t* delay);
 
 /**
  * @brief Calculate the mean and the standard deviation of multiple readings_t

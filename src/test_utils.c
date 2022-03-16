@@ -183,6 +183,12 @@ void delta_readings(readings_t* readings, size_t num_of_iterations)
     readings->index++;
 }
 
+void adjust_readings_for_delay(readings_t* readings, delay_t* delay)
+{
+    readings->cycles[readings->index - 1] -= delay->num_of_nops;
+    readings->nano_seconds[readings->index - 1] -= delay->delay_ns;
+}
+
 void destroy_readings(readings_t** readings)
 {
     free((*readings)->cycles);

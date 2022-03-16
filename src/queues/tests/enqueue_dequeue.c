@@ -17,12 +17,11 @@
 #include "../queue.h"
 
 #define TEST_ITERATIONS 1000000
-#define TEST_RERUNS 1000
+#define TEST_RERUNS 25
 #define NANO_TO_MINUTE 1000000000*60
-#define RANDOM_RANGE 5
 
 static pthread_barrier_t barrier;
-static int* random_delays_ns;
+static delay_t delay;
 
 typedef struct thread_args
 {
@@ -52,11 +51,12 @@ void* thread_fn(void* in_args)
         for (size_t j = 0; j < args->num_of_iterations; ++j)
         {
             enqueue(args->queue, &enqueued_item);
-            DELAY(random_delays_ns[j]);
+            DELAY_OPS(delay.num_of_nops);
             dequeue(args->queue, &dequeued_item);
-            DELAY(random_delays_ns[j]);
+            DELAY_OPS(delay.num_of_nops);
         }
         delta_readings(args->readings, args->num_of_iterations);
+        adjust_readings_for_delay(args->readings, &delay);
 
         while (dequeue(args->queue, &dequeued_item))
             assert(*((int*)dequeued_item) == enqueued_item);
@@ -70,14 +70,11 @@ int main(int argc, char** argv)
 {
     size_t num_of_threads, delay_ns;
     handle_queue_args(argc, argv, &num_of_threads, &delay_ns);
-
-    if (delay_ns < RANDOM_RANGE)
-        delay_ns = RANDOM_RANGE;
-
+    
     void* queue;
     PASS_LOG(create_queue(&queue), "Failed to create queue");
 
-    random_delays_ns = generate_random_numbers(TEST_ITERATIONS, delay_ns - RANDOM_RANGE, delay_ns + RANDOM_RANGE);
+    calibrate_delay(&delay, delay_ns);
 
     assert(sizeof(thread_args) == CACHE_LINE_SIZE);
 
@@ -115,7 +112,7 @@ int main(int argc, char** argv)
         temp[i] = args[i].readings;
     }
 
-    readings_t* readings = aggregate_readings(temp, num_of_threads, TEST_RERUNS);
+    readings_t* readings = aggregate_readings_2d(temp, num_of_threads, TEST_RERUNS);
 
     printf("\"%s\", %zu, %zu, ", get_queue_name(), num_of_threads, delay_ns);
     display_readings(readings);

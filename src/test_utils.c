@@ -42,6 +42,13 @@ int* generate_random_numbers(int n, int min, int max)
 
 __attribute__((always_inline)) inline void calibrate_delay(delay_t* delay, size_t expected_delay_ns)
 {
+    if (expected_delay_ns == 0)
+    {
+        delay->delay_ns = 0;
+        delay->num_of_nops = 0;
+        return;
+    }
+
     const size_t RERUNS = 5;
     const size_t TEST_ITERATIONS = 10000000;
     readings_t* delay_readings;

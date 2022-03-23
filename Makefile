@@ -29,7 +29,7 @@ LOCK_FILES = $(LOCKS_DIR)/pthread_lock.c $(LOCKS_DIR)/spin_lock.c $(LOCKS_DIR)/t
 
 CXX = gcc
 
-all: sequential_latency_tests
+all: sequential_latency_tests lock_contention_tests
 
 sequential_latency_tests: sequential_latency_spin_lock_test sequential_latency_ttas_lock_test sequential_latency_pthread_lock_test
 
@@ -41,21 +41,15 @@ init_build_folder:
 	mkdir -p $(OUTPUT_DIR)
 
 increment_%_test: init_build_folder
-	mkdir -p ./build/asm/increment/$*/
 	$(CXX) $(LOCKS_DIR)/$*.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -o $(OUTPUT_DIR)/$*_inc.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
-	$(CXX) $(LOCKS_DIR)/$*.c $(INCREMENT_TEST_FILES) $(LIBRARIES) $(ASM_FLAGS)
-	mv *.s build/asm/increment/$*
 
 SEQUENTIAL_LATENCY_COMMON = $(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) $(LOCKS_DIR)/$*.c $(LIBRARIES)
 
 lock_contention_%_test: init_build_folder
-	$(CXX) $(LOCKS_DIR)/$*.c $(LOCKS_DIR)/tests/contention.c $(TEST_UTILS) $(DEBUG_FLAGS) $(ERROR_FLAGS) $(PAPI_LIB) $(LIBRARIES) -o $(OUTPUT_DIR)/$*_contention
+	$(CXX) $(LOCKS_DIR)/$*.c $(LOCKS_DIR)/tests/contention.c $(TEST_UTILS) $(LIBRARIES) $(PAPI_LIB) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/$*_contention
 
 sequential_latency_%_test: init_build_folder
-	mkdir -p ./build/asm/sequential_latency/$*/
-	$(SEQUENTIAL_LATENCY_COMMON) -o $(OUTPUT_DIR)/$*_seq_lat.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
-	$(SEQUENTIAL_LATENCY_COMMON) $(ASM_FLAGS)
-	mv *.s build/asm/sequential_latency/$*
+	$(SEQUENTIAL_LATENCY_COMMON) $(PAPI_LIB) -o $(OUTPUT_DIR)/$*_seq_lat.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
 
 QUEUES_DIR = $(SRC_DIR)/queues
 BLOCKING_DIR = $(QUEUES_DIR)/blocking

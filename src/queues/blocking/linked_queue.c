@@ -28,7 +28,7 @@ typedef struct queue
 bool create_node(void* data, node_t** out_node)
 {
     *out_node = malloc(sizeof(node_t));
-    P_PASS(out_node);
+    ASSERT_NOT_NULL(out_node);
     (*out_node)->next = NULL;
     (*out_node)->value = data;
     return true;
@@ -37,7 +37,7 @@ bool create_node(void* data, node_t** out_node)
 bool create_queue(void** out_queue)
 {
     *out_queue = calloc(1, sizeof(queue));
-    P_PASS(*out_queue);
+    ASSERT_NOT_NULL(*out_queue);
     queue** temp = (queue**)out_queue;
     node_t* sentinel;
     PASS(create_node(NULL, &sentinel));

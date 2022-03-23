@@ -5,7 +5,7 @@
 
 #include "lock.h"
 
-// TODO: Add PASS and P_PASS
+// TODO: Add PASS and ASSERT_NOT_NULL
 bool create_lock(void** lock)
 {
     *lock = malloc(sizeof(pthread_mutex_t));

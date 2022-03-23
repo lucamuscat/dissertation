@@ -127,7 +127,7 @@ void destroy_readings(readings_t** readings);
  * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
  * callocs succeed.
  */
-#define P_PASS(x) if(x == NULL) {\
+#define ASSERT_NOT_NULL(x) if(x == NULL) {\
     fprintf(stderr, "%s, %d", __FILE__, __LINE__); \
     perror("Error:"); \
     exit(EXIT_FAILURE); \

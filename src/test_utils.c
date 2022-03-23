@@ -164,11 +164,11 @@ double stdev_2d(double** values, size_t N_x, size_t N_y)
 void create_readings(readings_t** readings, size_t N)
 {
     *readings = (readings_t*)malloc(sizeof(readings_t));
-    P_PASS(*readings);
+    ASSERT_NOT_NULL(*readings);
     (*readings)->cycles = calloc(N, sizeof(double));
-    P_PASS((*readings)->cycles);
+    ASSERT_NOT_NULL((*readings)->cycles);
     (*readings)->nano_seconds = calloc(N, sizeof(double));
-    P_PASS((*readings)->nano_seconds);
+    ASSERT_NOT_NULL((*readings)->nano_seconds);
     (*readings)->index = 0;
 }
 

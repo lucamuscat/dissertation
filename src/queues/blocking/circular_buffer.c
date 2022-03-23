@@ -28,7 +28,7 @@ typedef struct circular_buffer
 bool create_queue(void** out_queue)
 {
     *out_queue = calloc(1, sizeof(circular_buffer));
-    P_PASS(*out_queue);
+    ASSERT_NOT_NULL(*out_queue);
     // Initialize buffer with 0s (nulls)
     P_QUEUE(*out_queue)->buffer = (void**)calloc(CIRCULAR_BUFFER_SIZE, sizeof(void*));
     PASS(create_lock(&P_QUEUE(*out_queue)->mutex));

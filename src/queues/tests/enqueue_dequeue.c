@@ -57,6 +57,7 @@ void* thread_fn(void* in_args)
         }
         delta_readings(args->readings, args->num_of_iterations);
         adjust_readings_for_delay(args->readings, &delay);
+        adjust_readings_for_delay(args->readings, &delay);
 
         while (dequeue(args->queue, &dequeued_item))
             assert(*((int*)dequeued_item) == enqueued_item);
@@ -81,7 +82,7 @@ int main(int argc, char** argv)
     PASS_LOG(pthread_barrier_init(&barrier, NULL, num_of_threads) == 0, "Failed to create pthread_barrier");
 
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
-    P_PASS(args);
+    ASSERT_NOT_NULL(args);
 
     size_t accumulated_iterations = 0;
     long long total_run_time_ns = PAPI_get_real_nsec();

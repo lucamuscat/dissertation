@@ -83,7 +83,7 @@ void handle_queue_args(int argc, char** argv, size_t* out_num_of_thread, size_t*
 {
     if (argc != 3)
     {
-        fprintf(stderr, "Missing args, arg1 - Thread count, arg2 - reentrancy delay (ns)\n");
+        fprintf(stderr, "Missing args,\n\targ1 - Thread count,\n\targ2 - reentrancy delay (ns)\n");
         exit(EXIT_FAILURE);
     }
 

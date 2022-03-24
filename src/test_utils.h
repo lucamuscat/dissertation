@@ -145,7 +145,10 @@ void destroy_readings(readings_t** readings);
 
 // https://github.com/chaoran/fast-wait-free-queue/blob/d41ec16e5169c864e5fdbe05e1988358bd335fa0/align.h#L10
 #define CACHE_LINE_SIZE 64
+#define DWCAS_ALIGNMENT 16
 #define CACHE_ALIGNED __attribute__((aligned(CACHE_LINE_SIZE)))
+
+#define DWCAS_ALIGNED __attribute__((aligned(DWCAS_ALIGNMENT)))
 
 /**
  * @brief Delay for NS nano seconds. For some reason, multiplying NS*CPU_GHZ

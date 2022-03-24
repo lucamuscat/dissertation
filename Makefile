@@ -32,7 +32,7 @@ LOCK_FILES = $(LOCKS_DIR)/pthread_lock.c $(LOCKS_DIR)/spin_lock.c $(LOCKS_DIR)/t
 
 CXX = gcc
 
-all: sequential_latency_tests lock_contention_tests
+all: sequential_latency_tests lock_contention_tests enqueue_dequeue_blocking_tests
 
 sequential_latency_tests: sequential_latency_spin_lock_test sequential_latency_ttas_lock_test sequential_latency_pthread_lock_test
 
@@ -61,6 +61,10 @@ ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/enqueue_dequeue.c $(TEST_UTILS)
 P_ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/p_enqueue_dequeue.c $(TEST_UTILS)
 
 enqueue_dequeue_blocking_tests: enqueue_dequeue_blocking_linked_queue_test
+
+enqueue_dequeue_non_blocking_tests: enqueue_dequeue_nonblocking_ms_queue_test
+p_enqueue_dequeue_non_blocking_tests: p_enqueue_dequeue_nonblocking_ms_queue_test
+
 
 enqueue_dequeue_blocking_%_test: init_build_folder
 	for i in $(LOCK_FILES); \

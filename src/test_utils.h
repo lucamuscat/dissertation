@@ -138,7 +138,7 @@ void destroy_readings(readings_t** readings);
     return x; \
 }
 
-#define PASS_LOG(x, message) if(!x) {\
+#define PASS_LOG(x, message) if(!(x)) {\
     printf(message); \
     exit(EXIT_FAILURE); \
 }

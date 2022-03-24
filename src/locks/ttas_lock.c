@@ -28,7 +28,7 @@ void destroy_lock(void** lock)
     free(*lock);
 }
 
-// Source: https://stackoverflow.com/a/33048193
+// Source: https://rigtorp.se/spinlock/
 void wait_lock(void* lock)
 {
     do

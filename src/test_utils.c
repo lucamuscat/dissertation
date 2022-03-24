@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <x86intrin.h>
 #include <math.h>
+#include <stdint.h>
 #include <papi.h>
 #include "test_utils.h"
 
@@ -71,12 +73,20 @@ __attribute__((always_inline)) inline void calibrate_delay(delay_t* delay, size_
 
 /**
  * @brief Do not use. Use the DELAY macro instead.
- * 
+ * Source: https://github.com/pramalhe/ConcurrencyFreaks/blob/c61189546805c67792df7931f9484e09a3cda3bf/CPP/pqueues/pfences.h#L33
  */
-__attribute__((always_inline)) inline void _delay(size_t ns)
+__attribute__((always_inline)) inline void _delay(uint64_t cycles)
 {
-    for (size_t i = 0; i < ns; ++i)
+    /*
+    for (size_t i = 0; i < cycles; ++i)
         __asm__("nop");
+    */
+    uint64_t stop;
+    uint64_t start = _rdtsc();
+    do
+    {
+        stop = _rdtsc();
+    } while (stop - start < cycles);
 }
 
 void handle_queue_args(int argc, char** argv, size_t* out_num_of_thread, size_t* out_delay_ns)

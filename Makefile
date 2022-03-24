@@ -30,7 +30,9 @@ FILTER_LOCK_INCREMENT_OUTPUT_NAME = filter_lock_inc.o
 
 LOCK_FILES = $(LOCKS_DIR)/pthread_lock.c $(LOCKS_DIR)/spin_lock.c $(LOCKS_DIR)/ttas_lock.c
 
-CXX = gcc
+# We are using clang as gcc does not emit cmpxchg16b during a double-width CAS
+# (in my case anyways)
+CXX = clang
 
 all: sequential_latency_tests lock_contention_tests enqueue_dequeue_blocking_tests
 
@@ -44,7 +46,7 @@ init_build_folder:
 	mkdir -p $(OUTPUT_DIR)
 
 increment_%_test: init_build_folder
-	$(CXX) $(LOCKS_DIR)/$*.c $(INCREMENT_TEST_FILES) $(LIBRARIES) -o $(OUTPUT_DIR)/$*_inc.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	$(CXX) $(LOCKS_DIR)/$*.c $(INCREMENT_TEST_FILES) $(LIBRARIES) $(PAPI_LIB) -o $(OUTPUT_DIR)/$*_inc.o $(DEBUG_FLAGS) $(ERROR_FLAGS)
 
 SEQUENTIAL_LATENCY_COMMON = $(CXX) $(SEQUENTIAL_LATENCY_TEST_FILES) $(LOCKS_DIR)/$*.c $(LIBRARIES)
 

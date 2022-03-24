@@ -3,12 +3,15 @@ SHELL=bash
 ifdef DEBUG
 DEBUG_FLAGS = -DDEBUG -g
 else
-DEBUG_FLAGS = -O3
+DEBUG_FLAGS = -O3 -g
 endif
 ERROR_FLAGS = -Wall -Wextra
 
 ASM_FLAGS = -masm=intel -S -fno-exceptions -fno-dwarf2-cfi-asm -fno-asynchronous-unwind-tables -fno-exceptions
 LIBRARIES = -lm -lpthread
+# Libraries needed for the nonblocking builds
+# mcx16 is needed to emit the cmpxchg16b instruction
+NONBLOCKING_LIBRARIES = -lm -lpthread -latomic -march=native
 PAPI_LIB = /usr/local/lib/libpapi.a 
 
 SRC_DIR = ./src
@@ -66,7 +69,7 @@ enqueue_dequeue_blocking_%_test: init_build_folder
 	done
 
 enqueue_dequeue_nonblocking_%_test: init_build_folder
-	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(LIBRARIES) -o $(OUTPUT_DIR)/nonblocking_$* $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) -o $(OUTPUT_DIR)/nonblocking_$* $(DEBUG_FLAGS) $(ERROR_FLAGS)
 
 p_enqueue_dequeue_blocking_tests: p_enqueue_dequeue_blocking_linked_queue_test
 

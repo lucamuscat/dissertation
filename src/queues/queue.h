@@ -32,6 +32,8 @@ bool dequeue(void* queue, void** out_item);
  */
 bool create_queue(void** out_queue);
 
+void destroy_queue(void** out_queue);
+
 // A randomly poke method might come in handy in the future:
 // https://youtu.be/_qaKkHuHYE0?t=1073
 
@@ -41,5 +43,8 @@ bool create_queue(void** out_queue);
  * @return char* 
  */
 char* get_queue_name();
+
+void register_thread(size_t num_of_iterations);
+void cleanup_thread();
 
 #endif

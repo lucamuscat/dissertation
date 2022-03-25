@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdatomic.h>
 #include <assert.h>
+#include <threads.h>
 #include "../queue.h"
 #include "../../test_utils.h"
 
@@ -36,6 +37,21 @@ typedef struct queue_t
     node_pointer_t _Atomic tail;
 } queue_t;
 
+thread_local node_t* node_pool;
+thread_local int node_count;
+
+void register_thread(size_t num_of_iterations)
+{
+    node_pool = (node_t*)calloc(num_of_iterations, sizeof(node_t));
+    node_count = -1;
+    ASSERT_NOT_NULL(node_pool);
+}
+
+void cleanup_thread()
+{
+    free(node_pool);
+}
+
 /**
  * @brief Create a node object, initialized with null values
  * 
@@ -43,11 +59,9 @@ typedef struct queue_t
  * @return true 
  * @return false 
  */
-bool create_node(node_t** out_node)
+void create_node(node_t** out_node)
 {
-    *out_node = (node_t*)calloc(1, sizeof(node_t));
-    ASSERT_NOT_NULL(*out_node);
-    return true;
+    *out_node = &node_pool[++node_count];
 }
 
 // Beware that malloc might not be lock-free, making the algorithm
@@ -59,7 +73,7 @@ bool create_queue(void** out_queue)
     ASSERT_NOT_NULL(*queue);
     
     node_t* node;
-    create_node(&node);
+    node = (node_t*)calloc(1, sizeof(node_t));
     assert(atomic_is_lock_free(&node->next));
     node_pointer_t next_node = { NULL, 0 };
     node_pointer_t sentinel = { node, 0 };
@@ -67,6 +81,11 @@ bool create_queue(void** out_queue)
     atomic_init(&(*queue)->head, sentinel);
     atomic_init(&(*queue)->tail, sentinel);
     return true;
+}
+
+void destroy_queue(void** out_queue)
+{
+    free(*out_queue);
 }
 
 inline bool equals(node_pointer_t a, node_pointer_t b)

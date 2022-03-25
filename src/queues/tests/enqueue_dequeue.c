@@ -1,9 +1,30 @@
 /**
  * @file enqueue_dequeue.c
  * @brief Measure the performance of a queue's enqueue-dequeue pairs
- * @warning Make sure that the turbo boost and CPU frequency scaling are turned off.
+ *
+ * The benchmark setup is similar to ConcurrencyFreak's CR Turn Queue
+ * benchmark. This setup in particular was used to benchmark a small number
+ * of queues, the results of which were published in an academic paper.
+ 
+ * A number of queue benchmarks were evaluated before taking this approach.
+ * Most C/C++ benchmarks and queue implementations ignored the fact that the dynamic
+ * allocation of memory (malloc/free for C, new/delete for C++) is not non-blocking.
+
+ * Another flaw of most benchmarks is that memory was being allocated and deallocated
+ * without any proper memory management procedures. This may cause segmentation
+ * faults in specific interleavings, as a node may be held by one thread, but freed
+ * by another.
+
+ * For instance, if one prior enqueue has occurred, and another two threads enqueue and dequeue
+ * at the same time, the enqueueing thread might be making use of a node which has been
+ * freed by the other thread's dequeue.
+
+ * Source - https://github.com/pramalhe/ConcurrencyFreaks/blob/c61189546805c67792df7931f9484e09a3cda3bf/CPP/papers/crturnqueue/include/BenchmarkQ.hpp
+ * @warning Make sure that turbo boost and CPU frequency scaling settings are turned off.
  * Failure to do so will cause the DELAY macro to misbehave and the PAPI_get_real_cyc()
- * function to not match the actual total cycles.
+ * function to report the actual total cycles.
+ *
+ * https://web.eece.maine.edu/~vweaver/papers/papi/papi_v5_changes.pdf §13.17
  */
 
 #include <papi.h>
@@ -16,8 +37,9 @@
 #include "../../test_utils.h"
 #include "../queue.h"
 
-#define TEST_ITERATIONS 1000000
-#define TEST_RERUNS 25
+// 10^8 test iterations
+#define TEST_ITERATIONS 100000000LL
+#define TEST_RERUNS 5
 #define NANO_TO_MINUTE 1000000000*60
 
 static pthread_barrier_t barrier;
@@ -43,25 +65,25 @@ void* thread_fn(void* in_args)
     void* dequeued_item = NULL;
     int enqueued_item = 0;
     
-    for (size_t i = 0; i < TEST_RERUNS; ++i)
-    {
-        // Make sure that each thread executes the test at the same time.
-        pthread_barrier_wait(&barrier);
-        start_readings(args->readings);
-        for (size_t j = 0; j < args->num_of_iterations; ++j)
-        {
-            enqueue(args->queue, &enqueued_item);
-            DELAY_OPS(delay.num_of_nops);
-            dequeue(args->queue, &dequeued_item);
-            DELAY_OPS(delay.num_of_nops);
-        }
-        delta_readings(args->readings, args->num_of_iterations);
-        adjust_readings_for_delay(args->readings, &delay);
-        adjust_readings_for_delay(args->readings, &delay);
+    register_thread(args->num_of_iterations);
 
-        while (dequeue(args->queue, &dequeued_item))
+    // Make sure that each thread executes the test at the same time.
+    pthread_barrier_wait(&barrier);
+    start_readings(args->readings);
+    for (size_t j = 0; j < args->num_of_iterations; ++j)
+    {
+        enqueue(args->queue, &enqueued_item);
+        DELAY_OPS(delay.num_of_nops);
+        if (dequeue(args->queue, &dequeued_item))
             assert(*((int*)dequeued_item) == enqueued_item);
+
+        DELAY_OPS(delay.num_of_nops);
     }
+    delta_readings(args->readings, args->num_of_iterations);
+    adjust_readings_for_delay(args->readings, &delay);
+    adjust_readings_for_delay(args->readings, &delay);
+
+    cleanup_thread();
     // Make sure to synchronize all changes to args
     atomic_thread_fence(memory_order_seq_cst);
     return 0;
@@ -71,9 +93,6 @@ int main(int argc, char** argv)
 {
     size_t num_of_threads, delay_ns;
     handle_queue_args(argc, argv, &num_of_threads, &delay_ns);
-    
-    void* queue;
-    PASS_LOG(create_queue(&queue), "Failed to create queue");
 
     calibrate_delay(&delay, delay_ns);
 
@@ -84,39 +103,46 @@ int main(int argc, char** argv)
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
     ASSERT_NOT_NULL(args);
 
-    size_t accumulated_iterations = 0;
     long long total_run_time_ns = PAPI_get_real_nsec();
 
+    readings_t** readings = malloc(sizeof(readings_t*) * num_of_threads);
+    ASSERT_NOT_NULL(readings);
+
     for (size_t i = 0; i < num_of_threads; ++i)
     {
-        args[i].queue = queue;
-        create_readings(&args[i].readings, TEST_RERUNS);
-        args[i].num_of_iterations = iterations_per_thread(num_of_threads, i, TEST_ITERATIONS);
-        accumulated_iterations += args[i].num_of_iterations;
-        pthread_create(&args[i].tid, NULL, thread_fn, &args[i]);
+        create_readings(&readings[i], TEST_RERUNS);
     }
 
-    // Sanity check; Ensure that the total iterations match up.
-    assert(accumulated_iterations == TEST_ITERATIONS);
-    
-    for (size_t i = 0; i < num_of_threads; ++i)
+    for (size_t i = 0; i < TEST_RERUNS; ++i)
     {
-        pthread_join(args[i].tid, NULL);
+        size_t accumulated_iterations = 0;
+        void* queue;
+        PASS_LOG(create_queue(&queue), "Failed to create queue");
+        for (size_t j = 0; j < num_of_threads; ++j)
+        {
+            args[j].queue = queue;
+            args[j].readings = readings[j];
+            args[j].num_of_iterations = iterations_per_thread(num_of_threads, j, TEST_ITERATIONS);
+            accumulated_iterations += args[j].num_of_iterations;
+            pthread_create(&args[j].tid, NULL, thread_fn, &args[j]);
+        }
+
+        // Sanity check; Ensure that the total iterations match up.
+        assert(accumulated_iterations == TEST_ITERATIONS);
+
+        for (size_t j = 0; j < num_of_threads; ++j)
+        {
+            pthread_join(args[j].tid, NULL);
+        }
+        destroy_queue(&queue);
     }
 
     total_run_time_ns = PAPI_get_real_nsec() - total_run_time_ns;
 
-    readings_t** temp = (readings_t**)malloc(sizeof(readings_t*) * num_of_threads);
-    
-    for (size_t i = 0; i < num_of_threads; ++i)
-    {
-        temp[i] = args[i].readings;
-    }
-
-    readings_t* readings = aggregate_readings_2d(temp, num_of_threads, TEST_RERUNS);
+    readings_t* aggregates = aggregate_readings_2d(readings, num_of_threads, TEST_RERUNS);
 
     printf("\"%s\", %zu, %zu, ", get_queue_name(), num_of_threads, delay_ns);
-    display_readings(readings);
+    display_readings(aggregates);
     printf(", %lld\n", total_run_time_ns);
 
     // for (size_t i = 0; i < num_of_threads; ++i)

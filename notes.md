@@ -31,6 +31,18 @@ Will use multiple clock types and check their disparities.
 * Just start getting code done, we need a basis of code.
 * Keep it simple for now, just measure time.
 * Range of results will be nice to show.
+
+# Meeting notes 16-03-2022
+* Differences of averages across threads is useful to determine if each core is given the same amount of priority by the scheduler.
+* Create a configuration file which contains the number of iterations which will give the least amount of standard deviation across readings
+(No need to automatically figure that out)
+* Since the average of each enqueue/dequeue pair is being taken, the total number of
+iterations done is not really relevant, the most important thing is that no matter
+the number of iterations, they all converge to one value.
+
+# Meeting notes 23-03-2022
+* AR - Generates a files (statically linked .a files)
+
 ## TODO
 * Create a bunch of queues, 
 lock-based and maybe some simple lock-free

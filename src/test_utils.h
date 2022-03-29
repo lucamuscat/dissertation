@@ -2,6 +2,10 @@
 #define TEST_UTILS_H
 
 #define CPU_GHZ 2.6
+// 10^8 test iterations
+#define TEST_ITERATIONS 100000000LL
+#define TEST_RERUNS 5
+#define NANO_TO_MINUTE 1000000000*60
 
 /**
 

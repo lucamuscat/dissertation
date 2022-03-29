@@ -37,11 +37,6 @@
 #include "../../test_utils.h"
 #include "../queue.h"
 
-// 10^8 test iterations
-#define TEST_ITERATIONS 100000000LL
-#define TEST_RERUNS 5
-#define NANO_TO_MINUTE 1000000000*60
-
 static pthread_barrier_t barrier;
 static delay_t delay;
 

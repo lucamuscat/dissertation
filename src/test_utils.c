@@ -52,17 +52,17 @@ __attribute__((always_inline)) inline void calibrate_delay(delay_t* delay, size_
     }
 
     const size_t RERUNS = 5;
-    const size_t TEST_ITERATIONS = 10000000;
+    const size_t iterations = 10000000;
     readings_t* delay_readings;
     create_readings(&delay_readings, RERUNS);
     for (size_t j = 0; j < RERUNS; ++j)
     {
         start_readings(delay_readings);
-        for (size_t i = 0; i < TEST_ITERATIONS; ++i)
+        for (size_t i = 0; i < iterations; ++i)
         {
             DELAY(expected_delay_ns);
         }
-        delta_readings(delay_readings, TEST_ITERATIONS);
+        delta_readings(delay_readings, iterations);
     }
     readings_t* aggreated_readings = aggregate_readings(delay_readings, RERUNS);
     double mean_ns = aggreated_readings->nano_seconds[0];

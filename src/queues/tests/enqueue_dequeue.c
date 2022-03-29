@@ -63,7 +63,7 @@ void* thread_fn(void* in_args)
 {
     thread_args* args = in_args;
     void* dequeued_item = NULL;
-    int enqueued_item = 0;
+    int enqueued_item = 10;
     
     register_thread(args->num_of_iterations);
 
@@ -73,14 +73,12 @@ void* thread_fn(void* in_args)
     for (size_t j = 0; j < args->num_of_iterations; ++j)
     {
         enqueue(args->queue, &enqueued_item);
-        DELAY_OPS(delay.num_of_nops);
         if (dequeue(args->queue, &dequeued_item))
             assert(*((int*)dequeued_item) == enqueued_item);
 
         DELAY_OPS(delay.num_of_nops);
     }
     delta_readings(args->readings, args->num_of_iterations);
-    adjust_readings_for_delay(args->readings, &delay);
     adjust_readings_for_delay(args->readings, &delay);
 
     cleanup_thread();

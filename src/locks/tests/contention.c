@@ -63,8 +63,8 @@ int main(int argc, char** argv)
     calibrate_delay(&reentrancy_delay, reentrancy_delay_ns);
 
     void* lock;
-    PASS_LOG(create_lock(&lock), "Failed to create lock");
-    PASS_LOG(pthread_barrier_init(&barrier, NULL, num_of_threads) == 0, "Failed to create pthread_barrier");
+    ASSERT_TRUE(create_lock(&lock), "Failed to create lock");
+    ASSERT_TRUE(pthread_barrier_init(&barrier, NULL, num_of_threads) == 0, "Failed to create pthread_barrier");
 
     thread_args_t* args = (thread_args_t*)malloc(sizeof(thread_args_t) * num_of_threads);
     ASSERT_NOT_NULL(args);

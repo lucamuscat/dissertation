@@ -108,12 +108,13 @@ int main(int argc, char** argv)
 
     readings_t** readings = create_readings_2d(num_of_threads, TEST_RERUNS);
     
-    PASS_LOG(pthread_barrier_init(&barrier, NULL, num_of_threads) == 0, "Failed to create barrier");
+    // pthread_barrier_init returns zero when successful, however, zero is a falsy value in c.
+    ASSERT_TRUE(!pthread_barrier_init(&barrier, NULL, num_of_threads), "Failed to create barrier");
 
     for (size_t i = 0; i < TEST_RERUNS; ++i)
     {
         void* queue;
-        PASS_LOG(create_queue(&queue), "Failed to create queue");
+        ASSERT_TRUE(create_queue(&queue), "Failed to create queue");
         for (size_t j = 0; j < num_of_threads; ++j)
         {
             int thread_iterations = iterations_per_thread(num_of_threads, j, TEST_ITERATIONS);

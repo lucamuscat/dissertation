@@ -144,8 +144,8 @@ void destroy_readings(readings_t** readings);
     return x; \
 }
 
-#define PASS_LOG(x, message) if(!(x)) {\
-    printf(message); \
+#define ASSERT_TRUE(x, message) if(!(x)) {\
+    fprintf(stderr, "%s (File: %s Line: %d)", message, __FILE__, __LINE__); \
     exit(EXIT_FAILURE); \
 }
 

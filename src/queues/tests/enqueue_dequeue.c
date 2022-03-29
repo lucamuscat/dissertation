@@ -91,7 +91,7 @@ int main(int argc, char** argv)
 
     assert(sizeof(thread_args) == CACHE_LINE_SIZE);
 
-    PASS_LOG(pthread_barrier_init(&barrier, NULL, num_of_threads) == 0, "Failed to create pthread_barrier");
+    ASSERT_TRUE(!pthread_barrier_init(&barrier, NULL, num_of_threads), "Failed to create pthread_barrier");
 
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
     ASSERT_NOT_NULL(args);
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
     {
         size_t accumulated_iterations = 0;
         void* queue;
-        PASS_LOG(create_queue(&queue), "Failed to create queue");
+        ASSERT_TRUE(create_queue(&queue), "Failed to create queue");
         for (size_t j = 0; j < num_of_threads; ++j)
         {
             args[j].queue = queue;

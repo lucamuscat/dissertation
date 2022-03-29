@@ -163,13 +163,10 @@ bool dequeue(void* in_queue, void** out_item)
                 *out_item = next.ptr->value;
                 node_pointer_t new_ptr = { next.ptr, head.count + 1 };
                 if (atomic_compare_exchange_strong(&queue->head, &head, new_ptr))
-                    break;
+                    return true;
             }
         }
     }
-    // Look into the free function actually used by the authors.
-    // free(head.ptr);
-    return true;
 }
 
 char* get_queue_name()

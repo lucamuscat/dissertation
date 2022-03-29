@@ -55,12 +55,11 @@ void cleanup_thread()
 
 /**
  * @brief Create a node object, initialized with null values
- * 
- * @param out_node 
- * @return true 
- * @return false 
+ * @note Assumes that the method is being called inside of a thread that has
+ * called the register_thread(1) method.
+ * @param out_node
  */
-void create_node(node_t** out_node)
+inline void create_node(node_t** out_node)
 {
     *out_node = &node_pool[++node_count];
 }
@@ -68,9 +67,9 @@ void create_node(node_t** out_node)
 inline void create_sentinel_node()
 {
     sentinel = (node_t*)calloc(1, sizeof(node_t));
-    node_pointer_t next_node = { NULL, 0 };
+    node_pointer_t null_node = { NULL, 0 };
     assert(atomic_is_lock_free(&sentinel->next));
-    atomic_init(&sentinel->next, next_node);
+    atomic_init(&sentinel->next, null_node);
 }
 
 // Beware that malloc might not be lock-free, making the algorithm
@@ -108,6 +107,8 @@ bool enqueue(void* in_queue, void* in_item)
     node_t* node;
     create_node(&node);
     node->value = in_item;
+    node_pointer_t null_node = { NULL, 0 };
+    atomic_init(&node->next, null_node);
 
     node_pointer_t tail;
     node_pointer_t next;

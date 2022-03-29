@@ -39,6 +39,7 @@ typedef struct queue_t
 
 thread_local node_t* node_pool;
 thread_local int node_count;
+thread_local node_t* sentinel;
 
 void register_thread(size_t num_of_iterations)
 {
@@ -64,6 +65,14 @@ void create_node(node_t** out_node)
     *out_node = &node_pool[++node_count];
 }
 
+inline void create_sentinel_node()
+{
+    sentinel = (node_t*)calloc(1, sizeof(node_t));
+    node_pointer_t next_node = { NULL, 0 };
+    assert(atomic_is_lock_free(&sentinel->next));
+    atomic_init(&sentinel->next, next_node);
+}
+
 // Beware that malloc might not be lock-free, making the algorithm
 // also not lock-free.
 bool create_queue(void** out_queue)
@@ -71,21 +80,21 @@ bool create_queue(void** out_queue)
     queue_t** queue = (queue_t**)out_queue;
     *queue = (queue_t*)malloc(sizeof(queue_t));
     ASSERT_NOT_NULL(*queue);
-    
-    node_t* node;
-    node = (node_t*)calloc(1, sizeof(node_t));
-    assert(atomic_is_lock_free(&node->next));
-    node_pointer_t next_node = { NULL, 0 };
-    node_pointer_t sentinel = { node, 0 };
-    atomic_init(&node->next, next_node);
-    atomic_init(&(*queue)->head, sentinel);
-    atomic_init(&(*queue)->tail, sentinel);
+
+    create_sentinel_node();
+    // Make sure that double width compare and swap is available on the system
+    // may return false in the case that the compiler does not emit the assembly
+    // instruction directly.
+    node_pointer_t sentinel_ptr = { sentinel, 0 };
+    atomic_init(&(*queue)->head, sentinel_ptr);
+    atomic_init(&(*queue)->tail, sentinel_ptr);
     return true;
 }
 
 void destroy_queue(void** out_queue)
 {
     free(*out_queue);
+    free(sentinel);
 }
 
 inline bool equals(node_pointer_t a, node_pointer_t b)

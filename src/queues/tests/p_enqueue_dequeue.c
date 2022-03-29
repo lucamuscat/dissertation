@@ -106,14 +106,8 @@ int main(int argc, char** argv)
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
     ASSERT_NOT_NULL(args);
 
-    readings_t** readings = (readings_t**)malloc(sizeof(readings_t*) * num_of_threads);
-    ASSERT_NOT_NULL(readings);
-
-    for (size_t i = 0; i < num_of_threads; ++i)
-    {
-        create_readings(&readings[i], TEST_RERUNS);
-    }
-
+    readings_t** readings = create_readings_2d(num_of_threads, TEST_RERUNS);
+    
     PASS_LOG(pthread_barrier_init(&barrier, NULL, num_of_threads) == 0, "Failed to create barrier");
 
     for (size_t i = 0; i < TEST_RERUNS; ++i)

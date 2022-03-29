@@ -73,7 +73,9 @@ void calibrate_delay(delay_t* out_delay, size_t expected_delay_ns);
  * @param in_out_readings: Pointer to readings object to be initialized.
  * @param N: Number of readings that will be taken.
  */
-void create_readings(readings_t** readings, size_t N);
+readings_t* create_readings(size_t N);
+
+readings_t** create_readings_2d(size_t N_x, size_t N_y);
 
 /**
  * @brief Sets the cycles and nano_seconds fields of readings_t to the result

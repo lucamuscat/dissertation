@@ -53,8 +53,7 @@ __attribute__((always_inline)) inline void calibrate_delay(delay_t* delay, size_
 
     const size_t RERUNS = 5;
     const size_t iterations = 10000000;
-    readings_t* delay_readings;
-    create_readings(&delay_readings, RERUNS);
+    readings_t* delay_readings = create_readings(RERUNS);
     for (size_t j = 0; j < RERUNS; ++j)
     {
         start_readings(delay_readings);
@@ -171,15 +170,27 @@ double stdev_2d(double** values, size_t N_x, size_t N_y)
     return sqrt(acc);
 }
 
-void create_readings(readings_t** readings, size_t N)
+readings_t** create_readings_2d(size_t N_x, size_t N_y)
 {
-    *readings = (readings_t*)malloc(sizeof(readings_t));
-    ASSERT_NOT_NULL(*readings);
-    (*readings)->cycles = calloc(N, sizeof(double));
-    ASSERT_NOT_NULL((*readings)->cycles);
-    (*readings)->nano_seconds = calloc(N, sizeof(double));
-    ASSERT_NOT_NULL((*readings)->nano_seconds);
-    (*readings)->index = 0;
+    readings_t** result = (readings_t**)malloc(sizeof(readings_t*) * N_x);
+    ASSERT_NOT_NULL(result);
+    for (size_t i = 0; i < N_x; ++i)
+    {
+        result[i] = create_readings(N_y);
+    }
+    return result;
+}
+
+readings_t* create_readings(size_t N)
+{
+    readings_t* result = (readings_t*)malloc(sizeof(readings_t));
+    ASSERT_NOT_NULL(result);
+    result->cycles = calloc(N, sizeof(double));
+    ASSERT_NOT_NULL(result->cycles);
+    result->nano_seconds = calloc(N, sizeof(double));
+    ASSERT_NOT_NULL(result->nano_seconds);
+    result->index = 0;
+    return result;
 }
 
 void start_readings(readings_t* readings)
@@ -215,8 +226,7 @@ void destroy_readings(readings_t** readings)
 
 readings_t* aggregate_readings(readings_t* readings, size_t N)
 {
-    readings_t* result;
-    create_readings(&result, N);
+    readings_t* result = create_readings(N);
     double* cycles = (double*)malloc(sizeof(double) * N);
     double* nano_seconds = (double*)malloc(sizeof(double) * N);
 
@@ -237,8 +247,7 @@ readings_t* aggregate_readings(readings_t* readings, size_t N)
 
 readings_t* aggregate_readings_2d(readings_t** readings, size_t N_x, size_t N_y)
 {
-    readings_t* result;
-    create_readings(&result, 2);
+    readings_t* result = create_readings(2);
     double** cycles = (double**)malloc(sizeof(double*) * N_x);
     double** nano_seconds = (double**)malloc(sizeof(double*) * N_x);
     for (size_t i = 0; i < N_x; ++i)

@@ -98,13 +98,7 @@ int main(int argc, char** argv)
 
     long long total_run_time_ns = PAPI_get_real_nsec();
 
-    readings_t** readings = malloc(sizeof(readings_t*) * num_of_threads);
-    ASSERT_NOT_NULL(readings);
-
-    for (size_t i = 0; i < num_of_threads; ++i)
-    {
-        create_readings(&readings[i], TEST_RERUNS);
-    }
+    readings_t** readings = create_readings_2d(num_of_threads, TEST_RERUNS);
 
     for (size_t i = 0; i < TEST_RERUNS; ++i)
     {

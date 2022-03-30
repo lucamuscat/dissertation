@@ -35,7 +35,6 @@ typedef struct thread_args
 
 void* thread_fn(void* in_args)
 {
-    // PASS_LOG(PAPI_register_thread() == PAPI_OK, "Failed to register thread");
     thread_args* args = in_args;
     register_thread(args->iterations);
     int enqueued_item = 10;
@@ -58,7 +57,6 @@ void* thread_fn(void* in_args)
     adjust_readings_for_delay(args->readings, &delay);
     cleanup_thread();
     
-    // PASS_LOG(PAPI_unregister_thread() == PAPI_OK, "Failed to unregister thread");
     atomic_thread_fence(memory_order_seq_cst);
     return NULL;
 }

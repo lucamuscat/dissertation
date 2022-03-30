@@ -4,6 +4,8 @@
 #define CPU_GHZ 2.6
 // 10^8 test iterations
 #define TEST_ITERATIONS 100000000LL
+// 10^6 warm up iterations.
+#define WARMUP_ITERATIONS 1000000LL
 #define TEST_RERUNS 5
 #define NANO_TO_MINUTE 1000000000*60
 

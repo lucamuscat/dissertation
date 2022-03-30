@@ -44,6 +44,7 @@ typedef struct thread_args
 {
     void* queue;
     size_t num_of_iterations;
+    size_t num_of_threads;
     pthread_t tid;
     readings_t* readings;
 } CACHE_ALIGNED /* Align to cache to avoid false sharing */ thread_args;
@@ -60,20 +61,34 @@ void* thread_fn(void* in_args)
     void* dequeued_item = NULL;
     int enqueued_item = 10;
     
-    register_thread(args->num_of_iterations);
+    register_thread(args->num_of_iterations + (WARMUP_ITERATIONS / args->num_of_threads));
+    pthread_barrier_wait(&barrier);
+    for (size_t i = 0; i < WARMUP_ITERATIONS / args->num_of_threads; ++i)
+    {
+        enqueue(args->queue, &enqueued_item);
+        DELAY_OPS(delay.num_of_nops);
+        if (dequeue(args->queue, &dequeued_item))
+            assert(*((int*)dequeued_item) == enqueued_item);
+        DELAY_OPS(delay.num_of_nops);
+    }
+
+    // Empty the queue
+    while (dequeue(args->queue, &dequeued_item))
+        assert(*((int*)dequeued_item) == enqueued_item);
 
     // Make sure that each thread executes the test at the same time.
     pthread_barrier_wait(&barrier);
     start_readings(args->readings);
-    for (size_t j = 0; j < args->num_of_iterations; ++j)
+    for (size_t i = 0; i < args->num_of_iterations; ++i)
     {
         enqueue(args->queue, &enqueued_item);
+        DELAY_OPS(delay.num_of_nops);
         if (dequeue(args->queue, &dequeued_item))
             assert(*((int*)dequeued_item) == enqueued_item);
-
         DELAY_OPS(delay.num_of_nops);
     }
     delta_readings(args->readings, args->num_of_iterations);
+    adjust_readings_for_delay(args->readings, &delay);
     adjust_readings_for_delay(args->readings, &delay);
 
     cleanup_thread();
@@ -109,6 +124,7 @@ int main(int argc, char** argv)
         {
             args[j].queue = queue;
             args[j].readings = readings[j];
+            args[j].num_of_threads = num_of_threads;
             args[j].num_of_iterations = iterations_per_thread(num_of_threads, j, TEST_ITERATIONS);
             accumulated_iterations += args[j].num_of_iterations;
             pthread_create(&args[j].tid, NULL, thread_fn, &args[j]);

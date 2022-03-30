@@ -7,7 +7,7 @@
 
 typedef struct ttas_lock_t
 {
-    atomic_bool busy;
+    __attribute__((aligned(64))) atomic_bool busy;
 } ttas_lock_t;
 
 #define P_LOCK ((ttas_lock_t*)lock)

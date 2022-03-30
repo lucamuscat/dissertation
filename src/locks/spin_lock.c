@@ -10,7 +10,7 @@
 
 typedef struct spin_lock_t
 {
-    atomic_flag busy;
+    __attribute__((aligned(64))) atomic_flag busy;
 } spin_lock_t;
 
 bool create_lock(void** lock)

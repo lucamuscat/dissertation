@@ -29,6 +29,7 @@ typedef struct thread_args
     double p;
     int iterations;
     double* random_probabilities;
+    size_t num_of_threads;
     readings_t* readings;
     pthread_t tid;
 } CACHE_ALIGNED thread_args;
@@ -113,6 +114,7 @@ int main(int argc, char** argv)
                 random_probabilities[j][k] = drand48();
             }
             args[j].readings = readings[j];
+            args[j].num_of_threads = num_of_threads;
             args[j].iterations = thread_iterations;
             args[j].queue = queue;
             args[j].p = p;

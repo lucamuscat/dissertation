@@ -27,9 +27,9 @@ typedef struct thread_args
 {
     void* queue;
     double p;
-    int iterations;
     double* random_probabilities;
-    size_t num_of_threads;
+    size_t num_of_iterations;
+    size_t num_of_warm_up_iterations;
     readings_t* readings;
     pthread_t tid;
 } CACHE_ALIGNED thread_args;
@@ -37,14 +37,30 @@ typedef struct thread_args
 void* thread_fn(void* in_args)
 {
     thread_args* args = in_args;
-    register_thread(args->iterations);
+    register_thread(args->num_of_iterations + args->num_of_warm_up_iterations);
+
     int enqueued_item = 10;
     void* dequeued_item = NULL;
 
     pthread_barrier_wait(&barrier);
+    for (size_t i = 0; i < args->num_of_warm_up_iterations; ++i)
+    {
+        if (args->random_probabilities[i] < args->p)
+            enqueue(args->queue, (void**)&enqueued_item);
+        else if (dequeue(args->queue, (void*)&dequeued_item))
+            assert(*((int*)dequeued_item) == enqueued_item);
+
+        DELAY_OPS(delay.num_of_nops);
+    }
+
+    // Empty the queue
+    while (dequeue(args->queue, &dequeued_item))
+        assert(*((int*)dequeued_item) == enqueued_item);
+    
+    pthread_barrier_wait(&barrier);
     start_readings(args->readings);
     
-    for (int i = 0; i < args->iterations; ++i)
+    for (size_t i = 0; i < args->num_of_iterations; ++i)
     {
         if (args->random_probabilities[i] < args->p)
             enqueue(args->queue, (void**)&enqueued_item);
@@ -54,7 +70,7 @@ void* thread_fn(void* in_args)
         DELAY_OPS(delay.num_of_nops);
     }
     
-    delta_readings(args->readings, args->iterations);
+    delta_readings(args->readings, args->num_of_iterations);
     adjust_readings_for_delay(args->readings, &delay);
     cleanup_thread();
     
@@ -114,8 +130,8 @@ int main(int argc, char** argv)
                 random_probabilities[j][k] = drand48();
             }
             args[j].readings = readings[j];
-            args[j].num_of_threads = num_of_threads;
-            args[j].iterations = thread_iterations;
+            args[j].num_of_warm_up_iterations = TEST_ITERATIONS/num_of_threads;
+            args[j].num_of_iterations = thread_iterations;
             args[j].queue = queue;
             args[j].p = p;
             args[j].random_probabilities = random_probabilities[j];

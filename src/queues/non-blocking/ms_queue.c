@@ -33,8 +33,8 @@ typedef struct node_t
 typedef struct queue_t
 {
     // Needs to be atomic, these pointers will be accessed from multiple threads.
-    node_pointer_t _Atomic head;
-    node_pointer_t _Atomic tail;
+    DOUBLE_CACHE_ALIGNED node_pointer_t _Atomic head;
+    DOUBLE_CACHE_ALIGNED node_pointer_t _Atomic tail;
 } queue_t;
 
 thread_local node_t* node_pool;

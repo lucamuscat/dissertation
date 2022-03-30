@@ -12,8 +12,8 @@ typedef struct node_t
 
 typedef struct valois_queue_t
 {
-    node_t* _Atomic head;
-    node_t* _Atomic tail;
+    DOUBLE_CACHE_ALIGNED node_t* _Atomic head;
+    DOUBLE_CACHE_ALIGNED node_t* _Atomic tail;
 } valois_queue_t;
 
 thread_local node_t* node_pool;
@@ -89,8 +89,13 @@ bool enqueue(void* in_queue, void* in_item)
          * CAS causes every other enqueuing thread's CAS to fail.
         */
         if (atomic_compare_exchange_strong(&p->next, &null_ptr, q))
-            // until CAS
-            break;
+        {
+            // The tail is only a hint to the location of the last item in the queue. 
+            // This CAS returns true iff there are no contending enqueuers, or the enqueuing
+            // thread is the first thread to pass the doorway.
+            atomic_compare_exchange_strong(&queue->tail, &oldp, q);
+            return true;
+        }
         // Recall that in stdatomic.h (and in the intel64 instruction set),
         // when atomic_compare_exchange_strong returns false, the second parameter
         // is set to the value of the first. 
@@ -101,12 +106,6 @@ bool enqueue(void* in_queue, void* in_item)
         p = null_ptr; // null_ptr = p->next
         null_ptr = NULL;
     }
-    // The tail is only a hint to the location of the last item in the queue. 
-    // This CAS returns true iff there are no contending enqueuers, or the enqueuing
-    // thread is the first thread to pass the doorway.
-    atomic_compare_exchange_strong(&queue->tail, &oldp, q);
-    return true;
-
 }
 
 bool dequeue(void* in_queue, void** out_item)
@@ -119,21 +118,16 @@ bool dequeue(void* in_queue, void** out_item)
         if (old_node->next == NULL)
             return false;
         if (atomic_compare_exchange_weak(&queue->head, &old_node, old_node->next))
-            break;
+        {
+            // Recall that old_node = queue->head on CAS failure.
+            // Spurious failures (ie. CAS returning false even when &queue->head == &old_node)
+            // will not cause any serious errors.
+            old_node = atomic_load(&old_node->next);
+            *out_item = old_node->value;
+            return true;
+        }
         // Potentially employ backoff schemes        
     }
-
-    // do
-    // {
-    //     if (old_node->next == NULL)
-    //         return false;
-    //     // Recall that old_node = queue->head on CAS failure.
-    //     // Spurious failures (ie. CAS returning false even when &queue->head == &old_node)
-    //     // will not cause any serious errors.
-    // } while (!atomic_compare_exchange_weak(&queue->head, &old_node, old_node->next));
-    old_node = atomic_load(&old_node->next);
-    *out_item = old_node->value;
-    return true;
 }
 
 void destroy_queue(void** out_queue)

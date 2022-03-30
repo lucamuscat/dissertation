@@ -80,16 +80,6 @@ void p_handle_args(int argc, char** argv, size_t* num_of_threads, size_t* delay_
 
 int main(int argc, char** argv)
 {
-    /*
-    int retval;
-    if ((retval = PAPI_library_init(PAPI_VER_CURRENT)) != PAPI_VER_CURRENT)
-    {
-        PAPI_perror("");
-        return EXIT_FAILURE;
-    }
-    */
-
-    // PASS_LOG(PAPI_thread_init((unsigned long (*)(void)) (pthread_self)) == PAPI_OK, "PAPI_thread_init failed");
     size_t num_of_threads, delay_ns;
     double p;
     p_handle_args(argc, argv, &num_of_threads, &delay_ns, &p);

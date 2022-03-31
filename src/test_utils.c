@@ -271,6 +271,7 @@ void display_readings(readings_t* aggregated_readings)
     const double stdev_nano_seconds = aggregated_readings->nano_seconds[1];
 
     printf("%f, %f, ", mean_cycles, mean_nano_seconds);
+    printf("%f, ", (mean_nano_seconds * TEST_ITERATIONS) / 1e9);
     printf("%f, %f, ", stdev_cycles, stdev_nano_seconds);
     printf("%f, %f", stdev_cycles / mean_cycles, stdev_nano_seconds / mean_nano_seconds);
 }

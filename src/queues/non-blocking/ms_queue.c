@@ -148,9 +148,9 @@ bool dequeue(void* in_queue, void** out_item)
     {
         head = atomic_load(&queue->head);
         node_pointer_t tail = atomic_load(&queue->tail);
-        node_pointer_t next = head.ptr->next;
         if (equals(head, atomic_load(&queue->head)))
         {
+            node_pointer_t next = atomic_load(&head.ptr->next);
             if (head.ptr == tail.ptr)
             {
                 if (next.ptr == NULL)

@@ -125,7 +125,11 @@ bool enqueue(void* in_queue, void* in_item)
                 // TODO: Check if performance boost is gained when using
                 // atomic_compare_exchange_weak inside of a while loop.
                 if (atomic_compare_exchange_strong(&tail.ptr->next, &next, new_ptr))
-                    break;
+                {
+                    node_pointer_t new_ptr = { node, tail.count + 1 };
+                    atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
+                    return true;
+                }
             }
             else
             {
@@ -134,9 +138,6 @@ bool enqueue(void* in_queue, void* in_item)
             }
         }
     }
-    node_pointer_t new_ptr = { node, tail.count + 1 };
-    atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
-    return true;
 }
 
 bool dequeue(void* in_queue, void** out_item)

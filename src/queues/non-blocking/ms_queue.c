@@ -111,15 +111,14 @@ bool enqueue(void* in_queue, void* in_item)
     atomic_init(&node->next, null_node);
 
     node_pointer_t tail;
-    node_pointer_t next;
     
     while (true) // loop
     {
         // Check if the memory ordering can be weakened safely.
         tail = atomic_load(&queue->tail);
-        next = atomic_load(&tail.ptr->next);
         if (equals(tail, atomic_load(&queue->tail)))
         {
+            node_pointer_t next = atomic_load(&tail.ptr->next);
             if (next.ptr == NULL)
             {
                 node_pointer_t new_ptr = { node, next.count + 1 };

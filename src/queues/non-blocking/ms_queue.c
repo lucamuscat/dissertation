@@ -6,7 +6,30 @@
 #include "../queue.h"
 #include "../../test_utils.h"
 
-// Implemented following https://github.com/cagao/LockFree/blob/master/MichaelScottLockFreeQueue.cpp
+// Implemented following 
+
+/**
+ *  Sources [1, 2, 3] implement the Michael Scott Lock-Free queue in C++, whilst
+ *  [4] implements it in C.
+ *
+ *  [1, 2, 4] all make use of double-width compare and swap operations, however, Chaoran
+ *  moved away from using the double-width compare and swap operation, and adopted hazard pointers
+ *  as a means of protecting against the ABA problem.
+ *
+ *  The Boost Lock-Free library implements the Michael-Scott queue as its MPMC
+ *  lock-free queue [3]. The authors were able to implement the queue using single
+ *  compare and swaps by placing the version-counter inside of the least significant
+ *  16 bits of their pointers.
+ *
+ *  Aligning the head and tail pointers to double the size of the cache line led
+ *  to a 3x speedup, presumably due to reduced false sharing. This technique is
+ *  used inside of [2, 3, 4].
+ *
+ *  https://github.com/cagao/LockFree/blob/master/MichaelScottLockFreeQueue.cpp [1]
+ *  https://github.com/pramalhe/ConcurrencyFreaks/blob/master/CPP/queues/MichaelScottQueue.hpp [2]
+ *  https://www.boost.org/doc/libs/1_78_0/boost/lockfree/queue.hpp [3]
+ *  https://github.com/chaoran/fast-wait-free-queue/commit/56a83e14c0b6ec1f65db70b6aa31474096255697 [4]
+ */
 
 // The lock-free MS queue makes use of a counter to reduce the chances of the
 // ABA problem occuring.
@@ -26,8 +49,8 @@ typedef struct node_pointer_t
 
 typedef struct node_t
 {
-    void* value;
     struct node_pointer_t _Atomic next;
+    void* value;
 } node_t;
 
 typedef struct queue_t

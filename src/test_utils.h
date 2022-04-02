@@ -2,12 +2,13 @@
 #define TEST_UTILS_H
 
 #define CPU_GHZ 2.6
-// 10^8 test iterations
-#define TEST_ITERATIONS 100000000LL
+// 10^7 test iterations
+#define TEST_ITERATIONS 10000000LL
 // 10^6 warm up iterations.
 #define WARMUP_ITERATIONS 1000000LL
-#define TEST_RERUNS 5
+#define TEST_RERUNS 10
 #define NANO_TO_MINUTE 1000000000*60
+#define LIKELY(x) __builtin_expect((x), 1)
 
 /**
 

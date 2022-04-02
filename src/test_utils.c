@@ -265,13 +265,13 @@ readings_t* aggregate_readings_2d(readings_t** readings, size_t N_x, size_t N_y)
 
 void display_readings(readings_t* aggregated_readings)
 {
-    const double mean_cycles = aggregated_readings->cycles[0];
-    const double stdev_cycles = aggregated_readings->cycles[1];
+    //const double mean_cycles = aggregated_readings->cycles[0];
+    //const double stdev_cycles = aggregated_readings->cycles[1];
     const double mean_nano_seconds = aggregated_readings->nano_seconds[0];
     const double stdev_nano_seconds = aggregated_readings->nano_seconds[1];
 
-    printf("%f, %f, ", mean_cycles, mean_nano_seconds);
+    printf("%f, ", mean_nano_seconds);
     printf("%f, ", (mean_nano_seconds * TEST_ITERATIONS) / 1e9);
-    printf("%f, %f, ", stdev_cycles, stdev_nano_seconds);
-    printf("%f, %f", stdev_cycles / mean_cycles, stdev_nano_seconds / mean_nano_seconds);
+    printf("%f, ", stdev_nano_seconds);
+    printf("%f", stdev_nano_seconds / mean_nano_seconds);
 }

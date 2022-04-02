@@ -15,3 +15,5 @@ build/**
 **/.ipynb_checkpoints
 **/dissertation_packages
 *.pdf
+src/utils/benchmarks/*
+src/utils/readings/*

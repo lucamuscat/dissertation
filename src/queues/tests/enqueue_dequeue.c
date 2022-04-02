@@ -27,6 +27,8 @@
  * https://web.eece.maine.edu/~vweaver/papers/papi/papi_v5_changes.pdf §13.17
  */
 
+// Needed for setting thread affinity
+#define _GNU_SOURCE
 #include <papi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,6 +36,7 @@
 #include <pthread.h>
 #include <assert.h>
 #include <stdatomic.h>
+#include "../../affinity_utils.h"
 #include "../../test_utils.h"
 #include "../queue.h"
 
@@ -49,18 +52,11 @@ typedef struct thread_args
     pthread_t tid;
 } CACHE_ALIGNED /* Align to cache to avoid false sharing */ thread_args;
 
-/*
- * TODO:
-    1. Measure misaligned memory access counters.
- *
- * Should I be measuring the mean, or the median? 
-*/
 void* thread_fn(void* in_args)
 {
     thread_args* args = in_args;
     void* dequeued_item = NULL;
     int enqueued_item = 10;
-    
     register_thread(args->num_of_iterations + args->num_of_warm_up_iterations);
     pthread_barrier_wait(&barrier);
     for (size_t i = 0; i < args->num_of_warm_up_iterations; ++i)
@@ -98,7 +94,7 @@ void* thread_fn(void* in_args)
 }
 
 int main(int argc, char** argv)
-{
+{    
     size_t num_of_threads, delay_ns;
     handle_queue_args(argc, argv, &num_of_threads, &delay_ns);
 
@@ -127,7 +123,9 @@ int main(int argc, char** argv)
             args[j].num_of_warm_up_iterations = WARMUP_ITERATIONS/num_of_threads;
             args[j].num_of_iterations = iterations_per_thread(num_of_threads, j, TEST_ITERATIONS);
             accumulated_iterations += args[j].num_of_iterations;
-            pthread_create(&args[j].tid, NULL, thread_fn, &args[j]);
+
+            pthread_attr_t attr = create_thread_affinity_attr(j);
+            pthread_create(&args[j].tid, &attr, thread_fn, &args[j]);
         }
 
         // Sanity check; Ensure that the total iterations match up.
@@ -146,7 +144,7 @@ int main(int argc, char** argv)
 
     printf("\n\"%s\", %zu, %zu, ", get_queue_name(), num_of_threads, delay_ns);
     display_readings(aggregates);
-    printf(", %lld\n", total_run_time_ns);
+    printf(", %lld", total_run_time_ns);
 
     // for (size_t i = 0; i < num_of_threads; ++i)
     // {

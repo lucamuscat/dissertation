@@ -1,19 +1,22 @@
 #!/bin/bash
 
-# Switch off hyper-threading
-# https://askubuntu.com/a/1168248
-sudo echo off > /sys/devices/system/cpu/smt/control
+# $1 - Name of enqueue_dequeue benchmark binary to run
+# $2 - Comment to leave in the index
 
-# Disable CPU Frequency scaling
-# https://askubuntu.com/a/580785
-sudo cpufreq-set -g performance
+current_epoch=$EPOCHSECONDS
+dir_path=src/utils/readings/$1
 
-# Disable intel turbo
-# https://askubuntu.com/a/620114
-sudo echo "1" > /sys/devices/system/cpu/intel_pstate/no_turbo
+mkdir -p $dir_path
 
-for i in 1 2 3 4
+file_name=$dir_path/$current_epoch.csv
+
+echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_ns" > $file_name
+echo "$current_epoch: $2" | tee -a src/utils/readings/index.txt
+
+for num_of_threads in $(seq 4)
 do
-    echo "Threads: $i"
-    ./build/blocking_linked_queue_pthread_lock $i >> enqueue_dequeue_results.csv
+    for reruns in $(seq 5)
+    do
+    ./build/nonblocking_$1 $num_of_threads 100 | tee -a $file_name
+    done
 done

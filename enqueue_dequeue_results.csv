@@ -1,0 +1,10 @@
+name,num_of_threads,average_cycles,average_ns,total_run_time_ns
+"Circular Buffer Kernel Lock", 1, 75.503432, 29.130384, 291359503380
+"Circular Buffer Kernel Lock", 2, 394.100553, 152.040303, 1536443589578
+"Circular Buffer Kernel Lock", 3, 954.351323, 368.192699, 3758881699483
+"Circular Buffer Kernel Lock", 4, 2135.587288, 823.918985, 8267668619955
+"Circular Buffer Filter Lock", 1, 117.586120, 45.365750, 453710663947
+"Circular Buffer Filter Lock", 2, 1495.604252, 577.008395, 5770145106512
+"Circular Buffer Filter Lock", 3, 2401.995402, 926.694669, 9268377575722
+"Circular Buffer Filter Lock", 4, 4573.540850, 1764.486851, 17648201112745
+

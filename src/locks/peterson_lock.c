@@ -12,12 +12,12 @@ typedef struct peterson_lock_t
 
 #define P_LOCK ((peterson_lock_t*)lock)
 
-int create_lock(void** lock)
+bool create_lock(void** lock)
 {
     peterson_lock_t** temp = (peterson_lock_t**)lock;
     *temp = (peterson_lock_t*)malloc(sizeof(peterson_lock_t));
     (*temp)->flag = calloc(2, sizeof(bool));
-    return 0;
+    return true;
 }
 
 #define P_LOCK ((peterson_lock_t*)lock)
@@ -33,7 +33,12 @@ void wait_lock(void* lock)
     while (P_LOCK->flag[j] && P_LOCK->victim == i) {}; // wait
 }
 
-void free_lock(void* lock){/**/}
+void destroy_lock(void** in_lock)
+{
+    peterson_lock_t** lock = (peterson_lock_t**)in_lock;
+    free((*lock)->flag);
+    free(*lock);
+}
 
 void unlock(void* lock)
 {
@@ -44,4 +49,9 @@ void unlock(void* lock)
     int me = omp_get_thread_num();
     P_LOCK->flag[me] = false;
     asm("mfence");
+}
+
+char* get_lock_name()
+{
+    return "Peterson";
 }

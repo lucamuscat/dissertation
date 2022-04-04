@@ -10,20 +10,20 @@
 
 typedef struct spin_lock_t
 {
-    atomic_flag busy;
+    __attribute__((aligned(64))) atomic_flag busy;
 } spin_lock_t;
 
-int create_lock(void** lock)
+bool create_lock(void** lock)
 {
     *lock = malloc(sizeof(spin_lock_t));
     if (*lock == NULL)
-        return errno;
+        return false;
     atomic_flag_clear(&P_LOCK->busy);
-    return 0;
+    return true;
 }
-void free_lock(void* lock)
+void destroy_lock(void** lock)
 {
-    //free(lock);
+    free(*lock);
 }
 
 void wait_lock(void* lock)
@@ -36,4 +36,11 @@ void unlock(void* lock)
 {
     atomic_flag_clear_explicit(&(P_LOCK->busy), memory_order_release);
 }
+
+
+char* get_lock_name()
+{
+    return "TAS";
+}
+
 #endif

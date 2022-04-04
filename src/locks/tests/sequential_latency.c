@@ -6,18 +6,15 @@
 #include <papi.h>
 #include "../lock.h"
 #include "../globals.h"
-#include "./test_utils.h"
+#include "../../test_utils.h"
 
 #define CLOCK_ID CLOCK_REALTIME
 #define ITERATIONS 1000
 #define INNER_ITERATIONS 1000
 #define NAME_OF_LOCK "Lock"
 
-int main(int argc, char** argv)
+int main()
 {
-    int num_of_threads = handle_args(argc, argv);
-    if (num_of_threads == -1)
-        return -1;
     void* lock;
     create_lock(&lock);
     long long diff_time = 0, time = 0;
@@ -37,11 +34,11 @@ int main(int argc, char** argv)
     time /= ITERATIONS;
     #ifndef DEBUG
     // Output csv results
-    printf("%s, %d, %lld\n", argv[0], num_of_threads, time);
+    printf("%s, %lld\n", get_lock_name(), time);
     #else
-    DEBUG_LOG_F("===============%s===============", argv[0]);
-    DEBUG_LOG_F("\nNumber of threads: %d, ", omp_get_max_threads());
+    DEBUG_LOG_F("===============%s===============", get_lock_name());
     DEBUG_LOG_F("\nAverage Number of Cycles: %lld\n\n", time);
     #endif
+    destroy_lock(&lock);
     return 0;
 }

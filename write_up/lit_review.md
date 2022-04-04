@@ -91,6 +91,12 @@ $\text{Modified Data Sharing Ratio} = \frac{\text{EXT\_SNOOP.ALL\_AGENTS.HITM}}{
 # PAPI performance measurement library.
 PAPI is a performance measurement library that offer abstractions to accessing hardware counters [http://icl.cs.utk.edu/papi/]. PAPI offers both a low and a high level API [http://icl.cs.utk.edu/papi/docs/] that offer varying levels of granularity of control over several different types of measurements. Utility commands are provided to aid with the adoption of this tool; most notably, it comes with a script that measures the latency of each of its performance measuring functions. PAPI follows a modular design philosophy, this is evident in its 'Components' [http://icl.cs.utk.edu/papi/docs/d9/dc0/component_readme.html] feature where users are able to install adapters for hardware counters that are not supported out of the box (for instance, GPU hardware counters, CPU temperature counters, and so on).
 
+`papi_native_avail` can be used to find all the native hardware counters on the system. The names are a one-to-one mapping of what you would find inside intel's manuals; if a counter does not show up in the command, that means that it does not exist on the system.
+
+## [New Features in the PAPI 5.0 Release](https://web.eece.maine.edu/~vweaver/papers/papi/papi_v5_changes.pdf) §13.17
+> PAPI is full of assumptions that MHz is fixed. The PAPI get virt cycles() and PAPI get real cycles()
+> calls just multiply time by MHz for example.
+
 # Art of Multiprocessor Programming - Herlihy
 * A text book that helps with obtaining a fundemental understanding of the theoretical and practical side of parallel programming.
 
@@ -108,7 +114,9 @@ This paper introduces a new methodology for tuning performance and critical sect
 # Implementing Lock-Free Queues [@valois1994implementing]
 Valois covers multiple lock-free queue implementations using linked lists, noting that most of the algorithms can be implemented using the Compare and Swap atomic primitive. Valois notes that the algorithms that make use of the CAS atomic primitive suffer from the ABA problem. 
 
-Valois proposed the safe read protocol, which was a solution to the ABA problem that did not require stronger versions of CAS (such as DCAS) primitive. A new lock free queue that made use of  arrays and CAS was also proposed. The novel lock-free queue outperformed most lock-based queues both sequentially and under contention. Valois measures the performance of each lock-free queue with and without protection against the ABA problem, noting that even with the overhead, lock-free queues are still competitive with their lock-based counterparts.
+Valois proposed the safe read protocol, which was a solution to the ABA problem that did not require stronger versions of CAS (such as DCAS) primitive. Not by design, the safe read protocol contained a number of race conditions, which have been discovered, and fixed by Michael and Scott [source](https://www.cs.rochester.edu/u/scott/papers/1995_TR599.pdf).
+
+A new lock free queue that made use of arrays and CAS was also proposed. The novel lock-free queue outperformed most lock-based queues both sequentially and under contention. Valois measures the performance of each lock-free queue with and without protection against the ABA problem, noting that even with the overhead, lock-free queues are still competitive with their lock-based counterparts.
 
 Most notably, Valois measured the performance of each queue affected by random delay. Valois did this by simulating a delay of a random amount of cycles following an exponential distribution with a mean of 1000 cycles and a 10% chance of occuring. The results showed that the response time of the lock-free implementations were approximately 17% of that of the spin lock protected queues, highlighting the superiority of lock-based algorithms. The massive difference in performance was attributed to the blocking nature of the spin lock, noting that a delayed spin lock not only affected the current operation, but also the other pending critical sections.
 

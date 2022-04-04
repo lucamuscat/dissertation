@@ -1,8 +1,10 @@
 #ifndef LOCK_H
 #define LOCK_H
 
-int create_lock(void** lock);
-void free_lock(void*);
+#include <stdbool.h>
+
+bool create_lock(void** lock);
+void destroy_lock(void** lock);
 
 // Code design question: Should all the methods be grouped in a single header
 // ex. wait_lock_atomic, wait_lock_stm, wait_lock_membar
@@ -14,5 +16,13 @@ void free_lock(void*);
 // If already locked, wait
 void wait_lock(void* lock);
 void unlock(void* lock);
+
+/**
+ * @brief Get the name of the lock currently being used. This will be used in each
+ * tests' output.
+ *
+ * @return char* 
+ */
+char* get_lock_name();
 
 #endif

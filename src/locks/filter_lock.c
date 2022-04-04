@@ -16,7 +16,7 @@ typedef struct filter_lock_t
     int num_of_threads;
 } filter_lock_t;
 
-int create_lock(void** lock)
+bool create_lock(void** lock)
 {
     const int num_of_threads = omp_get_max_threads();
     DEBUG_LOG_F("Created lock of size %d\n", num_of_threads);
@@ -27,21 +27,22 @@ int create_lock(void** lock)
         //(*temp)->level = (int*)malloc(sizeof(int) * num_of_threads);
         P_LOCK_2->level = (int*)calloc(num_of_threads, sizeof(int));
         if (P_LOCK_2->level == NULL)
-            return errno;
+            return false;
         // (*temp)->victim = (int*)malloc(sizeof(int) * num_of_threads);
         P_LOCK_2->victim = (int*)calloc(num_of_threads, sizeof(int));
         if (P_LOCK_2->victim == NULL)
-            return errno;
-        return 0;
+            return false;
+        return true;
     }
     return errno;
 }
 
-void free_lock(void* lock)
+void destroy_lock(void** in_lock)
 {
-    free(P_LOCK->level);
-    free(P_LOCK->victim);
-    free(P_LOCK);
+    filter_lock_t** lock = (filter_lock_t**)in_lock;
+    free((*lock)->level);
+    free((*lock)->victim);
+    free(*lock);
 }
 
 void wait_lock(void* lock)
@@ -75,4 +76,9 @@ void unlock(void* lock)
 {
     FULL_BARRIER;
     P_LOCK->level[omp_get_thread_num()] = 0;
+}
+
+char* get_lock_name()
+{
+    return "Filter";
 }

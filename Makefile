@@ -4,7 +4,7 @@ SHELL=bash
 # lock over here
 LOCK_NAMES = pthread_lock spin_lock ttas_lock
 BLOCKING_QUEUE_NAMES = linked_queue
-NONBLOCKING_QUEUE_NAMES = ms_queue valois_queue
+NONBLOCKING_QUEUE_NAMES = ms_queue valois_queue baskets_queue
 
 ifdef DEBUG
 DEBUG_FLAGS = -DDEBUG -g
@@ -62,6 +62,9 @@ clean:
 sequential_latency_tests: $(foreach LOCK_NAME, $(LOCK_NAMES), sequential_latency_$(LOCK_NAME)_test)
 lock_contention_tests: $(foreach LOCK_NAME, $(LOCK_NAMES), lock_contention_$(LOCK_NAME)_test)
 
+tagged_ptr_test: init_build_folder
+	$(CXX) $(QUEUES_DIR)/tests/tagged_ptr_test.c -g -O3 $(ERROR_FLAGS) -o $(OUTPUT_DIR)/tagged_ptr_test
+
 init_build_folder:
 	mkdir -p $(OUTPUT_DIR)
 
@@ -96,7 +99,6 @@ enqueue_dequeue_blocking_%_test: init_build_folder
 
 enqueue_dequeue_nonblocking_%_test: init_build_folder
 	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) -o $(OUTPUT_DIR)/nonblocking_$* $(DEBUG_FLAGS) $(ERROR_FLAGS)
-
 
 p_enqueue_dequeue_blocking_%_test: init_build_folder
 	for i in $(LOCK_FILES); \

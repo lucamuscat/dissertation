@@ -67,7 +67,6 @@ typedef struct delay_t
     size_t num_of_nops;
 } delay_t;
 
-
 void _delay(size_t ns);
 void calibrate_delay(delay_t* out_delay, size_t expected_delay_ns);
 

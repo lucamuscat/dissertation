@@ -58,8 +58,8 @@ bool create_queue(void** out_queue)
 
     create_sentinel_node();
 
-    atomic_init(&(*queue)->head, sentinel);
-    atomic_init(&(*queue)->tail, sentinel);
+    atomic_store(&(*queue)->head, sentinel);
+    atomic_store(&(*queue)->tail, sentinel);
     return true;
 }
 /* Sources: 
@@ -76,7 +76,7 @@ bool enqueue(void* in_queue, void* in_item)
     node_t* q;
     create_node(&q);
     q->value = in_item;
-    atomic_init(&q->next, NULL);
+    atomic_store(&q->next, NULL);
 
     node_t* p = atomic_load(&queue->tail);
     node_t* oldp = p;

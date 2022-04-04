@@ -78,8 +78,8 @@ bool create_queue(void** out_queue)
     create_sentinel_node();
 
     pointer_t sentinel_ptr = { sentinel, 0, false };
-    atomic_init(&(*queue)->head, sentinel_ptr);
-    atomic_init(&(*queue)->tail, sentinel_ptr);
+    atomic_store(&(*queue)->head, sentinel_ptr);
+    atomic_store(&(*queue)->tail, sentinel_ptr);
     return true;
 }
 

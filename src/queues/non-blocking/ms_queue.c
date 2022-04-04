@@ -92,7 +92,7 @@ inline void create_sentinel_node()
     sentinel = (node_t*)calloc(1, sizeof(node_t));
     node_pointer_t null_node = { NULL, 0 };
     assert(atomic_is_lock_free(&sentinel->next));
-    atomic_init(&sentinel->next, null_node);
+    atomic_store(&sentinel->next, null_node);
 }
 
 // Beware that malloc might not be lock-free, making the algorithm

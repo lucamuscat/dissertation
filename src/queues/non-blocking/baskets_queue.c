@@ -66,7 +66,7 @@ inline void create_sentinel_node()
     sentinel = (node_t*)calloc(1, sizeof(node_t));
     pointer_t null_node = { NULL, false, 0 };
     assert(atomic_is_lock_free(&sentinel->next));
-    atomic_init(&sentinel->next, null_node);
+    atomic_store(&sentinel->next, null_node);
 }
 
 bool create_queue(void** out_queue)

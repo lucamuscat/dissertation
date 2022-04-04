@@ -94,8 +94,6 @@ bool enqueue(void* in_queue, void* in_item)
     node_t* nd;
     create_node(&nd);
     nd->value = in_item;
-    pointer_t null_ptr = { NULL, false, 0 };
-    atomic_init(&nd->next, null_ptr);
 
     while (true)
     {
@@ -114,8 +112,7 @@ bool enqueue(void* in_queue, void* in_item)
                     atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
                     return true;
                 }
-
-                next = atomic_load(&tail.ptr->next);
+                // next = tail.ptr->next is done implicitly by CAS on failure
                 while ((next.tag == tail.tag + 1) && !next.deleted)
                 {
                     // backoff scheme
@@ -133,9 +130,12 @@ bool enqueue(void* in_queue, void* in_item)
                     next_next = atomic_load(&next.ptr->next);
                     // You can only break out of E20 if next.ptr->next.ptr == NULL
                     // or Q->tail != tail
-                    if (next_next.ptr == NULL || !equals(atomic_load(&queue->tail), tail))
-                        break;
-                    next = next_next;
+                    if (next_next.ptr != NULL && equals(atomic_load(&queue->tail), tail))
+                    {
+                        next = next_next;
+                        continue;
+                    }
+                    break;
                 }
                 pointer_t new_tail = { next.ptr, 0, tail.tag + 1 };
                 atomic_compare_exchange_strong(&queue->tail, &tail, new_tail);
@@ -147,32 +147,16 @@ bool enqueue(void* in_queue, void* in_item)
 // A constant defined in the paper
 #define MAX_HOPS 3
 
-
-void free_chain(queue_t* q, pointer_t* head, pointer_t* new_head)
-{
-    pointer_t new_ptr = { new_head->ptr, false, head->tag + 1 };
-    if (atomic_compare_exchange_strong(&q->head, head, new_ptr))
-    {
-        pointer_t next;
-        while (head->ptr != new_head->ptr)
-        {
-            next = atomic_load(&head->ptr->next);
-            // reclaim the head pointer
-            *head = next;
-        }
-    }
-}
-
 bool dequeue(void* in_queue, void** out_item)
 {
     queue_t* queue = (queue_t*)in_queue;
     while (true)
     {
         pointer_t head = atomic_load(&queue->head);
-        pointer_t tail = atomic_load(&queue->tail);
-        pointer_t next = atomic_load(&head.ptr->next);
         if (equals(head, atomic_load(&queue->head)))
         {
+            pointer_t tail = atomic_load(&queue->tail);
+            pointer_t next = atomic_load(&head.ptr->next);
             if (head.ptr == tail.ptr)
             {
                 if (next.ptr == NULL)
@@ -181,9 +165,12 @@ bool dequeue(void* in_queue, void** out_item)
                 while (true) // D09
                 {
                     next_next = atomic_load(&next.ptr->next);
-                    if (next_next.ptr == NULL || !equals(atomic_load(&queue->tail), tail))
-                        break;
-                    next = next_next; // D10
+                    if (next_next.ptr != NULL && equals(atomic_load(&queue->tail), tail))
+                    {
+                        next = next_next; // D10
+                        continue;
+                    }
+                    break;
                 }
                 pointer_t new_tail = { next.ptr, false, tail.tag + 1 };
                 atomic_compare_exchange_strong(&queue->tail, &tail, new_tail);
@@ -202,7 +189,10 @@ bool dequeue(void* in_queue, void** out_item)
                     continue;
                 else if (iter.ptr == tail.ptr)
                 {
-                    free_chain(queue, &head, &iter);
+                    // free chain without memory reclamation
+                    pointer_t new_ptr = { iter.ptr, false, head.tag + 1 };
+                    atomic_compare_exchange_strong(&queue->head, &head, new_ptr);
+                    //free_chain(queue, &head, &iter);
                 }
                 else
                 {
@@ -211,7 +201,10 @@ bool dequeue(void* in_queue, void** out_item)
                     if (atomic_compare_exchange_strong(&iter.ptr->next, &next, new_ptr))
                     {
                         if (hops >= MAX_HOPS)
-                            free_chain(queue, &head, &next);
+                        {
+                            pointer_t new_ptr = { next.ptr, false, head.tag + 1 };
+                            atomic_compare_exchange_strong(&queue->head, &head, new_ptr);
+                        }
                         *out_item = value;
                         return true;
                     }

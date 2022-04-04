@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 
-#define PHYSICAL_CORES 4
+#define PHYSICAL_CORES 8
 
 inline pthread_attr_t create_thread_affinity_attr(size_t index)
 {

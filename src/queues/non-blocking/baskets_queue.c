@@ -78,8 +78,8 @@ bool create_queue(void** out_queue)
     create_sentinel_node();
 
     pointer_t sentinel_ptr = { sentinel, 0, false };
-    atomic_init(&(*queue)->head, sentinel_ptr);
-    atomic_init(&(*queue)->tail, sentinel_ptr);
+    atomic_store(&(*queue)->head, sentinel_ptr);
+    atomic_store(&(*queue)->tail, sentinel_ptr);
     return true;
 }
 
@@ -153,10 +153,11 @@ bool dequeue(void* in_queue, void** out_item)
     while (true)
     {
         pointer_t head = atomic_load(&queue->head);
+        pointer_t tail = atomic_load(&queue->tail);
+        pointer_t next = atomic_load(&head.ptr->next);
+
         if (equals(head, atomic_load(&queue->head)))
         {
-            pointer_t tail = atomic_load(&queue->tail);
-            pointer_t next = atomic_load(&head.ptr->next);
             if (head.ptr == tail.ptr)
             {
                 if (next.ptr == NULL)

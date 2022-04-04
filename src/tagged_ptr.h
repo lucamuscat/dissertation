@@ -11,24 +11,35 @@
 // (1L<<48L)-1, zeros out the 16 most significant bits.
 #define PTR_MASK 0xffffffffffffUL
 #define TAG_BITS 16
+#define TAG_POS 15
 #define PTR_BITS 48
+#define UINT15T_MASK 0x7fff
 
 typedef uintptr_t tagged_ptr_t;
 
-inline void* extract_ptr(volatile tagged_ptr_t i)
-{
-    return (void*)(i & PTR_MASK);
-}
+#define extract_ptr(ptr) ((void*)(ptr & PTR_MASK))
+#define extract_tag(ptr) ((uint16_t)(ptr >> PTR_BITS))
+#define pack_ptr(ptr, tag) (((uintptr_t)ptr) | ((uint64_t)tag << PTR_BITS))
 
-inline tagged_ptr_t extract_tag(volatile tagged_ptr_t i)
-{
-    // Shift the by 48 to move the 16 MSBs to the LSBs
-    return (uint16_t)(i >> PTR_BITS);
-}
+// tag % UINT15T_MASK makes sure that a 16 bit unsigned int's overflow/wrap
+// around behaviour is the same as that of a 15 bit unsigned int
 
-inline tagged_ptr_t pack_ptr(volatile void* ptr, uint16_t tag)
-{
-    return ((uintptr_t)ptr) | ((uint64_t)tag << PTR_BITS);
-}
+/**
+ * @brief Create a tagged_ptr_t with a boolean flag and a 15 bit counter
+ * 
+ */
+#define pack_ptr_with_flag(ptr, tag, flag) (((uintptr_t)ptr) | (((uint64_t)((tag % (UINT15T_MASK)) | (((uint16_t)flag) << TAG_POS))) << PTR_BITS))
+
+/**
+ * @brief Extract the flag from a tagged_ptr with a flag.
+ * Assumes that the tagged_ptr was created using pack_ptr_with_flag
+ */
+#define extract_flag(ptr) ((bool)(ptr >> 63))
+
+/**
+ * @brief Extract a tag from a tagged_ptr that was created using pack_ptr_with_flag
+ * 
+ */
+#define extract_flagged_tag(i) ((uint16_t)((i >> PTR_BITS) & UINT15T_MASK))
 
 #endif

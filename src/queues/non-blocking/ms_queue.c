@@ -5,6 +5,7 @@
 #include <threads.h>
 #include "../queue.h"
 #include "../../test_utils.h"
+#include "../../tagged_ptr.h"
 
 // Implemented following 
 
@@ -38,26 +39,18 @@
 // is still a possibility of this occurring.
 
 struct node_t;
-struct node_pointer_t;
-
-typedef struct node_pointer_t
-{
-    struct node_t* ptr;
-    uint64_t count;
-} DWCAS_ALIGNED node_pointer_t;
-// Align to 16 bytes to ensure that cmpxcgh16b is used.
 
 typedef struct node_t
 {
-    struct node_pointer_t _Atomic next;
+    tagged_ptr_t _Atomic next;
     void* value;
 } node_t;
 
 typedef struct queue_t
 {
     // Needs to be atomic, these pointers will be accessed from multiple threads.
-    DOUBLE_CACHE_ALIGNED node_pointer_t _Atomic head;
-    DOUBLE_CACHE_ALIGNED node_pointer_t _Atomic tail;
+    DOUBLE_CACHE_ALIGNED tagged_ptr_t _Atomic head;
+    DOUBLE_CACHE_ALIGNED tagged_ptr_t _Atomic tail;
 } queue_t;
 
 thread_local node_t* node_pool;
@@ -90,7 +83,7 @@ inline void create_node(node_t** out_node)
 inline void create_sentinel_node()
 {
     sentinel = (node_t*)calloc(1, sizeof(node_t));
-    node_pointer_t null_node = { NULL, 0 };
+    tagged_ptr_t null_node = pack_ptr(NULL, 0);
     assert(atomic_is_lock_free(&sentinel->next));
     atomic_store(&sentinel->next, null_node);
 }
@@ -104,10 +97,8 @@ bool create_queue(void** out_queue)
     ASSERT_NOT_NULL(*queue);
 
     create_sentinel_node();
-    // Make sure that double width compare and swap is available on the system
-    // may return false in the case that the compiler does not emit the assembly
-    // instruction directly.
-    node_pointer_t sentinel_ptr = { sentinel, 0 };
+
+    tagged_ptr_t sentinel_ptr = pack_ptr(sentinel, 0);
     atomic_store(&(*queue)->head, sentinel_ptr);
     atomic_store(&(*queue)->tail, sentinel_ptr);
     return true;
@@ -119,44 +110,41 @@ void destroy_queue(void** out_queue)
     free(sentinel);
 }
 
-inline bool equals(node_pointer_t a, node_pointer_t b)
-{
-    return a.count == b.count && a.ptr == b.ptr;
-}
-
 bool enqueue(void* in_queue, void* in_item)
 {
     queue_t* queue = (queue_t*)in_queue;
     node_t* node;
     create_node(&node);
     node->value = in_item;
-    node_pointer_t null_node = { NULL, 0 };
+    tagged_ptr_t null_node = pack_ptr(NULL, 0 );
     atomic_store(&node->next, null_node);
 
-    node_pointer_t tail;
+    tagged_ptr_t tail;
     
     while (true) // loop
     {
         // Check if the memory ordering can be weakened safely.
         tail = atomic_load(&queue->tail);
-        if (equals(tail, atomic_load(&queue->tail)))
+        if (tail == atomic_load(&queue->tail))
         {
-            node_pointer_t next = atomic_load(&tail.ptr->next);
-            if (next.ptr == NULL)
+            node_t* tail_ptr = extract_ptr(tail);
+            tagged_ptr_t next = atomic_load(&tail_ptr->next);
+            if (extract_ptr(next) == NULL)
             {
-                node_pointer_t new_ptr = { node, next.count + 1 };
+                tagged_ptr_t new_ptr = pack_ptr(node, extract_tag(next) + 1);
                 // TODO: Check if performance boost is gained when using
                 // atomic_compare_exchange_weak inside of a while loop.
-                if (atomic_compare_exchange_strong(&tail.ptr->next, &next, new_ptr))
+                if (atomic_compare_exchange_strong(&tail_ptr->next, &next, new_ptr))
                 {
-                    node_pointer_t new_ptr = { node, tail.count + 1 };
+                    // Can be optimized by directly changing new_ptr;
+                    new_ptr = pack_ptr(node, extract_tag(tail) + 1);
                     atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
                     return true;
                 }
             }
             else
             {
-                node_pointer_t new_ptr = { next.ptr, tail.count + 1 };
+                tagged_ptr_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1);
                 atomic_compare_exchange_strong(&queue->tail, &next, new_ptr);
             }
         }
@@ -166,25 +154,30 @@ bool enqueue(void* in_queue, void* in_item)
 bool dequeue(void* in_queue, void** out_item)
 {
     queue_t* queue = (queue_t*)in_queue;
-    node_pointer_t head;
+    tagged_ptr_t head;
     while (true)
     {
         head = atomic_load(&queue->head);
-        node_pointer_t tail = atomic_load(&queue->tail);
-        if (equals(head, atomic_load(&queue->head)))
+        tagged_ptr_t tail = atomic_load(&queue->tail);
+        if (head == atomic_load(&queue->head))
         {
-            node_pointer_t next = atomic_load(&head.ptr->next);
-            if (head.ptr == tail.ptr)
+            node_t* head_ptr = extract_ptr(head);
+            node_t* tail_ptr = extract_ptr(tail);
+
+            tagged_ptr_t next = atomic_load(&head_ptr->next);
+            node_t* next_ptr = extract_ptr(next);
+
+            if (head_ptr == tail_ptr)
             {
-                if (next.ptr == NULL)
+                if (next_ptr == NULL)
                     return false;
-                node_pointer_t new_ptr = { next.ptr, tail.count + 1 };
+                tagged_ptr_t new_ptr = pack_ptr(next_ptr, extract_tag(tail) + 1);
                 atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
             }
             else
             {
-                *out_item = next.ptr->value;
-                node_pointer_t new_ptr = { next.ptr, head.count + 1 };
+                *out_item = next_ptr->value;
+                tagged_ptr_t new_ptr = pack_ptr(next_ptr, extract_tag(head) + 1);
                 if (atomic_compare_exchange_strong(&queue->head, &head, new_ptr))
                     return true;
             }

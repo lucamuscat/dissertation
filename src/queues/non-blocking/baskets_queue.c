@@ -153,10 +153,11 @@ bool dequeue(void* in_queue, void** out_item)
     while (true)
     {
         pointer_t head = atomic_load(&queue->head);
+        pointer_t tail = atomic_load(&queue->tail);
+        pointer_t next = atomic_load(&head.ptr->next);
+
         if (equals(head, atomic_load(&queue->head)))
         {
-            pointer_t tail = atomic_load(&queue->tail);
-            pointer_t next = atomic_load(&head.ptr->next);
             if (head.ptr == tail.ptr)
             {
                 if (next.ptr == NULL)

@@ -108,8 +108,8 @@ bool create_queue(void** out_queue)
     // may return false in the case that the compiler does not emit the assembly
     // instruction directly.
     node_pointer_t sentinel_ptr = { sentinel, 0 };
-    atomic_init(&(*queue)->head, sentinel_ptr);
-    atomic_init(&(*queue)->tail, sentinel_ptr);
+    atomic_store(&(*queue)->head, sentinel_ptr);
+    atomic_store(&(*queue)->tail, sentinel_ptr);
     return true;
 }
 
@@ -131,7 +131,7 @@ bool enqueue(void* in_queue, void* in_item)
     create_node(&node);
     node->value = in_item;
     node_pointer_t null_node = { NULL, 0 };
-    atomic_init(&node->next, null_node);
+    atomic_store(&node->next, null_node);
 
     node_pointer_t tail;
     

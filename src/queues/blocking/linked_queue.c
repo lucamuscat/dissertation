@@ -12,19 +12,20 @@
 #include <stdlib.h>
 #include <threads.h>
 #include <stdint.h>
+#include <stdatomic.h>
 
 typedef struct node_t
 {
-    void* value;
-    struct node_t* next;
+    void* _Atomic value;
+    struct node_t* _Atomic next;
 } node_t;
 
 typedef struct queue
 {
     void* head_lock;
     void* tail_lock;
-    node_t* head; // Head
-    node_t* tail; // Tail/Rear
+    node_t* _Atomic head; // Head
+    node_t* _Atomic tail; // Tail/Rear
 } queue;
 
 thread_local node_t* sentinel;
@@ -49,8 +50,8 @@ void cleanup_thread()
 bool create_node(void* data, node_t** out_node)
 {
     *out_node = &node_pool[++node_counter];
-    (*out_node)->next = NULL;
-    (*out_node)->value = data;
+    atomic_store(&(*out_node)->next, NULL);
+    atomic_store(&(*out_node)->value, data);
     return true;
 }
 
@@ -61,12 +62,12 @@ bool create_queue(void** out_queue)
     queue** temp = (queue**)out_queue;
     node_t* sentinel;
     sentinel = (node_t*)malloc(sizeof(node_t));
-    sentinel->next = NULL;
-    sentinel->value = NULL;
+    atomic_store(&sentinel->next, NULL);
+    atomic_store(&sentinel->value, NULL);
     PASS(create_lock(&(*temp)->head_lock));
     PASS(create_lock(&(*temp)->tail_lock));
-    (*temp)->head = sentinel;
-    (*temp)->tail = sentinel;
+    atomic_store(&(*temp)->head, sentinel);
+    atomic_store(&(*temp)->tail, sentinel);
 
     return true;
 }
@@ -78,30 +79,34 @@ void destroy_queue(void** out_queue)
 
 bool enqueue(void* in_queue, void* in_data)
 {
-    queue* temp = in_queue;
+    queue* queue = in_queue;
     node_t* node; // New node
     create_node(in_data, &node); // New node
-    wait_lock(temp->tail_lock); // Acquire enq lock
-    temp->tail->next = node; // Link node at the end of the linked list
-    temp->tail = node; // Swing tail to node
-    unlock(temp->tail_lock); // Release
+    wait_lock(queue->tail_lock); // Acquire enq lock
+
+    node_t* ltail = atomic_load(&queue->tail);
+    atomic_store(&ltail->next, node);
+    //queue->tail->next = node; // Link node at the end of the linked list
+    atomic_store(&queue->tail, node);
+    //queue->tail = node; // Swing tail to node
+    unlock(queue->tail_lock); // Release
     return true;
 }
 
 bool dequeue(void* in_queue, void** out_data)
 {
-    queue* temp = in_queue;
-    wait_lock(temp->head_lock);
-    node_t* node = temp->head;
-    node_t* new_head = node->next;
+    queue* queue = in_queue;
+    wait_lock(queue->head_lock);
+    node_t* node = atomic_load(&queue->head);
+    node_t* new_head = atomic_load(&node->next);
     if (new_head == NULL)
     {
-        unlock(temp->head_lock);
+        unlock(queue->head_lock);
         return false;
     }
-    *out_data = new_head->value;
-    temp->head = new_head;
-    unlock(temp->head_lock);
+    *out_data = atomic_load(&new_head->value);
+    atomic_store(&queue->head, new_head);
+    unlock(queue->head_lock);
     //free(node);
     return true;
 }

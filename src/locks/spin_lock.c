@@ -4,6 +4,7 @@
 #include <stdatomic.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <immintrin.h>
 #include "lock.h"
 
 #define P_LOCK ((spin_lock_t*)lock)
@@ -29,7 +30,10 @@ void destroy_lock(void** lock)
 void wait_lock(void* lock)
 {
     // If test & set returns 0 => the current thread locked the thread.
-    while (atomic_flag_test_and_set_explicit(&(P_LOCK->busy), memory_order_acquire));
+    while (atomic_flag_test_and_set_explicit(&(P_LOCK->busy), memory_order_acquire))
+    {
+        _mm_pause();
+    }
 }
 
 void unlock(void* lock)

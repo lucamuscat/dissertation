@@ -157,6 +157,8 @@ void destroy_readings(readings_t** readings);
 #define DOUBLE_CACHE_LINE_SIZE 128
 #define DWCAS_ALIGNMENT 16
 #define CACHE_ALIGNED __attribute__((aligned(CACHE_LINE_SIZE)))
+#define PAD_TO_CACHELINE(type_of_previous_field) (CACHE_LINE_SIZE - sizeof(type_of_previous_field))
+
 /**
  * https://stackoverflow.com/q/29199779 - [1]
  * Intel Optimization Manual Order Number: 248966-045 Feb 2022 - [2]

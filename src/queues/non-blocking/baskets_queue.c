@@ -28,9 +28,12 @@ typedef struct queue_t
     DOUBLE_CACHE_ALIGNED pointer_t _Atomic head;
 } queue_t;
 
-thread_local node_t* node_pool;
-thread_local int node_count;
 thread_local node_t* sentinel;
+thread_local char pad1[PAD_TO_CACHELINE(node_t*)];
+thread_local int64_t node_count;
+thread_local char pad3[PAD_TO_CACHELINE(int64_t)];
+thread_local node_t* node_pool;
+thread_local char pad2[PAD_TO_CACHELINE(node_t*)];
 
 void register_thread(size_t num_of_iterations)
 {
@@ -137,7 +140,7 @@ bool enqueue(void* in_queue, void* in_item)
                     }
                     break;
                 }
-                pointer_t new_tail = { next.ptr, 0, tail.tag + 1 };
+                pointer_t new_tail = { next.ptr, false, tail.tag + 1 };
                 atomic_compare_exchange_strong(&queue->tail, &tail, new_tail);
             }
         }

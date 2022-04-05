@@ -11,6 +11,7 @@
 
 #include <stdlib.h>
 #include <threads.h>
+#include <stdint.h>
 
 typedef struct node_t
 {
@@ -26,8 +27,12 @@ typedef struct queue
     node_t* tail; // Tail/Rear
 } queue;
 
+thread_local node_t* sentinel;
+thread_local char pad1[PAD_TO_CACHELINE(node_t*)];
+thread_local int64_t node_counter;
+thread_local char pad3[PAD_TO_CACHELINE(int64_t)];
 thread_local node_t* node_pool;
-thread_local int node_counter;
+thread_local char pad2[PAD_TO_CACHELINE(node_t*)];
 
 void register_thread(size_t num_of_iterations)
 {

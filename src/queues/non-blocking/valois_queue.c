@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdatomic.h>
 #include <threads.h>
+#include <stdint.h>
 #include "../queue.h"
 #include "../../test_utils.h"
 
@@ -16,11 +17,12 @@ typedef struct valois_queue_t
     DOUBLE_CACHE_ALIGNED node_t* _Atomic tail;
 } valois_queue_t;
 
-thread_local node_t* node_pool;
-thread_local int node_count;
-// Keep track of the sentinel node so that we may free it once the thread is
-// destroyed.
 thread_local node_t* sentinel;
+thread_local char pad1[PAD_TO_CACHELINE(node_t*)];
+thread_local int64_t node_count;
+thread_local char pad3[PAD_TO_CACHELINE(int64_t)];
+thread_local node_t* node_pool;
+thread_local char pad2[PAD_TO_CACHELINE(node_t*)];
 
 void register_thread(size_t num_of_iterations)
 {

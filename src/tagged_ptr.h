@@ -17,9 +17,9 @@
 
 typedef uintptr_t tagged_ptr_t;
 
-#define extract_ptr(ptr) ((void*)(ptr & PTR_MASK))
-#define extract_tag(ptr) ((uint16_t)(ptr >> PTR_BITS))
-#define pack_ptr(ptr, tag) (((uintptr_t)ptr) | ((uint64_t)tag << PTR_BITS))
+#define extract_ptr(ptr) ((void*)((ptr) & PTR_MASK))
+#define extract_tag(ptr) ((uint16_t)((ptr) >> PTR_BITS))
+#define pack_ptr(ptr, tag) (((uintptr_t)ptr) | (((uint64_t)tag) << PTR_BITS))
 
 // tag % UINT15T_MASK makes sure that a 16 bit unsigned int's overflow/wrap
 // around behaviour is the same as that of a 15 bit unsigned int
@@ -28,18 +28,18 @@ typedef uintptr_t tagged_ptr_t;
  * @brief Create a tagged_ptr_t with a boolean flag and a 15 bit counter
  * 
  */
-#define pack_ptr_with_flag(ptr, tag, flag) (((uintptr_t)ptr) | (((uint64_t)((tag % (UINT15T_MASK)) | (((uint16_t)flag) << TAG_POS))) << PTR_BITS))
+#define pack_ptr_with_flag(ptr, tag, flag) (((uintptr_t)ptr) | (((uint64_t)(((tag) % (UINT15T_MASK)) | (((uint16_t)flag) << TAG_POS))) << PTR_BITS))
 
 /**
  * @brief Extract the flag from a tagged_ptr with a flag.
  * Assumes that the tagged_ptr was created using pack_ptr_with_flag
  */
-#define extract_flag(ptr) ((bool)(ptr >> 63))
+#define extract_flag(ptr) ((bool)((ptr) >> 63))
 
 /**
  * @brief Extract a tag from a tagged_ptr that was created using pack_ptr_with_flag
  * 
  */
-#define extract_flagged_tag(i) ((uint16_t)((i >> PTR_BITS) & UINT15T_MASK))
+#define extract_flagged_tag(i) ((uint16_t)(((i) >> PTR_BITS) & UINT15T_MASK))
 
 #endif

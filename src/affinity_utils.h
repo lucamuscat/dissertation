@@ -5,7 +5,7 @@
 
 #define PHYSICAL_CORES 8
 
-inline pthread_attr_t create_thread_affinity_attr(size_t index)
+pthread_attr_t create_thread_affinity_attr(size_t index)
 {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);

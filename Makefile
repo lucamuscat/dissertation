@@ -7,7 +7,7 @@ BLOCKING_QUEUE_NAMES = linked_queue
 NONBLOCKING_QUEUE_NAMES = ms_queue valois_queue baskets_queue
 
 ifdef DEBUG
-DEBUG_FLAGS = -DDEBUG -g
+DEBUG_FLAGS = -g
 else
 DEBUG_FLAGS = -O3 -g
 endif
@@ -94,11 +94,11 @@ p_enqueue_dequeue_nonblocking_tests: $(foreach NAME, $(NONBLOCKING_QUEUE_NAMES),
 enqueue_dequeue_blocking_%_test: init_build_folder
 	for i in $(LOCK_FILES); \
 	do \
-		$(CXX) $(BLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $$i $(PAPI_LIB) $(LIBRARIES) -o $(OUTPUT_DIR)/blocking_$*_`basename $$i .c` $(DEBUG_FLAGS) $(ERROR_FLAGS); \
+		$(CXX) $(BLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $$i $(PAPI_LIB) $(LIBRARIES) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/blocking_$*_`basename $$i .c`; \
 	done
 
 enqueue_dequeue_nonblocking_%_test: init_build_folder
-	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) -o $(OUTPUT_DIR)/nonblocking_$* $(DEBUG_FLAGS) $(ERROR_FLAGS)
+	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/nonblocking_$*
 
 p_enqueue_dequeue_blocking_%_test: init_build_folder
 	for i in $(LOCK_FILES); \

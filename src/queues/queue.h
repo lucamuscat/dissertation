@@ -45,6 +45,12 @@ void destroy_queue(void** out_queue);
 char* get_queue_name();
 
 void register_thread(size_t num_of_iterations);
+
+/**
+ * @brief Free the memory allocated in register_thread(). It is the user's
+ * responsibility to make sure that this function is only called when no other
+ * threads are still making use of the memory being freed.
+ */
 void cleanup_thread();
 
 #endif

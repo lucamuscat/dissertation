@@ -28,7 +28,7 @@
  */
 
 // Needed for setting thread affinity
-#define _GNU_SOURCE
+#include "../../affinity_utils.h"
 #include <papi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +36,6 @@
 #include <pthread.h>
 #include <assert.h>
 #include <stdatomic.h>
-#include "../../affinity_utils.h"
 #include "../../test_utils.h"
 #include "../queue.h"
 

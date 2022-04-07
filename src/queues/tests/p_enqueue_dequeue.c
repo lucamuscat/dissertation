@@ -10,6 +10,7 @@
  * is set to a high value.
  */
 
+#include "../../affinity_utils.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <papi.h>

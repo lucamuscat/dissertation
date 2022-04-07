@@ -190,7 +190,7 @@ bool dequeue(void* in_queue, void** out_item)
 
 char* get_queue_name()
 {
-    return "MS Queue with tagged ptr";
+    return "MS Queue using Tagged Pointers";
 }
 
 

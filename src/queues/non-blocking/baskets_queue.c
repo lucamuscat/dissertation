@@ -80,7 +80,7 @@ bool create_queue(void** out_queue)
 
     create_sentinel_node();
 
-    pointer_t sentinel_ptr = { sentinel, 0, false };
+    pointer_t sentinel_ptr = { sentinel, false, 0 };
     atomic_store(&(*queue)->head, sentinel_ptr);
     atomic_store(&(*queue)->tail, sentinel_ptr);
     return true;
@@ -223,5 +223,5 @@ bool dequeue(void* in_queue, void** out_item)
 
 char* get_queue_name()
 {
-    return "Baskets queue";
+    return "Baskets Queue using DWCAS";
 }

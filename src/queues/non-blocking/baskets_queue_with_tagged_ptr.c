@@ -223,5 +223,5 @@ bool dequeue(void* in_queue, void** out_item)
 
 char* get_queue_name()
 {
-    return "Baskets queue";
+    return "Baskets Queue using Tagged Pointers";
 }

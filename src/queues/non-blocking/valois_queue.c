@@ -140,5 +140,5 @@ void destroy_queue(void** out_queue)
 
 char* get_queue_name()
 {
-    return "Valois MPMC Lock-Free Queue";
+    return "Valois Queue";
 }

@@ -194,7 +194,7 @@ bool dequeue(void* in_queue, void** out_item)
 
 char* get_queue_name()
 {
-    return "MS Lock-Free Queue";
+    return "MS Queue using DWCAS";
 }
 
 

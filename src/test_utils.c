@@ -263,6 +263,16 @@ readings_t* aggregate_readings_2d(readings_t** readings, size_t N_x, size_t N_y)
     return result;
 }
 
+size_t count_enqueues_from_probabilities(double* probabilities, double p, size_t iterations)
+{
+    size_t acc = 0;
+    for (size_t i = 0; i < iterations; ++i)
+    {
+        acc += probabilities[i] < p;
+    }
+    return acc;
+}
+
 void display_readings(readings_t* aggregated_readings)
 {
     //const double mean_cycles = aggregated_readings->cycles[0];

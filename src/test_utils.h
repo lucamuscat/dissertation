@@ -131,6 +131,8 @@ void display_readings(readings_t* aggregated_readings);
  */
 void destroy_readings(readings_t** readings);
 
+size_t count_enqueues_from_probabilities(double* probabilities, double p, size_t iterations);
+
 /**
  * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
  * callocs succeed.

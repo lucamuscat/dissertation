@@ -6,7 +6,7 @@
  * Failure to do so will cause the DELAY macro to misbehave and the PAPI_get_real_cyc()
  * function to not match the actual total cycles.
  *
- * Low values of p may cause the system to run out of memory if TEST_ITERATIONS
+ * High values of p may cause the system to run out of memory if TEST_ITERATIONS
  * is set to a high value.
  */
 
@@ -38,7 +38,20 @@ typedef struct thread_args
 void* thread_fn(void* in_args)
 {
     thread_args* args = in_args;
-    register_thread(args->num_of_iterations + args->num_of_warm_up_iterations);
+
+    size_t num_of_enqueues = count_enqueues_from_probabilities(
+        args->random_probabilities,
+        args->p,
+        args->num_of_iterations
+    );
+
+    size_t num_of_enqueues_warmup = count_enqueues_from_probabilities(
+        args->random_probabilities,
+        args->p,
+        args->num_of_warm_up_iterations
+    );
+
+    register_thread(num_of_enqueues + num_of_enqueues_warmup);
 
     int enqueued_item = 10;
     void* dequeued_item = NULL;
@@ -73,6 +86,8 @@ void* thread_fn(void* in_args)
     
     delta_readings(args->readings, args->num_of_iterations);
     adjust_readings_for_delay(args->readings, &delay);
+
+    pthread_barrier_wait(&barrier);
     cleanup_thread();
     
     atomic_thread_fence(memory_order_seq_cst);

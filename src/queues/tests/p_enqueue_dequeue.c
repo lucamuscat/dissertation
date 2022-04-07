@@ -23,6 +23,7 @@
 
 delay_t delay;
 pthread_barrier_t barrier;
+size_t _Atomic prefill_counter;
 
 typedef struct thread_args
 {
@@ -51,7 +52,9 @@ void* thread_fn(void* in_args)
         args->num_of_warm_up_iterations
     );
 
-    register_thread(num_of_enqueues + num_of_enqueues_warmup);
+    size_t total_enqueues = num_of_enqueues + num_of_enqueues_warmup + PREFILL_SIZE;
+
+    register_thread(total_enqueues);
 
     int enqueued_item = 10;
     void* dequeued_item = NULL;
@@ -60,8 +63,8 @@ void* thread_fn(void* in_args)
     for (size_t i = 0; i < args->num_of_warm_up_iterations; ++i)
     {
         if (args->random_probabilities[i] < args->p)
-            enqueue(args->queue, (void**)&enqueued_item);
-        else if (dequeue(args->queue, (void*)&dequeued_item))
+            enqueue(args->queue, &enqueued_item);
+        else if (dequeue(args->queue, &dequeued_item))
             assert(*((int*)dequeued_item) == enqueued_item);
 
         DELAY_OPS(delay.num_of_nops);
@@ -70,10 +73,17 @@ void* thread_fn(void* in_args)
     // Empty the queue
     while (dequeue(args->queue, &dequeued_item))
         assert(*((int*)dequeued_item) == enqueued_item);
-    
+
+    while (atomic_fetch_add(&prefill_counter, 1) < PREFILL_SIZE)
+    {
+        enqueue(args->queue, &enqueued_item);
+    }
+
+    assert(atomic_load(&prefill_counter) == (PREFILL_SIZE - 1));
+
     pthread_barrier_wait(&barrier);
     start_readings(args->readings);
-    
+
     for (size_t i = 0; i < args->num_of_iterations; ++i)
     {
         if (args->random_probabilities[i] < args->p)
@@ -83,13 +93,13 @@ void* thread_fn(void* in_args)
 
         DELAY_OPS(delay.num_of_nops);
     }
-    
+
     delta_readings(args->readings, args->num_of_iterations);
     adjust_readings_for_delay(args->readings, &delay);
 
     pthread_barrier_wait(&barrier);
     cleanup_thread();
-    
+
     atomic_thread_fence(memory_order_seq_cst);
     return NULL;
 }
@@ -118,7 +128,7 @@ int main(int argc, char** argv)
     p_handle_args(argc, argv, &num_of_threads, &delay_ns, &p);
 
     calibrate_delay(&delay, delay_ns);
-    
+
     assert(p >= 0);
     assert(p <= 1);
 
@@ -128,7 +138,7 @@ int main(int argc, char** argv)
     ASSERT_NOT_NULL(args);
 
     readings_t** readings = create_readings_2d(num_of_threads, TEST_RERUNS);
-    
+
     // pthread_barrier_init returns zero when successful, however, zero is a falsy value in c.
     ASSERT_TRUE(!pthread_barrier_init(&barrier, NULL, num_of_threads), "Failed to create barrier");
 
@@ -136,6 +146,7 @@ int main(int argc, char** argv)
     {
         void* queue;
         ASSERT_TRUE(create_queue(&queue), "Failed to create queue");
+        atomic_store(&prefill_counter, 0);
         for (size_t j = 0; j < num_of_threads; ++j)
         {
             int thread_iterations = iterations_per_thread(num_of_threads, j, TEST_ITERATIONS);

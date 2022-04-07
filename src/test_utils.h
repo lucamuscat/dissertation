@@ -6,6 +6,13 @@
 #define TEST_ITERATIONS 10000000LL
 // 10^6 warm up iterations.
 #define WARMUP_ITERATIONS 1000000LL
+
+/**
+ * @brief Size of the queue before running the p_enqueue_dequeue benchmark.
+ * This is necessary, as long runs of dequeues on an empty queue will mostly
+ * trigger the empty dequeue path of each queue.
+ */
+#define PREFILL_SIZE 1000
 #define TEST_RERUNS 10
 #define NANO_TO_MINUTE 1000000000*60
 #define LIKELY(x) __builtin_expect((x), 1)

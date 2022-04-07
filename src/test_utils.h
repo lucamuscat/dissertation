@@ -6,6 +6,13 @@
 #define TEST_ITERATIONS 10000000LL
 // 10^6 warm up iterations.
 #define WARMUP_ITERATIONS 1000000LL
+
+/**
+ * @brief Size of the queue before running the p_enqueue_dequeue benchmark.
+ * This is necessary, as long runs of dequeues on an empty queue will mostly
+ * trigger the empty dequeue path of each queue.
+ */
+#define PREFILL_SIZE 1000
 #define TEST_RERUNS 10
 #define NANO_TO_MINUTE 1000000000*60
 #define LIKELY(x) __builtin_expect((x), 1)
@@ -66,7 +73,6 @@ typedef struct delay_t
     size_t delay_ns;
     size_t num_of_nops;
 } delay_t;
-
 
 void _delay(size_t ns);
 void calibrate_delay(delay_t* out_delay, size_t expected_delay_ns);
@@ -131,6 +137,8 @@ void display_readings(readings_t* aggregated_readings);
  * @param readings readings_t object to be freed.
  */
 void destroy_readings(readings_t** readings);
+
+size_t count_enqueues_from_probabilities(double* probabilities, double p, size_t iterations);
 
 /**
  * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and

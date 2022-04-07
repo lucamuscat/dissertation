@@ -36,18 +36,18 @@ void cleanup_thread()
     free(node_pool);
 }
 
-inline void create_node(node_t** out_node)
+void create_node(node_t** out_node)
 {
     *out_node = &node_pool[++node_count];
 }
 
-inline void create_sentinel_node()
+void create_sentinel_node()
 {
     sentinel = (node_t*)calloc(1, sizeof(node_t));
     ASSERT_NOT_NULL(sentinel);
 }
 
-inline void destroy_sentinel_node()
+void destroy_sentinel_node()
 {
     free(sentinel);
 }

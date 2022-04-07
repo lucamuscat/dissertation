@@ -28,7 +28,7 @@
  */
 
 // Needed for setting thread affinity
-#define _GNU_SOURCE
+#include "../../affinity_utils.h"
 #include <papi.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +36,6 @@
 #include <pthread.h>
 #include <assert.h>
 #include <stdatomic.h>
-#include "../../affinity_utils.h"
 #include "../../test_utils.h"
 #include "../queue.h"
 
@@ -86,7 +85,10 @@ void* thread_fn(void* in_args)
     delta_readings(args->readings, args->num_of_iterations);
     adjust_readings_for_delay(args->readings, &delay);
     adjust_readings_for_delay(args->readings, &delay);
-
+    // This barrier protects against the scenario where a thread
+    // finishes before another thread that frees memory that is used by another
+    // thread
+    pthread_barrier_wait(&barrier);
     cleanup_thread();
     // Make sure to synchronize all changes to args
     atomic_thread_fence(memory_order_seq_cst);

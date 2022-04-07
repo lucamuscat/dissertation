@@ -146,7 +146,7 @@ int main(int argc, char** argv)
                 random_probabilities[j][k] = drand48();
             }
             args[j].readings = readings[j];
-            args[j].num_of_warm_up_iterations = TEST_ITERATIONS/num_of_threads;
+            args[j].num_of_warm_up_iterations = TEST_ITERATIONS / num_of_threads;
             args[j].num_of_iterations = thread_iterations;
             args[j].queue = queue;
             args[j].p = p;

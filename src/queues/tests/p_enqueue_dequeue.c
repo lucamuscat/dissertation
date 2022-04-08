@@ -79,8 +79,6 @@ void* thread_fn(void* in_args)
         enqueue(args->queue, &enqueued_item);
     }
 
-    assert(atomic_load(&prefill_counter) == (PREFILL_SIZE - 1));
-
     pthread_barrier_wait(&barrier);
     start_readings(args->readings);
 

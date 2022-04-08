@@ -28,14 +28,16 @@ blocking_linked_queue_ttas_lock
 )
 
 for queue in ${queues[@]}
-for num_of_threads in $(seq 12)
 do
-    for delay in ${delays[@]}
+    for num_of_threads in $(seq 12)
     do
-        for reruns in $(seq 5)
+        for delay in ${delays[@]}
         do
-        ./build/$queue $num_of_threads $delay | tee -a $enqueue_dequeue_results
-        ./build/p_$queue $num_of_threads $delay | tee -a $p_enqueue_dequeue_results
+            for reruns in $(seq 5)
+            do
+            ./build/$queue $num_of_threads $delay | tee -a $enqueue_dequeue_results
+            ./build/p_$queue $num_of_threads $delay | tee -a $p_enqueue_dequeue_results
+            done
         done
     done
 done

@@ -127,6 +127,7 @@ int main(int argc, char** argv)
     double p;
     p_handle_args(argc, argv, &num_of_threads, &delay_ns, &p);
 
+    long long total_run_time_ns = PAPI_get_real_nsec();
     calibrate_delay(&delay, delay_ns);
 
     assert(p >= 0);
@@ -141,7 +142,7 @@ int main(int argc, char** argv)
 
     // pthread_barrier_init returns zero when successful, however, zero is a falsy value in c.
     ASSERT_TRUE(!pthread_barrier_init(&barrier, NULL, num_of_threads), "Failed to create barrier");
-
+    
     for (size_t i = 0; i < TEST_RERUNS; ++i)
     {
         void* queue;
@@ -172,12 +173,16 @@ int main(int argc, char** argv)
         destroy_queue(&queue);
     }
 
+    total_run_time_ns = PAPI_get_real_nsec() - total_run_time_ns;
+    
     readings_t* aggregates = aggregate_readings_2d(readings, num_of_threads, TEST_RERUNS);
 
-    printf("\"%s\", %ld, %zu, ", get_queue_name(), num_of_threads, delay_ns);
+    double total_run_time_minutes = NANO_TO_MINUTE(total_run_time_ns);
+    
     printf("\"%s\",%ld,%zu,", get_queue_name(), num_of_threads, delay_ns);
     display_readings(aggregates);
     printf(",%f", total_run_time_minutes);
+    pthread_barrier_destroy(&barrier);
 
     return EXIT_SUCCESS;
 }

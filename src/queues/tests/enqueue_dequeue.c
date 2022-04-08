@@ -100,6 +100,8 @@ int main(int argc, char** argv)
     size_t num_of_threads, delay_ns;
     handle_queue_args(argc, argv, &num_of_threads, &delay_ns);
 
+    long long total_run_time_ns = PAPI_get_real_nsec();
+
     calibrate_delay(&delay, delay_ns);
 
     assert(sizeof(thread_args) == CACHE_LINE_SIZE);
@@ -109,7 +111,6 @@ int main(int argc, char** argv)
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
     ASSERT_NOT_NULL(args);
 
-    long long total_run_time_ns = PAPI_get_real_nsec();
 
     readings_t** readings = create_readings_2d(num_of_threads, TEST_RERUNS);
 
@@ -144,12 +145,12 @@ int main(int argc, char** argv)
 
     readings_t* aggregates = aggregate_readings_2d(readings, num_of_threads, TEST_RERUNS);
 
-    printf("\n\"%s\", %zu, %zu, ", get_queue_name(), num_of_threads, delay_ns);
+    double total_run_time_minutes = NANO_TO_MINUTE(total_run_time_ns);
     
     printf("\n\"%s\",%zu,%zu,", get_queue_name(), num_of_threads, delay_ns);
     display_readings(aggregates);
     printf(",%f", total_run_time_minutes);
     pthread_barrier_destroy(&barrier);
 
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -16,7 +16,7 @@
  */
 #define PREFILL_SIZE 1000
 #define TEST_RERUNS 10
-#define NANO_TO_MINUTE 1000000000*60
+#define NANO_TO_MINUTE(x) ((double)x/(6e10))
 #define LIKELY(x) __builtin_expect((x), 1)
 
 /**

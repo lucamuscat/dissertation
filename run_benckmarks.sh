@@ -12,8 +12,8 @@ enqueue_dequeue_results=enqueue_dequeue_results.csv
 p_enqueue_dequeue_results=p_enqueue_dequeue_results.csv
 
 
-echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_ns" > $enqueue_dequeue_results
-echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_ns" > $p_enqueue_dequeue_results
+echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min" > $enqueue_dequeue_results
+echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min" > $p_enqueue_dequeue_results
 
 # echo "$current_epoch: $2" | tee -a $dir_path/index.txt
 

@@ -59,12 +59,12 @@ void destroy_queue(void** out_queue)
  * called the register_thread(1) method.
  * @param out_node
  */
-inline void create_node(node_t** out_node)
+void create_node(node_t** out_node)
 {
     *out_node = &node_pool[++node_count];
 }
 
-inline void create_sentinel_node()
+void create_sentinel_node()
 {
     sentinel = (node_t*)calloc(1, sizeof(node_t));
     pointer_t null_node = { NULL, false, 0 };
@@ -86,7 +86,7 @@ bool create_queue(void** out_queue)
     return true;
 }
 
-inline bool equals(pointer_t a, pointer_t b)
+bool equals(pointer_t a, pointer_t b)
 {
     return a.tag == b.tag && a.ptr == b.ptr && a.deleted == b.deleted;
 }

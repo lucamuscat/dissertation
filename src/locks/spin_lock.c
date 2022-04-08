@@ -6,20 +6,22 @@
 #include <stdlib.h>
 #include <immintrin.h>
 #include "lock.h"
+#include "../alignment_utils.h"
 
 #define P_LOCK ((spin_lock_t*)lock)
 
 typedef struct spin_lock_t
 {
-    __attribute__((aligned(64))) atomic_flag busy;
+    CACHE_ALIGNED atomic_flag busy;
 } spin_lock_t;
 
 bool create_lock(void** lock)
 {
-    *lock = malloc(sizeof(spin_lock_t));
+    spin_lock_t** temp = (spin_lock_t**)lock;
+    *temp = malloc(sizeof(spin_lock_t));
     if (*lock == NULL)
         return false;
-    atomic_flag_clear(&P_LOCK->busy);
+    atomic_flag_clear(&(*temp)->busy);
     return true;
 }
 void destroy_lock(void** lock)
@@ -40,7 +42,6 @@ void unlock(void* lock)
 {
     atomic_flag_clear_explicit(&(P_LOCK->busy), memory_order_release);
 }
-
 
 char* get_lock_name()
 {

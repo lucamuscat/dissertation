@@ -36,7 +36,7 @@ do
             for reruns in $(seq 5)
             do
             ./build/$queue $num_of_threads $delay | tee -a $enqueue_dequeue_results
-            ./build/p_$queue $num_of_threads $delay | tee -a $p_enqueue_dequeue_results
+            ./build/p_$queue $num_of_threads $delay 0.5 | tee -a $p_enqueue_dequeue_results
             done
         done
     done

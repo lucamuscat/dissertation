@@ -280,8 +280,8 @@ void display_readings(readings_t* aggregated_readings)
     const double mean_nano_seconds = aggregated_readings->nano_seconds[0];
     const double stdev_nano_seconds = aggregated_readings->nano_seconds[1];
 
-    printf("%f, ", mean_nano_seconds);
-    printf("%f, ", (mean_nano_seconds * TEST_ITERATIONS) / 1e9);
-    printf("%f, ", stdev_nano_seconds);
+    printf("%f,", mean_nano_seconds);
+    printf("%f,", (mean_nano_seconds * TEST_ITERATIONS) / 1e9);
+    printf("%f,", stdev_nano_seconds);
     printf("%f", stdev_nano_seconds / mean_nano_seconds);
 }

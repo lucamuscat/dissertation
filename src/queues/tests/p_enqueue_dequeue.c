@@ -175,8 +175,9 @@ int main(int argc, char** argv)
     readings_t* aggregates = aggregate_readings_2d(readings, num_of_threads, TEST_RERUNS);
 
     printf("\"%s\", %ld, %zu, ", get_queue_name(), num_of_threads, delay_ns);
+    printf("\"%s\",%ld,%zu,", get_queue_name(), num_of_threads, delay_ns);
     display_readings(aggregates);
-    puts("");
+    printf(",%f", total_run_time_minutes);
 
     return EXIT_SUCCESS;
 }

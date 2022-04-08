@@ -145,17 +145,11 @@ int main(int argc, char** argv)
     readings_t* aggregates = aggregate_readings_2d(readings, num_of_threads, TEST_RERUNS);
 
     printf("\n\"%s\", %zu, %zu, ", get_queue_name(), num_of_threads, delay_ns);
+    
+    printf("\n\"%s\",%zu,%zu,", get_queue_name(), num_of_threads, delay_ns);
     display_readings(aggregates);
-    printf(", %lld", total_run_time_ns);
-
-    // for (size_t i = 0; i < num_of_threads; ++i)
-    // {
-    //     destroy_readings(&temp[i]);
-    // }
-    //free(temp);
-    //destroy_readings(&readings);
+    printf(",%f", total_run_time_minutes);
     pthread_barrier_destroy(&barrier);
-    //free(args);
 
     return 0;
 }

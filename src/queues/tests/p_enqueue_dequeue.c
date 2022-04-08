@@ -133,6 +133,15 @@ int main(int argc, char** argv)
 
     double** random_probabilities = (double**)malloc(sizeof(double*) * num_of_threads);
     ASSERT_NOT_NULL(random_probabilities);
+
+    for (size_t i = 0; i < num_of_threads; ++i)
+    {
+        int thread_iterations = iterations_per_thread(num_of_threads, i, TEST_ITERATIONS);
+        random_probabilities[i] = (double*)malloc(sizeof(double) * thread_iterations);
+        for(int j = 0; j < thread_iterations; ++j)
+            random_probabilities[i][j] = drand48();
+    }
+
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
     ASSERT_NOT_NULL(args);
 
@@ -149,12 +158,6 @@ int main(int argc, char** argv)
         for (size_t j = 0; j < num_of_threads; ++j)
         {
             int thread_iterations = iterations_per_thread(num_of_threads, j, TEST_ITERATIONS);
-            random_probabilities[j] = (double*)malloc(sizeof(double) * thread_iterations);
-            ASSERT_NOT_NULL(random_probabilities[j]);
-            for (int k = 0; k < thread_iterations; ++k)
-            {
-                random_probabilities[j][k] = drand48();
-            }
             args[j].readings = readings[j];
             args[j].num_of_warm_up_iterations = TEST_ITERATIONS / num_of_threads;
             args[j].num_of_iterations = thread_iterations;

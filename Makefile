@@ -42,10 +42,8 @@ CXX = clang
 all: \
 	sequential_latency_tests \
 	lock_contention_tests \
-	enqueue_dequeue_blocking_tests \
-	enqueue_dequeue_nonblocking_tests \
-	p_enqueue_dequeue_blocking_tests \
-	p_enqueue_dequeue_nonblocking_tests
+	enqueue_dequeue \
+	p_enqueue_dequeue 
 
 .PHONY: all clean
 
@@ -84,6 +82,9 @@ BLOCKING_DIR = $(QUEUES_DIR)/blocking
 NONBLOCKING_DIR = $(QUEUES_DIR)/non-blocking
 ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/enqueue_dequeue.c $(TEST_UTILS)
 P_ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/p_enqueue_dequeue.c $(TEST_UTILS)
+
+enqueue_dequeue: enqueue_dequeue_blocking_tests enqueue_dequeue_nonblocking_tests
+p_enqueue_dequeue: p_enqueue_dequeue_blocking_tests p_enqueue_dequeue_nonblocking_tests
 
 enqueue_dequeue_blocking_tests: $(foreach NAME, $(BLOCKING_QUEUE_NAMES), enqueue_dequeue_blocking_$(NAME)_test)
 enqueue_dequeue_nonblocking_tests: $(foreach NAME, $(NONBLOCKING_QUEUE_NAMES), enqueue_dequeue_nonblocking_$(NAME)_test)

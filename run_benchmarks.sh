@@ -17,13 +17,13 @@ echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min" 
 
 # echo "$current_epoch: $2" | tee -a $dir_path/index.txt
 
-delays=(0 100 200 300 400 500 600 700 800 900 1000)
+delays=(0 250 500 750 1000)
 queues=(
-nonblocking_ms_queue
 nonblocking_ms_queue_with_tagged_ptr
-nonblocking_baskets_queue
 nonblocking_baskets_queue_with_tagged_ptr
 nonblocking_valois_queue
+nonblocking_ms_queue
+nonblocking_baskets_queue
 blocking_linked_queue_ttas_lock
 )
 
@@ -33,7 +33,7 @@ do
     do
         for delay in ${delays[@]}
         do
-            for reruns in $(seq 5)
+            for reruns in $(seq 3)
             do
             ./build/$queue $num_of_threads $delay | tee -a $enqueue_dequeue_results
             ./build/p_$queue $num_of_threads $delay 0.5 | tee -a $p_enqueue_dequeue_results

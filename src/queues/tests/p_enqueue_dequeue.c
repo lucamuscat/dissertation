@@ -180,7 +180,7 @@ int main(int argc, char** argv)
 
     double total_run_time_minutes = NANO_TO_MINUTE(total_run_time_ns);
     
-    printf("\"%s\",%ld,%zu,", get_queue_name(), num_of_threads, delay_ns);
+    printf("\n\"%s\",%ld,%zu,", get_queue_name(), num_of_threads, delay_ns);
     display_readings(aggregates);
     printf(",%f", total_run_time_minutes);
     pthread_barrier_destroy(&barrier);

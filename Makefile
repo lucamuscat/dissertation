@@ -9,7 +9,7 @@ NONBLOCKING_QUEUE_NAMES = ms_queue ms_queue_with_tagged_ptr valois_queue baskets
 ifdef DEBUG
 DEBUG_FLAGS = -g
 else
-DEBUG_FLAGS = -O3 -g
+DEBUG_FLAGS = -O3
 endif
 ERROR_FLAGS = -Wall -Wextra
 

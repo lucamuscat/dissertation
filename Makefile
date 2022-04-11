@@ -47,10 +47,9 @@ all: \
 
 .PHONY: all clean
 
-COMMON_DELAY = $(CXX) $(QUEUES_DIR)/tests/delay_test.c $(TEST_UTILS) -lm  $(DEBUG_FLAGS) 
+COMMON_DELAY = $(CXX) $(QUEUES_DIR)/tests/delay_test.c $(TEST_UTILS) -lm $(DEBUG_FLAGS) 
 delay_test: init_build_folder
 	$(COMMON_DELAY) $(PAPI_LIB) -o $(OUTPUT_DIR)/delay_test $(ERROR_FLAGS)
-	$(COMMON_DELAY) $(ASM_FLAGS)
 
 clean: 
 	rm -rf ./build

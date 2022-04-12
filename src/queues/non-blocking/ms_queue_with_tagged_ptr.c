@@ -122,16 +122,16 @@ bool enqueue(void* in_queue, void* in_item)
     tagged_ptr_t null_node = pack_ptr(NULL, 0 );
     atomic_store(&node->next, null_node);
 
-    tagged_ptr_t tail;
+    tagged_ptr_t tail, next ;
     
     while (true) // loop
     {
         // Check if the memory ordering can be weakened safely.
         tail = atomic_load(&queue->tail);
+        node_t* tail_ptr = extract_ptr(tail);
+        next = atomic_load(&tail_ptr->next);
         if (tail == atomic_load(&queue->tail))
         {
-            node_t* tail_ptr = extract_ptr(tail);
-            tagged_ptr_t next = atomic_load(&tail_ptr->next);
             if (extract_ptr(next) == NULL)
             {
                 tagged_ptr_t new_ptr = pack_ptr(node, extract_tag(next) + 1);
@@ -157,19 +157,22 @@ bool enqueue(void* in_queue, void* in_item)
 bool dequeue(void* in_queue, void** out_item)
 {
     queue_t* queue = (queue_t*)in_queue;
-    tagged_ptr_t head;
+    tagged_ptr_t head, tail, next;
+    node_t* head_ptr;
+    node_t* tail_ptr;
+    node_t* next_ptr;
+
     while (true)
     {
         head = atomic_load(&queue->head);
-        tagged_ptr_t tail = atomic_load(&queue->tail);
+        tail = atomic_load(&queue->tail);
+        head_ptr = extract_ptr(head);
+        tail_ptr = extract_ptr(tail);
+
+        next = atomic_load(&head_ptr->next);
+        next_ptr = extract_ptr(next);
         if (head == atomic_load(&queue->head))
         {
-            node_t* head_ptr = extract_ptr(head);
-            node_t* tail_ptr = extract_ptr(tail);
-
-            tagged_ptr_t next = atomic_load(&head_ptr->next);
-            node_t* next_ptr = extract_ptr(next);
-
             if (head_ptr == tail_ptr)
             {
                 if (next_ptr == NULL)

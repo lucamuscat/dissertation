@@ -133,15 +133,15 @@ bool enqueue(void* in_queue, void* in_item)
     node_pointer_t null_node = { NULL, 0 };
     atomic_store(&node->next, null_node);
 
-    node_pointer_t tail;
+    node_pointer_t tail, next;
     
     while (true) // loop
     {
         // Check if the memory ordering can be weakened safely.
         tail = atomic_load(&queue->tail);
+        next = atomic_load(&tail.ptr->next);
         if (equals(tail, atomic_load(&queue->tail)))
         {
-            node_pointer_t next = atomic_load(&tail.ptr->next);
             if (next.ptr == NULL)
             {
                 node_pointer_t new_ptr = { node, next.count + 1 };
@@ -166,14 +166,14 @@ bool enqueue(void* in_queue, void* in_item)
 bool dequeue(void* in_queue, void** out_item)
 {
     queue_t* queue = (queue_t*)in_queue;
-    node_pointer_t head;
+    node_pointer_t head, tail, next;
     while (true)
     {
         head = atomic_load(&queue->head);
-        node_pointer_t tail = atomic_load(&queue->tail);
+        tail = atomic_load(&queue->tail);
+        next = atomic_load(&head.ptr->next);
         if (equals(head, atomic_load(&queue->head)))
         {
-            node_pointer_t next = atomic_load(&head.ptr->next);
             if (head.ptr == tail.ptr)
             {
                 if (next.ptr == NULL)

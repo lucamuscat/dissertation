@@ -3,7 +3,7 @@ SHELL=bash
 # In order to add a new lock inside of the build process, add the name of the
 # lock over here
 LOCK_NAMES = pthread_lock spin_lock ttas_lock
-BLOCKING_QUEUE_NAMES = linked_queue
+BLOCKING_QUEUE_NAMES = ms_two_lock
 NONBLOCKING_QUEUE_NAMES = ms_queue ms_queue_with_tagged_ptr valois_queue baskets_queue baskets_queue_with_tagged_ptr
 
 ifdef DEBUG

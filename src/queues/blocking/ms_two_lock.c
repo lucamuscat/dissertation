@@ -24,8 +24,8 @@ typedef struct queue
 {
     void* head_lock;
     void* tail_lock;
-    node_t* _Atomic head; // Head
-    node_t* _Atomic tail; // Tail/Rear
+    DOUBLE_CACHE_ALIGNED node_t* _Atomic head; // Head
+    DOUBLE_CACHE_ALIGNED node_t* _Atomic tail; // Tail/Rear
 } queue;
 
 thread_local node_t* sentinel;
@@ -84,10 +84,11 @@ bool enqueue(void* in_queue, void* in_data)
     create_node(in_data, &node); // New node
     wait_lock(queue->tail_lock); // Acquire enq lock
 
-    node_t* ltail = atomic_load(&queue->tail);
-    atomic_store(&ltail->next, node);
+    node_t* ltail = atomic_load_explicit(&queue->tail, memory_order_relaxed);
+    atomic_store_explicit(&ltail->next, node, memory_order_relaxed);
     //queue->tail->next = node; // Link node at the end of the linked list
-    atomic_store(&queue->tail, node);
+    
+    atomic_store_explicit(&queue->tail, node, memory_order_relaxed);
     //queue->tail = node; // Swing tail to node
     unlock(queue->tail_lock); // Release
     return true;
@@ -97,15 +98,15 @@ bool dequeue(void* in_queue, void** out_data)
 {
     queue* queue = in_queue;
     wait_lock(queue->head_lock);
-    node_t* node = atomic_load(&queue->head);
-    node_t* new_head = atomic_load(&node->next);
+    node_t* node = atomic_load_explicit(&queue->head, memory_order_relaxed);
+    node_t* new_head = atomic_load_explicit(&node->next, memory_order_relaxed);
     if (new_head == NULL)
     {
         unlock(queue->head_lock);
         return false;
     }
-    *out_data = atomic_load(&new_head->value);
-    atomic_store(&queue->head, new_head);
+    *out_data = atomic_load_explicit(&new_head->value, memory_order_relaxed);
+    atomic_store_explicit(&queue->head, new_head, memory_order_relaxed);
     unlock(queue->head_lock);
     //free(node);
     return true;

@@ -29,13 +29,23 @@ void destroy_lock(void** lock)
 }
 
 // Source: https://rigtorp.se/spinlock/
+// Backoff is adapted from Example 2-9 Intel 64 and IA-32 Architectures Optimization Reference Manual
+#define MAX_BACKOFF 64
+
 void wait_lock(void* lock)
 {
+    int mask = 1;
     do
     {
         // Spin whilst busy == 1
         while (atomic_load_explicit(&P_LOCK->busy, memory_order_acquire))
-            _mm_pause();
+        {
+            for (int i = mask; i; --i)
+            {
+                _mm_pause();
+            }
+            mask = mask < MAX_BACKOFF ? mask << 1 : MAX_BACKOFF;
+        }
         // Set busy to 1, if busy is already 1, loop again.
         // The method loops again on the condition at least two threads
         // see the busy flag being set to zero at the same time.

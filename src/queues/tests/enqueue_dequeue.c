@@ -54,7 +54,7 @@ typedef struct thread_args
 void* thread_fn(void* in_args)
 {
     thread_args* args = in_args;
-    void* dequeued_item = NULL;
+    void* dequeued_item[PAD_TO_CACHELINE(void*)];
     int enqueued_item = 10;
     register_thread(args->num_of_iterations + args->num_of_warm_up_iterations);
     pthread_barrier_wait(&barrier);
@@ -62,14 +62,14 @@ void* thread_fn(void* in_args)
     {
         enqueue(args->queue, &enqueued_item);
         DELAY_OPS(delay.num_of_nops);
-        if (dequeue(args->queue, &dequeued_item))
-            assert(*((int*)dequeued_item) == enqueued_item);
+        if (dequeue(args->queue, &dequeued_item[0]))
+            assert(*((int*)dequeued_item[0]) == enqueued_item);
         DELAY_OPS(delay.num_of_nops);
     }
 
     // Empty the queue
-    while (dequeue(args->queue, &dequeued_item))
-        assert(*((int*)dequeued_item) == enqueued_item);
+    while (dequeue(args->queue, &dequeued_item[0]))
+        assert(*((int*)dequeued_item[0]) == enqueued_item);
 
     // Make sure that each thread executes the test at the same time.
     pthread_barrier_wait(&barrier);
@@ -78,8 +78,8 @@ void* thread_fn(void* in_args)
     {
         enqueue(args->queue, &enqueued_item);
         DELAY_OPS(delay.num_of_nops);
-        if (dequeue(args->queue, &dequeued_item))
-            assert(*((int*)dequeued_item) == enqueued_item);
+        if (dequeue(args->queue, &dequeued_item[0]))
+            assert(*((int*)dequeued_item[0]) == enqueued_item);
         DELAY_OPS(delay.num_of_nops);
     }
     delta_readings(args->readings, args->num_of_iterations);

@@ -139,3 +139,6 @@ The proposed wait-free queue assumes that the garbage collector is responsible f
 Performance of each queue mentioned in the paper was collected using the following methodology:
 + `enqueue-dequeue` pairs: Starting with an empty queue, each thread iteratively performs an enqueue followed by a dequeue.
 + `50% enqueues`: The queue is intialized with 1000 elements, each thread does a 'coin toss' to decide 
+
+# Intel Volume 3A Chapter 8.2
+Modern Intel processors use "Processor-Ordered-Memory-Ordering" memory model, providing guarantees such as total ordering of locked operations.

@@ -31,18 +31,13 @@
 \newtheorem{theorem}{Theorem}[section]
 %%you can delete till here if you dont need the code and proofs environments
 
-
-
 \setlength{\headheight}{15pt}
 %\overfullrule=15pt
 
-
 \begin{document}
 
-
-
 %%make sure to enter this information
-\title{A Comparative Study of Concurrent Queueing Algorithms & Their Performance}
+\title{A Comparative Study of Concurrent Queueing Algorithms \& Their Performance}
 \author{Luca Muscat}
 \date{06/04/2022}
 \supervisor{Dr. Kevin Vella}
@@ -62,61 +57,40 @@ an abstract
 \end{abstract}
 
 \tableofcontents
-
 \listoffigures
-
 \listoftables
-
-
 
 \mainmatter
 
-\chapter{Introduction}
-%%you can organise your chapters into parts but this is not always necessary
-\part{Part1}
-\chapter{Body1}
+\include{introduction.tex}
+\include{background.tex}
+\include{literature_review.tex}
+\include{design_implementation.tex}
+\include{evaluation.tex}
+\include{conclusion.tex}
 
-\section{section 1}
+% \begin{definition}
+% This is an example of a definition
+% \end{definition}
 
-\begin{definition}
-This is an example of a definition
-\end{definition}
+% \begin{example}
+% This is an example of an example :)
+% \end{example}
 
-\begin{example}
-This is an example of an example :)
-\end{example}
-
-
-
-
-\part{Part2}
-\chapter{Body2}
-
-\section{section 2}
-\begin{proof}
-this is a proof
-\end{proof}
-
-
-\chapter{Conclusions}
-
+% \begin{proof}
+% this is a proof
+% \end{proof}
 
 \appendix
 
-\chapter{This chapter is in the appendix}
-\section{These are some details}
 %%example of the code environment
-\begin{code}
-this is some code;
-I hope you found this template useful.
-\end{code}
-
+% \begin{code}
+% this is some code;
+% I hope you found this template useful.
+% \end{code}
 
 \bibliomatter
-
-
-
 \bibliographystyle{abbrv}
- \bibliography{references}
+\bibliography{references}
  
 \end{document}

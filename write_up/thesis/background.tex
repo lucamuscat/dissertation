@@ -1,0 +1,152 @@
+\chapter{Background}
+
+% [] Define what a multiprocessor environment is, and how it differs from a single processor environment.
+% [] Define concurrent objects (using the text that already exists).
+% [] Correctness conditions
+% [] Progress conditions
+% [] CPU Architectures, and why they should be taken into consideration.
+% [] Mutual Exclusion
+
+
+\section{Threads}
+% [] What is a thread and why is it used?
+% [] Formal definitions:
+% Sequential Programs, Concurrent Programs, Threads, Concurrent Systems
+
+\subsection{Concurrent Objects}
+\textcite{herlihy1990linearizability} define a concurrent object as a data object shared by concurrent processes \cite{herlihy1990linearizability}. 
+
+Concurrent systems are modeled by a finite sequence of method invocations and response events \cite[Chapter~3.6]{herlihy2020art}. \textcite{herlihy2020art} provides the following formal definitions \cite[Chapter~3.6]{herlihy2020art}:
+% \begin{itemize}
+%   \item A method call in a history \emph{H} is a pair made up of an invocation that follows the next response (An invocation is the starting point of the method call, whilst the response may be seen as a point in the method where an object is returned).
+%   \item An invocation is pending in \emph{H} if it does not follow a matching response.
+%   \item A history \emph{H} is \emph{sequential} if the first event of \emph{H} is an invocation, and each invocation, possibly excluding the last, is immediately followed by a matching response.
+%   \item A history \emph{H} is \emph{well formed} if all of its sub-histories are \emph{sequential}.
+%   \item A thread sub-history, $H|A$  (``\emph{H at A}'') is the subsequence of all events in \emph{H} whose thread names are \emph{A}.
+%   \item Two histories \emph{H} and \emph{H'} are equivalent if $\forall a:A \cdot H|A = H'|A$.
+% \end{itemize}
+\begin{definition}[Method Call]
+A method call in a history \emph{H} is a pair made up of an invocation that follows the next response; An invocation is the starting point of the method call, whilst the response is the point in the method where an object is returned.
+\end{definition}
+
+\begin{definition}[Pending Invocation]
+An invocation is pending in \emph{H} if it does not follow a matching response.    
+\end{definition}
+
+\begin{definition}[History]
+A history \emph{H} is \emph{sequential} if the first event of \emph{H} is an invocation, and each invocation, possibly excluding the last, is immediately followed by a matching response. A history \emph{H} is \emph{well formed} if all of its sub-histories are \emph{sequential}.
+\end{definition}
+
+\begin{definition}[Sub-History]
+A thread sub-history, $H|A$  (``\emph{H at A}'') is the subsequence of all events in \emph{H} whose thread names are \emph{A}.
+\end{definition}
+
+\begin{definition}[Equivalence]
+Two histories \emph{H} and \emph{H'} are equivalent if $\forall a:A \cdot H|A = H'|A$.
+\end{definition}
+
+\section{Uniprocessors and Multiprocessors}
+
+\subsection{CPU Cache Overview}
+% [] Caching is needed to avoid accessing slow memory by copying data into faster memory hardware
+% [] There are different levels cache, there is the register, L1, L2, and L3
+% As cache levels move towards the register, access times get faster and cache sizes get smaller since they are more expensive.
+% [] CPU cache lines are used as a unit of transfer between different caches, on most architectures, a cache line is 64 bytes in size.
+% [] Mention what false sharing is and why it should be avoided. Also mention how it impacted the experiments before being fixed.
+
+\subsubsection{UMA and NUMA}
+% 
+
+\subsection{Atomic Operations}
+% [] What is an atomic operation?
+% [] Why use an atomic operation?
+% [] How do you use an atomic operation?
+% [] Define Read-Modify-Write (RMW) operations.
+
+\subsection{Cache Coherence}
+% [] What is cache coherence?
+% [] What problems are associated with incoherent caches?
+
+\subsection{Memory Consistency Models}
+% [] What is a memory consistency model?
+% [] Sequential Consistency
+% [] Weak Consistency
+% [] ARM is weakly consistent when writing to normal memory.
+% [] Xbox360 CPUs are sequentially consistent as they reads and writes are in order (be careful, as in order might not be sequential consistence).
+% [] Modern Intel CPUs use a variation of sequential consistency known as program-ordered-consistency
+% [] Give the multithreaded counting example, and mention how torn reads/writes and incoherent caches may lead to incorrect results.
+
+\section{Progress Conditions}
+There are two types of progress conditions, which are blocking and non-blocking \cite[Chapter~3.7]{herlihy2020art}. An algorithm is blocking if an unexpected delay in one thread can prevent other threads from making progress, whilst a non-blocking one will at no point in time wait for another thread \cite[Chapter~3.7]{herlihy2020art}. Two types of blocking progress conditions are deadlock-free and starvation-free. These properties offer guarantees that every thread will eventually leave every critical section in a timely manner \cite[Chapter~3.7.1]{herlihy2020art}. There are different types of non-blocking progress conditions, which may either be dependent or independent of other threads. 
+
+A method is obstruction-free if, from any point after which it executes in isolation, it finishes in a finite number of steps (may be implemented using back-off algorithms whenever conflict is encountered)\cite{herlihy2020art,herlihy2003obstruction}. Obstruction-free algorithms are, by definition, dependent.
+
+A method is lock-free if it guarantees that infinitely often some method call finishes in a finite number of steps \cite{herlihy2020art}.
+
+A method is wait-free if it guarantees that a method call finishes in a bounded number of steps. This bound may also depend on the number of threads \cite{herlihy2020art}.
+
+\section{Correctness Conditions}
+
+Correctness conditions describe the pre and post conditions for a concurrent object's operations \cite{herlihy2020art}. Such pre and post conditions decide whether a concurrent history is legal \cite{herlihy1990linearizability}. Correctness conditions are usually based on two requirements: (1) When an operation takes effect, and (2) how the order of non concurrent operations should be preserved \cite{herlihy1990linearizability}.
+
+A subset of existing correctness conditions are:
+
+\begin{itemize}
+\item \emph{Sequential}: Sequential consistency requires that each process's method call takes effect in program order.
+\item \emph{Linearizable}: A concurrent computation is linearizable if it is ``equivalent'' (as previously formally defined) to a legal sequential computation \cite{herlihy1990linearizability}. A linearizable concurrent computation gives the illusion that a method call takes effect instantaneously some time between the method's invocation and response; the point in time where the method takes effect is also known as the linearizability point \cite{herlihy2020art,herlihy1990linearizability}. Linearizability is composable, meaning that if each object in a system satisfies a condition, the entire system also satisfies said condition \cite[Chapter~3.3.1]{herlihy2020art}. Linearizability is also a non-blocking property, which means that method call is never forced to wait \cite{herlihy1990linearizability}. A problem with linearizability is that the order of overlapping operations is non-deterministic.
+\item \emph{Serializable}: A history is serializable if it is equivalent to a history where transactions appear to happen sequentially (without interleaving) \cite[Section~3.3]{herlihy1990linearizability}. This correctness condition is typically used in databases and distributed systems \cite{guerraoui2019consensus}. Serializable consistency comes with the blocking progress condition and is a general case of linearizability \cite{herlihy1990linearizability}.
+\end{itemize}
+
+\section{Queues}
+\subsection{Definition}
+Knuth defines a queue as a linear list for which all insertions are made at one end of the list and all deletions are made at the other end \cite{knuth1968art}. A queue typically comes with two main operations, which are enqueue (places an item at the head of the queue) and dequeue (removes and returns an item at the tail of the queue). Queues follow First in First out (FIFO) ordering (unlike the stack, which is Last in First out).
+\subsection{Definition of a concurrent queue}
+A concurrent queue is a type of queue that remains consistent and correct when accessed simultaneously through different threads. Non-concurrent or ill-synchronized queues typically end up in an inconsistent state after being accessed through multiple threads (this may occur for a number of reasons, such as race conditions)\cite{yahav2003automatically}, this may lead to undefined and incorrect behaviour. Concurrent queues are often the basis of scheduling algorithms and many other concurrent algorithms \cite{yahav2003automatically}.
+% \subsection{Correctness conditions with respect to queues}
+% The defacto correctness condition for a queue is linearizability, as it ensures that the semantics of the queue's operations are not altered \cite{mellor1987concurrent}. A queue cannot be sequentially consistent, as sequential consistency allows histories that don't lead to FIFO ordering. A queue may also be serializable, however, serializability constrains the degree of concurrency that can occur, making it too strong of a correctness condition.
+
+% When talking about correctness conditions with respect to FIFO queues, restricting the order of method calls is only a subset of the applicable correctness conditions. Yahav and Sagiv\cite{yahav2003automatically} provide some examples of correctness conditions for concurrent FIFO queues, which are:
+% \begin{itemize}
+%   \item The linked list is always connected
+%   \item Nodes are only inserted after the last node of the linked list
+%   \item Nodes are only deleted from the beginning of the linked list
+%   \item The head of the queue always points to the first node in the linked list
+%   \item The tail of the queue always points to a node in the linked list.
+% \end{itemize}
+
+\section{Mutual Exclusion}
+The 'Mutual Exclusion' protocol ensures that shared memory remains consistent when modified concurrently by two or threads running in parallel.
+
+% Mutual exclusion introduces the concept of critical sections, where different threads do not overlap \cite[Chapter~2]{herlihy2020art}. 
+
+Any mutual exclusion protocol needs to determine what to do when it is unable to acquire a lock. There are three alternatives to this problem \cite[Chapter~7]{herlihy2020art}:
+\begin{itemize}
+  \item Busy waiting - Conditionally and actively polls an area in memory or a shared resource. Busy waiting locks are typically referred to as spin-locks.
+  \item Blocking - Yields control of the CPU to other processes.
+  \item Hybrid - Makes use of both busy waiting and blocking for optimal use of resources.
+\end{itemize}
+
+``Roll your own lightweight mutex''\cite{preshingmutex} covers a simple mutex implementation using a type of semaphore informally known as the `Benaphore'\cite{haikubenaphore}.
+
+``Locks Aren't Slow; Lock Contention Is''\cite{preshinglockcontentionslow} offers insight into the performance of spin locks under contention. Preshing uses a custom implementation of the Mersenne Twister \cite{matsumoto1998mersenne} to simulate a critical section. The workload (ie. the amount of time that the lock is held for) and the number of threads used as variables whilst the lock frequency remained constant. The results show that high levels of contention on a lock is enough to degrade the performance of a parallel solution to the point where a sequential thread will perform better.
+
+Boyd-Wickizer et. al show that non-scalable locks, such as spin locks should not be used in operating systems where contention is hard to control. Several micro-benchmarks were implemented using a spin lock implementation offered by the linux kernel; as the contention increased, the performance of each benchmark dropped drastically. The spin lock was then re-implemented using scalable locks, such as the MCS lock \cite{mellor1991algorithms} and the CLH lock \cite{craig1993building,magnusson1994queue} improved performance on a large number of cores by at least 3.5 times, and in some cases, 16 times.
+
+Segall and Rudolph \cite{rudolph1984dynamic} propose an alternative to the test and set (TAS) spinning method called test-and-test-and-set (TTAS). TTAS reduces the amount of cache line invalidations caused by TAS spinning by checking if the flag being spinned on has changed before calling TAS.
+
+Anderson offers an improvement to the TTAS lock by implementing several spin locks based on CSMA network protocols \cite{anderson1990performance}. Anderson notes that spin locks using Ethernet's back off protocol tends to perform better under contention than a regular TTAS lock.
+
+Graunke and Thakkar also offer improvements to the TTAS lock by adding a delay after each failed test in order to reduce contention \cite{graunke1990synchronization}. The authors also proposed a novel queuing lock that outperformed all variations of the TAS lock when more than three processors are competing for access.
+
+Mellor-Crummey and Scott propose a novel array based lock known as the MCS lock that outperforms both array based queueing locks proposed by Anderson and Graunke et al. \cite{mellor1991algorithms}. The authors also offer insight into existing spin locks such as TAS, TTAS, and the ticket lock, and describe their benefits and their caveats.
+
+\section{Benchmarks and Performance Analysis Methodologies}
+Fog and McKenney offer insights into how to reduce the number of errors and interventions when micro-benchmarking \cite{fog1996optimizing,fog2020optimizing, mckenney2017parallel}. Some measures to prevent errors are: keeping the CPU clock frequency stable (Stinner described methods of configuring and reading multiple CPU parameters \cite{stinnerpstate}), ignoring the first few iterations due to the cache and the branch predictor being cold\cite{fog1996optimizing}, avoiding symmetric multi-threading (aka. hyper-threading) \cite{fog2020optimizing} and detecting kernel interferences \cite[Chapter~11.7]{mckenney2017parallel}.
+
+Intel's lock scaling analysis on Intel Xeon processors \cite{intelxeonlockscaling} benchmarks the relative contended performance of the Xeon Phi E5-2600 over X5600. The most notable contribution of this paper is the methodology used to for the benchmarks. The authors claim that a microbenchmark that aims to study lock performance does not reflect behaviour on real software if the study does not factor in the length of the simulated critical section and the frequency of locking. The paper reaches the conclusion that when predictable performance is desired, the locking algorithm requires reasonably long critical sections and re-entry times.
+
+Sahelices et al. offer a new methodology for tuning performance and critical sections inside of parallel programs \cite{sahelices2009methodology}. Critical sections were characterized by lock contention and degree of data sharing, allowing the authors to identify a number of inefficiencies caused by data sharing patterns and data layouts. Interestingly, the benchmarks were conducted on a multiprocessor simulator called RSIM, that allowed the authors to take fine grained and accurate statistics.
+
+Gregg describes several performance 'Anti-Methodologies' and 'Methodologies' \cite{methodologygregg}. Anti-Methodologies are methods of benchmarking performance that do not lead to accurate or correct results. This is an article that anyone in the field of performance analysis should read, as it reveals methodical and structured methods of carrying out performance analysis.
+
+Intel's optimization reference manual \cite{intelmanualoptimization} suggests several potential metrics that may be derived from specific hardware counters. Notably, equations for calculating bus utilization, L2 Modified Lines Eviction Rate, and Modified Data Sharing Ratio are all provided.

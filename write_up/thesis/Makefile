@@ -8,6 +8,7 @@ content:
 	$(PDF_LATEX_COMMAND) && $(PDF_LATEX_COMMAND)
 
 references:
+	$(PDF_LATEX_COMMAND)
 	bibtex $(PROJECT_NAME)
 	$(PDF_LATEX_COMMAND)
 	$(PDF_LATEX_COMMAND)

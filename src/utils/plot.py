@@ -1,80 +1,101 @@
-import pandas as pd
-import matplotlib.pyplot as plt
 import os
-from typing import List
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+# Taken from: https://regenerativetoday.com/some-tricks-to-make-matplotlib-visualization-even-better/
+# from mpl_toolkits.axes_grid1.inset_locator import mark_inset, inset_axes
 
 images_path = "src/utils/images/"
 
 os.makedirs(images_path, exist_ok=True)
 
-markersize = 4
-linewidth = 0.5
+markersize = 7
+linewidth = 0.7
 
-queue_markers = {
-    "Baskets Queue with DWCAS": ("8", "solid"),
-    "Baskets Queue with tagged ptr": ("8", "dashdot"),
-    "MS Two-Lock TTAS": ("*", "solid"),
-    "MS Lock-Free Queue with DWCAS": ("+", "solid"),
-    "MS Lock-Free Queue with tagged ptr": ("+", "dashdot"),
-    "Valois Queue": ("x", "solid")
-}
-
-individual_queue_markers = {
-    0: ("8", "solid"),
-    250: ("s", "dashdot"),
-    500: ("+", "dashed"),
-    750: ("*", "dotted"),
-    1000: ("x", (0, (3, 1, 1, 1, 1, 1)))
+sns_kwargs = {
+    "markers": True,
+    "dashes": True,
+    "ci": "sd",
+    "markeredgecolor": "none",
+    "err_style": "bars",
+    "linewidth": linewidth,
+    "markersize": markersize,
+    "err_kws": {"linewidth" : linewidth, "capsize" : 2, "ecolor" : "k"}
 }
 
 
-def plot_results(file_name:str, title:str, output_file_name_prefix=""):
-    runtime_key = "net_runtime_s"
-    readings = pd.read_csv(f"{file_name}")
-    queue_names = sorted(readings["name"].unique())
-    max_threads = readings["threads"].max()
-    grouped_readings = readings.groupby(["name", "delay", "threads"])
-    thread_axis = list(range(1, max_threads + 1))
-    delay_times = sorted(readings["delay"].unique())
-    #print(mean_readings.get(queue_names[0]).keys())
-    # Could be made cleaner using agg()
-    min_readings = grouped_readings[runtime_key].min()
-    max_readings = grouped_readings[runtime_key].max()
-    mean_readings = grouped_readings[runtime_key].mean()
+
+def plot_cleanup():
+    # Disable matplotlib's colour cycling after each plot
+    # ensuring idempotent results
+    #plt.gca().set_prop_cycle(None)
+    plt.close()
+
+def plot_grouped_results(delay:int, input_file_name:str, output_file_name:str, plot_title:str, dpi:int = 300):
+    df = pd.read_csv(f"{input_file_name}.csv")
+    individual_delay_df = df.query(f"delay == {str(delay)}").sort_values(by="name")
+
+    sns.set_style("whitegrid")
+    sns.set_palette("colorblind")
+
+    ax1 = sns.lineplot(
+        data = individual_delay_df,
+        x = "threads",
+        y = "net_runtime_s",
+        style = "name",
+        hue = "name",
+        **sns_kwargs
+    )
+
+    ax1.set_xlabel("Threads")
+    ax1.set_ylabel("Runtime (s)")
+    ax1.set_title(plot_title)
+
+    plt.savefig(f"{images_path}/{output_file_name}.jpg", dpi = dpi)
+    plot_cleanup()
+
+def plot_individual_results(input_file_name:str, output_file_name:str, plot_title:str, dpi:int = 300):
+    df = pd.read_csv(f"{input_file_name}.csv", index_col="name")
+    queue_names = df.index.unique().sort_values()
+
+    sns.set_style("whitegrid")
+    sns.set_palette("colorblind")
+
     for queue_name in queue_names:
-        current_mean_readings = mean_readings.get(queue_name)
-        current_min_readings = min_readings.get(queue_name)
-        current_max_readings = max_readings.get(queue_name)
-        fig, ax = plt.subplots()
-        ax.set_title(queue_name + f" {title}")
+        individual_df = df.loc[queue_name, ["net_runtime_s", "threads", "delay"]]
+        individual_df.reset_index(drop = True, inplace = True)
+
+        ax = sns.lineplot(
+            data = individual_df,
+            x = "threads",
+            y = "net_runtime_s",
+            style = "delay",
+            hue = "delay",
+            **sns_kwargs
+        )
+
         ax.set_xlabel("Threads")
-        ax.set_ylabel("Total Runtime (s)")
-        for delay_time in delay_times:
-            temp_total_runtime = current_mean_readings.get(delay_time)
-            temp_min_runtime = current_min_readings.get(delay_time)
-            temp_max_runtime = current_max_readings.get(delay_time)
-            
-            marker, linestyle = individual_queue_markers[delay_time]
-            ax.errorbar(
-                thread_axis,
-                temp_total_runtime.to_list(),
-                yerr=[temp_total_runtime-temp_min_runtime, temp_max_runtime-temp_total_runtime],
-                label = f"{delay_time}ns",
-                marker = marker,
-                linestyle = linestyle,
-                markersize = markersize,
-                linewidth = linewidth,
-                # ecolor="k",
-                capsize=2
-            )
-            
-        
-        ax.legend()
-        cleaned_queue_name = queue_name.lower().replace(" ", "_")
-        fig.savefig(f"{images_path}{output_file_name_prefix}{cleaned_queue_name}.png")
-        # https://stackoverflow.com/a/39116381
-        plt.gca().set_prop_cycle(None)
-        plt.close()
-        
-plot_results("enqueue_dequeue_results.csv", "Enqueue Dequeue Benchmark")
-plot_results("p_enqueue_dequeue_results.csv", "50% Enqueue Dequeue", "p_")
+        ax.set_ylabel("Runtime (s)")
+        ax.set_title(f"{queue_name}: {plot_title}")
+
+        cleaned_queue_name = str.lower(queue_name).replace(" ", "_")
+
+        plt.savefig(
+            f"{images_path}/{output_file_name}_{cleaned_queue_name}.jpg",
+            dpi = dpi
+        )
+
+        plot_cleanup()
+
+enqueue_dequeue_title = "Pairwise Enqueue Dequeue Benchmark"
+enqueue_dequeue_file_name = "enqueue_dequeue_results"
+p_enqueue_dequeue_title = "50% Enqueue Benchmark"
+p_enqueue_dequeue_file_name = "p_enqueue_dequeue_results"
+
+
+plot_grouped_results(250, "enqueue_dequeue_results", "grouped_enqueue_dequeue", enqueue_dequeue_title)
+plot_grouped_results(250, "p_enqueue_dequeue_results", "p_grouped_enqueue_dequeue", p_enqueue_dequeue_title)
+
+plot_individual_results("enqueue_dequeue_results", "individual_enqueue_dequeue", enqueue_dequeue_title)
+plot_individual_results("p_enqueue_dequeue_results", "individual_p_enqueue_dequeue", p_enqueue_dequeue_title)
+

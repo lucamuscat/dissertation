@@ -45,9 +45,29 @@ A thread sub-history, $H|A$  (``\emph{H at A}'') is the subsequence of all event
 Two histories \emph{H} and \emph{H'} are equivalent if $\forall a:A \cdot H|A = H'|A$.
 \end{definition}
 
-\section{Uniprocessors and Multiprocessors}
+\section{Multiprocessors}
+Over the years, as the exponential increase in Uniprocessor performance diminished, programmers started to rely on parallelism offered by Multicore CPUs in order to further increase performance \cite{cantrill2008real}.
 
-\subsection{CPU Cache Overview}
+\begin{definition}[Multiprocessor]
+    Multiprocessors consist of multiple hardware processors, each of which executes a sequential program \cite[Appendix~B.2]{herlihy2020art}.
+\end{definition}
+\begin{definition}[Time Slice]
+    A \emph{`Time Slice'} is a small unit of time that a thread may consume before being paused, and swapped to another thread \cite{osconcepts2021}.
+\end{definition}
+\begin{definition}[Threads]
+    Threads are a software construct that represent sequential programs.
+\end{definition}
+\begin{definition}[Context Switch]
+Once a thread's time quantum has expired, the operating system will typically use a \emph{context switch} in order to swap the thread with another. A thread may be \emph{descheduled} voluntarily before its time slice expires by yielding control to the CPU, or when an interrupt or a system call occurs \cite[Section~3.2.3]{osconcepts2021}
+\end{definition}
+
+The practicality and feasibility of parallel programming as of recent years has improved drastically, partly thanks to Multiprocessors getting cheaper, and easier to program due to abstractions such as OpenMP, MPI (Message Passing Interface), implicit parallel programming environments such as SQL, and programming language standards that give guarantees to how parallel code will behave, such as Java's \cite{javamemorymodel2014} and C++11's \cite{cppmemorymodel} standardized memory model \cite[Chapter~2.2]{perfbook2021}.
+
+% \cite[Appendix~B.7.1]{perfbook2021}.
+For the sake of optimization, CPUs and compilers do not guarantee any specific results when multiple threads modify the same memory location concurrently \cite{drepper2007every}; an example of an optimization is out-of-order execution \cite[Appendix~B.7.1]{perfbook2021}. Developers of shared-memory multithreaded programs need to explicitly make use of synchronization primitives in order to prevent the corruption of data.
+
+\subsection{CPU Cache}
+As the disparity between CPU frequency and memory access time continued to grow, CPU engineers started to add small, yet fast SRAM chips between the CPU and main memory in order to alleviate the speed differences. Since using large amounts of SRAM is considered to be uneconomical, more cache layers were added, with each layer being slower, larger, and cheaper. The fast L1 cache is
 % [] Caching is needed to avoid accessing slow memory by copying data into faster memory hardware
 % [] There are different levels cache, there is the register, L1, L2, and L3
 % As cache levels move towards the register, access times get faster and cache sizes get smaller since they are more expensive.
@@ -141,7 +161,7 @@ Graunke and Thakkar also offer improvements to the TTAS lock by adding a delay a
 Mellor-Crummey and Scott propose a novel array based lock known as the MCS lock that outperforms both array based queueing locks proposed by Anderson and Graunke et al. \cite{mellor1991algorithms}. The authors also offer insight into existing spin locks such as TAS, TTAS, and the ticket lock, and describe their benefits and their caveats.
 
 \section{Benchmarks and Performance Analysis Methodologies}
-Fog and McKenney offer insights into how to reduce the number of errors and interventions when micro-benchmarking \cite{fog1996optimizing,fog2020optimizing, mckenney2017parallel}. Some measures to prevent errors are: keeping the CPU clock frequency stable (Stinner described methods of configuring and reading multiple CPU parameters \cite{stinnerpstate}), ignoring the first few iterations due to the cache and the branch predictor being cold\cite{fog1996optimizing}, avoiding symmetric multi-threading (aka. hyper-threading) \cite{fog2020optimizing} and detecting kernel interferences \cite[Chapter~11.7]{mckenney2017parallel}.
+Fog and McKenney offer insights into how to reduce the number of errors and interventions when micro-benchmarking \cite{fog1996optimizing,fog2020optimizing, perfbook2021}. Some measures to prevent errors are: keeping the CPU clock frequency stable (Stinner described methods of configuring and reading multiple CPU parameters \cite{stinnerpstate}), ignoring the first few iterations due to the cache and the branch predictor being cold\cite{fog1996optimizing}, avoiding symmetric multi-threading (aka. hyper-threading) \cite{fog2020optimizing} and detecting kernel interferences \cite[Chapter~11.7]{perfbook2021}.
 
 Intel's lock scaling analysis on Intel Xeon processors \cite{intelxeonlockscaling} benchmarks the relative contended performance of the Xeon Phi E5-2600 over X5600. The most notable contribution of this paper is the methodology used to for the benchmarks. The authors claim that a microbenchmark that aims to study lock performance does not reflect behaviour on real software if the study does not factor in the length of the simulated critical section and the frequency of locking. The paper reaches the conclusion that when predictable performance is desired, the locking algorithm requires reasonably long critical sections and re-entry times.
 

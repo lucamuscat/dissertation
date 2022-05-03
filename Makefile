@@ -51,6 +51,9 @@ COMMON_DELAY = $(CXX) $(QUEUES_DIR)/tests/delay_test.c $(TEST_UTILS) -lm $(DEBUG
 delay_test: init_build_folder
 	$(COMMON_DELAY) $(PAPI_LIB) -o $(OUTPUT_DIR)/delay_test $(ERROR_FLAGS)
 
+plot:
+	py src/utils/plot.py
+
 clean: 
 	rm -rf ./build
 	rm -f *.s *.o

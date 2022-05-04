@@ -54,30 +54,29 @@
 % \end{definition}
 
 \section{Multiprocessors}
-Over the years, as the exponential increase in Uniprocessor performance
+Over the years, as the exponential increase in \emph{uniprocessor} performance
 diminished, programmers started to rely on parallelism offered by Multicore
-CPUs in order to further increase performance\cite{cantrill2008real}.
+CPUs in order to further increase performance~\cite{cantrill2008real}.
 
 \begin{definition}[Multiprocessor]
-    Multiprocessors consist of multiple hardware processors, each of which
-    executes a sequential program\cite[Appendix~B.2]{herlihy2020art}.
+    \emph{Multiprocessors} consist of multiple hardware processors, each of which
+    executes a \emph{sequential program}~\cite[Appendix~B.2]{herlihy2020art}.
 \end{definition}
 
 \begin{definition}[Time Slice]
-    A \emph{`Time Slice'} is a small unit of time that a thread may consume
-    before being paused, and swapped to another thread\cite{osconcepts2021}.
+    A \emph{time slice} is a small unit of time that a thread may consume
+    before being paused, and swapped with another thread~\cite{osconcepts2021}.
 \end{definition}
 
 \begin{definition}[Thread]
-    A thread is a software construct that represents a sequential program.
+    A \emph{thread} is a software construct that represents a sequential program~\cite[Appendix~B.2]{herlihy2020art}.
 \end{definition}
 
 \begin{definition}[Context Switch]
 Once a thread's time quantum has expired, the operating system will typically
-use a \emph{context switch} in order to swap the thread with another. A thread
-may be \emph{descheduled} voluntarily before its time slice expires by yielding
-control to the CPU, or when an interrupt or a system call occurs
-\cite[Section~3.2.3]{osconcepts2021}
+use a \emph{context switch} in order to swap the thread out with another. A thread
+may be \emph{descheduled} before its time slice expires due to an interrupt,
+system call, or by voluntarily yielding the remainder of the time slice to the CPU~\cite[Section~3.2.3]{osconcepts2021}.
 \end{definition}
 
 The practicality and feasibility of parallel programming as of recent years has
@@ -108,22 +107,26 @@ last~\cite{drepper2007every, perfbook2021}.
 
 Data is transferred in units of \emph{``cache lines''}, which are power-of-two
 fixed-size aligned blocks of memory, commonly ranging from 32 to 256 bytes in
-size~\cite[Section~3.2.1]{perfbook2021}. Cache lines are filled with data from
-the requested memory address, together with neighbouring bytes.
+size. Cache lines are filled with data from the requested memory address,
+together with neighbouring bytes~\cite[Section~3.2.1]{perfbook2021}.
 
-\emph{Sharing} occurs when overlapping data is loaded into several cache lines.
-Following the MESI protocol, cache lines become \emph{invalidated} when
-modified in a shared state, leading to the invalidation of cache lines
-containing shared data. 
+The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, Invalid)
+attaches states to memory addresses; transitions notify the processor
+when to invalidate a cache line in order to prevent stale data~\cite[Appendix~B.5.1]{herlihy2020art}.
+
+%\emph{Sharing} occurs when overlapping data is loaded into several cache lines.
+\emph{Sharing} occurs when one processor reads or writes to a memory address that
+is cached by another~\cite[Appendix~B.5.1]{herlihy2020art}.
 
 In some cases, sharing is unavoidable; it is possible for closely located,
-yet unrelated data to share a single cache line.
-\emph{False Sharing} occurs when the invalidation of a cache line invalidated
+yet unrelated data to share a single cache line. Whenever a cache line
+\emph{False Sharing} occurs when the invalidation of a cache line invalidates
 other cache lines due to unrelated data being shared. In parallel programming,
 \emph{false sharing} is a performance killer, as writes become expensive due to
 the increased rate of invalidations per write. At the cost of a higher memory
 footprint, \emph{false sharing} may be thwarted by padding data with
 unused memory to prevent cache lines from being shared.
+
 
 % [x] Caching is needed to avoid accessing slow memory by copying data into faster memory hardware
 % [x] There are different levels cache, there is the register, L1, L2, and L3
@@ -132,8 +135,9 @@ unused memory to prevent cache lines from being shared.
 % [x] Mention what false sharing is and why it should be avoided.
 % [] Mention how false sharing impacted this study's performance before being fixed.
 
-\subsubsection{UMA and NUMA}
-% 
+
+%\subsubsection{Interconnection}
+% Describe UMA and NUMA
 
 \subsection{Atomic Operations}
 % [] What is an atomic operation?

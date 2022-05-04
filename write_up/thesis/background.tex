@@ -8,71 +8,129 @@
 % [] Mutual Exclusion
 
 
-\section{Threads}
-% [] What is a thread and why is it used?
-% [] Formal definitions:
-% Sequential Programs, Concurrent Programs, Threads, Concurrent Systems
+% \section{Threads}
+% % [] What is a thread and why is it used?
+% % [] Formal definitions:
+% % Sequential Programs, Concurrent Programs, Threads, Concurrent Systems
 
-\subsection{Concurrent Objects}
-\textcite{herlihy1990linearizability} define a concurrent object as a data object shared by concurrent processes \cite{herlihy1990linearizability}. 
+% \subsection{Concurrent Objects}
+% Herlihy defines a concurrent object as a data object shared by concurrent processes\cite{herlihy1990linearizability}. 
 
-Concurrent systems are modeled by a finite sequence of method invocations and response events \cite[Chapter~3.6]{herlihy2020art}. \textcite{herlihy2020art} provides the following formal definitions \cite[Chapter~3.6]{herlihy2020art}:
-% \begin{itemize}
-%   \item A method call in a history \emph{H} is a pair made up of an invocation that follows the next response (An invocation is the starting point of the method call, whilst the response may be seen as a point in the method where an object is returned).
-%   \item An invocation is pending in \emph{H} if it does not follow a matching response.
-%   \item A history \emph{H} is \emph{sequential} if the first event of \emph{H} is an invocation, and each invocation, possibly excluding the last, is immediately followed by a matching response.
-%   \item A history \emph{H} is \emph{well formed} if all of its sub-histories are \emph{sequential}.
-%   \item A thread sub-history, $H|A$  (``\emph{H at A}'') is the subsequence of all events in \emph{H} whose thread names are \emph{A}.
-%   \item Two histories \emph{H} and \emph{H'} are equivalent if $\forall a:A \cdot H|A = H'|A$.
-% \end{itemize}
-\begin{definition}[Method Call]
-A method call in a history \emph{H} is a pair made up of an invocation that follows the next response; An invocation is the starting point of the method call, whilst the response is the point in the method where an object is returned.
-\end{definition}
+% Concurrent systems are modelled by a finite sequence of method invocations and response events\cite[Chapter~3.6]{herlihy2020art}. Herlihy provides the following formal definitions\cite[Chapter~3.6]{herlihy2020art}:
+% % \begin{itemize}
+% %   \item A method call in a history \emph{H} is a pair made up of an invocation that follows the next response (An invocation is the starting point of the method call, whilst the response may be seen as a point in the method where an object is returned).
+% %   \item An invocation is pending in \emph{H} if it does not follow a matching response.
+% %   \item A history \emph{H} is \emph{sequential} if the first event of \emph{H} is an invocation, and each invocation, possibly excluding the last, is immediately followed by a matching response.
+% %   \item A history \emph{H} is \emph{well formed} if all of its sub-histories are \emph{sequential}.
+% %   \item A thread sub-history, $H|A$  (``\emph{H at A}'') is the subsequence of all events in \emph{H} whose thread names are \emph{A}.
+% %   \item Two histories \emph{H} and \emph{H'} are equivalent if $\forall a:A \cdot H|A = H'|A$.
+% % \end{itemize}
+% \begin{definition}[Method Call]
+% A method call in a history \emph{H} is a pair made up of an invocation that
+% follows the next response; An invocation is the starting point of the
+% method call, whilst the response is the point in the method where an object is
+% returned.
+% \end{definition}
 
-\begin{definition}[Pending Invocation]
-An invocation is pending in \emph{H} if it does not follow a matching response.    
-\end{definition}
+% \begin{definition}[Pending Invocation]
+% An invocation is pending in \emph{H} if it does not follow a matching response.    
+% \end{definition}
 
-\begin{definition}[History]
-A history \emph{H} is \emph{sequential} if the first event of \emph{H} is an invocation, and each invocation, possibly excluding the last, is immediately followed by a matching response. A history \emph{H} is \emph{well formed} if all of its sub-histories are \emph{sequential}.
-\end{definition}
+% \begin{definition}[History]
+% A history \emph{H} is \emph{sequential} if the first event of \emph{H} is an
+% invocation, and each invocation, possibly excluding the last, is immediately
+% followed by a matching response. A history \emph{H} is \emph{well formed} if
+% all of its sub-histories are \emph{sequential}.
+% \end{definition}
 
-\begin{definition}[Sub-History]
-A thread sub-history, $H|A$  (``\emph{H at A}'') is the subsequence of all events in \emph{H} whose thread names are \emph{A}.
-\end{definition}
+% \begin{definition}[Sub-History]
+% A thread sub-history, $H|A$  (``\emph{H at A}'') is the subsequence of all
+% events in \emph{H} whose thread names are \emph{A}.
+% \end{definition}
 
-\begin{definition}[Equivalence]
-Two histories \emph{H} and \emph{H'} are equivalent if $\forall a:A \cdot H|A = H'|A$.
-\end{definition}
+% \begin{definition}[Equivalence]
+% Two histories \emph{H} and \emph{H'} are equivalent if $\forall a:A \cdot H|A =
+% H'|A$.
+% \end{definition}
 
 \section{Multiprocessors}
-Over the years, as the exponential increase in Uniprocessor performance diminished, programmers started to rely on parallelism offered by Multicore CPUs in order to further increase performance \cite{cantrill2008real}.
+Over the years, as the exponential increase in Uniprocessor performance
+diminished, programmers started to rely on parallelism offered by Multicore
+CPUs in order to further increase performance\cite{cantrill2008real}.
 
 \begin{definition}[Multiprocessor]
-    Multiprocessors consist of multiple hardware processors, each of which executes a sequential program \cite[Appendix~B.2]{herlihy2020art}.
-\end{definition}
-\begin{definition}[Time Slice]
-    A \emph{`Time Slice'} is a small unit of time that a thread may consume before being paused, and swapped to another thread \cite{osconcepts2021}.
-\end{definition}
-\begin{definition}[Threads]
-    Threads are a software construct that represent sequential programs.
-\end{definition}
-\begin{definition}[Context Switch]
-Once a thread's time quantum has expired, the operating system will typically use a \emph{context switch} in order to swap the thread with another. A thread may be \emph{descheduled} voluntarily before its time slice expires by yielding control to the CPU, or when an interrupt or a system call occurs \cite[Section~3.2.3]{osconcepts2021}
+    Multiprocessors consist of multiple hardware processors, each of which
+    executes a sequential program\cite[Appendix~B.2]{herlihy2020art}.
 \end{definition}
 
-The practicality and feasibility of parallel programming as of recent years has improved drastically, partly thanks to Multiprocessors getting cheaper, and easier to program due to abstractions such as OpenMP, MPI (Message Passing Interface), implicit parallel programming environments such as SQL, and programming language standards that give guarantees to how parallel code will behave, such as Java's \cite{javamemorymodel2014} and C++11's \cite{cppmemorymodel} standardized memory model \cite[Chapter~2.2]{perfbook2021}.
+\begin{definition}[Time Slice]
+    A \emph{`Time Slice'} is a small unit of time that a thread may consume
+    before being paused, and swapped to another thread\cite{osconcepts2021}.
+\end{definition}
+
+\begin{definition}[Thread]
+    A thread is a software construct that represents a sequential program.
+\end{definition}
+
+\begin{definition}[Context Switch]
+Once a thread's time quantum has expired, the operating system will typically
+use a \emph{context switch} in order to swap the thread with another. A thread
+may be \emph{descheduled} voluntarily before its time slice expires by yielding
+control to the CPU, or when an interrupt or a system call occurs
+\cite[Section~3.2.3]{osconcepts2021}
+\end{definition}
+
+The practicality and feasibility of parallel programming as of recent years has
+improved drastically, partly thanks to Multiprocessors getting cheaper, and
+easier to program due to abstractions such as OpenMP, MPI (Message Passing
+Interface), implicit parallel programming environments such as SQL, and
+programming language standards that provide guarantees to how parallel code will
+behave, such as Java's\cite{javamemorymodel2014} and C++11's
+\cite{cppmemorymodel} standardized memory model
+\cite[Chapter~2.2]{perfbook2021}.
 
 % \cite[Appendix~B.7.1]{perfbook2021}.
-For the sake of optimization, CPUs and compilers do not guarantee any specific results when multiple threads modify the same memory location concurrently \cite{drepper2007every}; an example of an optimization is out-of-order execution \cite[Appendix~B.7.1]{perfbook2021}. Developers of shared-memory multithreaded programs need to explicitly make use of synchronization primitives in order to prevent the corruption of data.
+For the sake of optimization, CPUs and compilers do not guarantee any specific
+results when multiple threads modify the same memory location concurrently
+\cite{drepper2007every}; an example of an optimization is out-of-order
+execution\cite[Appendix~B.7.1]{perfbook2021}. Developers of shared-memory
+multithreaded programs need to explicitly make use of synchronization
+primitives in order to prevent the corruption of data.
 
 \subsection{CPU Cache}
-As the disparity between CPU frequency and memory access time continued to grow, CPU engineers started to add small, yet fast SRAM chips between the CPU and main memory in order to alleviate the speed differences. Since using large amounts of SRAM is considered to be uneconomical, more cache layers were added, with each layer being slower, larger, and cheaper. The fast L1 cache is
-% [] Caching is needed to avoid accessing slow memory by copying data into faster memory hardware
-% [] There are different levels cache, there is the register, L1, L2, and L3
+As the disparity between CPU frequency and memory access time continued to
+grow, CPU engineers started to add small, yet fast SRAM chips between the CPU
+and main memory in order to alleviate issues caused by the speed
+differences~\cite{cantrill2008real, drepper2007every , perfbook2021}. Since
+using large amounts of SRAM is considered to be uneconomical, more cache layers
+were added, with each layer being slower, larger, and cheaper than the
+last~\cite{drepper2007every, perfbook2021}.
+
+Data is transferred in units of \emph{``cache lines''}, which are power-of-two
+fixed-size aligned blocks of memory, commonly ranging from 32 to 256 bytes in
+size~\cite[Section~3.2.1]{perfbook2021}. Cache lines are filled with data from
+the requested memory address, together with neighbouring bytes.
+
+\emph{Sharing} occurs when overlapping data is loaded into several cache lines.
+Following the MESI protocol, cache lines become \emph{invalidated} when
+modified in a shared state, leading to the invalidation of cache lines
+containing shared data. 
+
+In some cases, sharing is unavoidable; it is possible for closely located,
+yet unrelated data to share a single cache line.
+\emph{False Sharing} occurs when the invalidation of a cache line invalidated
+other cache lines due to unrelated data being shared. In parallel programming,
+\emph{false sharing} is a performance killer, as writes become expensive due to
+the increased rate of invalidations per write. At the cost of a higher memory
+footprint, \emph{false sharing} may be thwarted by padding data with
+unused memory to prevent cache lines from being shared.
+
+% [x] Caching is needed to avoid accessing slow memory by copying data into faster memory hardware
+% [x] There are different levels cache, there is the register, L1, L2, and L3
 % As cache levels move towards the register, access times get faster and cache sizes get smaller since they are more expensive.
-% [] CPU cache lines are used as a unit of transfer between different caches, on most architectures, a cache line is 64 bytes in size.
-% [] Mention what false sharing is and why it should be avoided. Also mention how it impacted the experiments before being fixed.
+% [x] CPU cache lines are used as a unit of transfer between different caches, on most architectures, a cache line is 64 bytes in size.
+% [x] Mention what false sharing is and why it should be avoided.
+% [] Mention how false sharing impacted this study's performance before being fixed.
 
 \subsubsection{UMA and NUMA}
 % 

@@ -45,11 +45,15 @@ all: \
 	enqueue_dequeue \
 	p_enqueue_dequeue 
 
-.PHONY: all clean
+.PHONY: all clean document plot
 
 COMMON_DELAY = $(CXX) $(QUEUES_DIR)/tests/delay_test.c $(TEST_UTILS) -lm $(DEBUG_FLAGS) 
 delay_test: init_build_folder
 	$(COMMON_DELAY) $(PAPI_LIB) -o $(OUTPUT_DIR)/delay_test $(ERROR_FLAGS)
+
+# Generate the pdf for the FYP
+document:
+	cd write_up/thesis && make references
 
 plot:
 	py src/utils/plot.py

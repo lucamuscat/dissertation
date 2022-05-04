@@ -14,5 +14,5 @@ references:
 	$(PDF_LATEX_COMMAND)
 
 clean:
-	rm -f *.aux *.log *.out *.pdf *.toc
+	rm -f *.aux *.log *.out *.pdf *.toc *.log *.lof *.lot *.blg *.bbl
 	rm -rf _minted-$(PROJECT_NAME)

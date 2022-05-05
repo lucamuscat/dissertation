@@ -27,6 +27,13 @@
   publisher={IEEE}
 }
 
+@book{perfbook2021,
+  title={Is parallel programming hard, and, if so, what can you do about it?},
+  author={McKenney, Paul E},
+  year={2021},
+  edition={Second Edition, Release Candidate 11}
+}
+
 @inproceedings{sahelices2009methodology,
   title={A methodology to characterize critical section bottlenecks in dsm multiprocessors},
   author={Sahelices, Benjam{\'\i}n and Ib{\'a}nez, Pablo and Vi{\~n}als, V{\'\i}ctor and Llaber{\'\i}a, Jos{\'e} Mar{\'\i}a},
@@ -63,6 +70,12 @@
   publisher={ACM New York, NY, USA}
 }
 
+@book{herlihy2020art,
+  title     = {The art of multiprocessor programming},
+  author    = {Herlihy, Maurice and Shavit, Nir and Luchangco, Victor and Spear, Michael},
+  year      = {2020},
+  publisher = {Newnes}
+}
 
 @manual{intelmanual,
   title  = {Intel{\textregistered} 64 and IA-32 Architectures Software Developer's Manual},
@@ -70,6 +83,14 @@
   year = {2021},
   version      = {325462-075US},
   chapter      = {Chapter 18}
+}
+
+
+@manual{intelmanualoptimization,
+  title        = {Intel{\textregistered} 64 and IA-32 Architectures Optimization Reference Manual},
+  organization = {Intel},
+  year         = {2021},
+  version      = {248966-044b}
 }
 
 @misc{introlockfree,
@@ -225,102 +246,4 @@
 }
 
 @article{abrial2005formal,
-  title   = {Formal Construction of a Non-blocking Concurrent Queue Algorithm (a Case Study in Atomicity).},
-  author  = {Abrial, Jean-Raymond and Cansell, Dominique},
-  journal = {J. Univers. Comput. Sci.},
-  volume  = {11},
-  number  = {5},
-  pages   = {744--770},
-  year    = {2005}
-}
-
-@article{herlihy1990linearizability,
-  title     = {Linearizability: A correctness condition for concurrent objects},
-  author    = {Herlihy, Maurice P and Wing, Jeannette M},
-  journal   = {ACM Transactions on Programming Languages and Systems (TOPLAS)},
-  volume    = {12},
-  number    = {3},
-  pages     = {463--492},
-  year      = {1990},
-  publisher = {ACM New York, NY, USA}
-}
-
-@inproceedings{guerraoui2019consensus,
-  title     = {The consensus number of a cryptocurrency},
-  author    = {Guerraoui, Rachid and Kuznetsov, Petr and Monti, Matteo and Pavlovi{\v{c}}, Matej and Seredinschi, Dragos-Adrian},
-  booktitle = {Proceedings of the 2019 ACM Symposium on Principles of Distributed Computing},
-  pages     = {307--316},
-  year      = {2019}
-}
-
-@inproceedings{herlihy2003obstruction,
-  title        = {Obstruction-free synchronization: Double-ended queues as an example},
-  author       = {Herlihy, Maurice and Luchangco, Victor and Moir, Mark},
-  booktitle    = {23rd International Conference on Distributed Computing Systems, 2003. Proceedings.},
-  pages        = {522--529},
-  year         = {2003},
-  organization = {IEEE}
-}
-
-@article{knuth1968art,
-  title   = {The Art of Computer Programming, vol 1: Fundamental},
-  author  = {Knuth, Donald E},
-  journal = {Algorithms},
-  pages   = {187},
-  year    = {1968}
-}
-
-@techreport{mellor1987concurrent,
-  title       = {Concurrent Queues: Practical Fetch-and-Phi Algorithms.},
-  author      = {Mellor-Crummey, John M},
-  year        = {1987},
-  institution = {ROCHESTER UNIV NY DEPT OF COMPUTER SCIENCE}
-}
-
-@article{yahav2003automatically,
-  title     = {Automatically verifying concurrent queue algorithms},
-  author    = {Yahav, Eran and Sagiv, Mooly},
-  journal   = {Electronic Notes in Theoretical Computer Science},
-  volume    = {89},
-  number    = {3},
-  pages     = {450--463},
-  year      = {2003},
-  publisher = {Elsevier}
-}
-
-@inproceedings{hoffman2007baskets,
-  title        = {The baskets queue},
-  author       = {Hoffman, Moshe and Shalev, Ori and Shavit, Nir},
-  booktitle    = {International Conference On Principles Of Distributed Systems},
-  pages        = {401--414},
-  year         = {2007},
-  organization = {Springer}
-}
-
-@inproceedings{ladan2004optimistic,
-  title        = {An optimistic approach to lock-free FIFO queues},
-  author       = {Ladan-Mozes, Edya and Shavit, Nir},
-  booktitle    = {International Symposium on Distributed Computing},
-  pages        = {117--131},
-  year         = {2004},
-  organization = {Springer}
-}
-
-@phdthesis{gharachorloo1996memory,
-  title  = {Memory consistency models for shared-memory multiprocessors},
-  author = {Gharachorloo, Kourosh},
-  year   = {1996},
-  school = {Stanford University}
-}
-
-@article{mooreslaw2006,
-  author  = {Mollick, Ethan},
-  year    = {2006},
-  month   = {08},
-  pages   = {62 - 75},
-  title   = {Establishing Moore's Law},
-  volume  = {28},
-  journal = {Annals of the History of Computing, IEEE},
-  doi     = {10.1109/MAHC.2006.45}
-}
-
+  title   = {Formal Construction of a Non-blocking Concurrent Queu

@@ -110,23 +110,57 @@ fixed-size aligned blocks of memory, commonly ranging from 32 to 256 bytes in
 size. Cache lines are filled with data from the requested memory address,
 together with neighbouring bytes~\cite[Section~3.2.1]{perfbook2021}.
 
-The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, Invalid)
-attaches states to memory addresses; transitions notify the processor
-when to invalidate a cache line in order to prevent stale data~\cite[Appendix~B.5.1]{herlihy2020art}.
+% The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, Invalid)
+% attaches states to memory addresses; transitions notify the processor
+% when to invalidate a cache line in order to prevent stale data~\cite[Appendix~B.5.1]{herlihy2020art}.
+
+In the \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared,
+or Invalid state), a state is attached to a memory address. Transitions in
+state notify the processor when to invalidate a cache line in order to prevent
+stale data from being read.
 
 %\emph{Sharing} occurs when overlapping data is loaded into several cache lines.
 \emph{Sharing} occurs when one processor reads or writes to a memory address that
 is cached by another~\cite[Appendix~B.5.1]{herlihy2020art}.
 
-In some cases, sharing is unavoidable; it is possible for closely located,
-yet unrelated data to share a single cache line. Whenever a cache line
-\emph{False Sharing} occurs when the invalidation of a cache line invalidates
-other cache lines due to unrelated data being shared. In parallel programming,
-\emph{false sharing} is a performance killer, as writes become expensive due to
-the increased rate of invalidations per write. At the cost of a higher memory
-footprint, \emph{false sharing} may be thwarted by padding data with
-unused memory to prevent cache lines from being shared.
+% In some cases, sharing is unavoidable; it is possible for closely located, yet
+% unrelated data to share a single cache line. \emph{False Sharing} occurs when
+% the invalidation of a cache line invalidates other cache lines due to unrelated
+% data being shared. In parallel programming, \emph{false sharing} is a
+% performance killer, as writes become expensive due to the increased rate of
+% invalidations. At the cost of a higher memory footprint, \emph{false
+% sharing} may be thwarted by padding data with unused memory to prevent cache
+% lines from being shared.
 
+In some cases, sharing is unavoidable; it is possible for closely located, yet
+logically distinct data to share a single cache line~\cite[Appendix~B.5.1]{herlihy2020art}. \emph{False Sharing} occurs when
+a cache line is invalidated due to an update on logically distinct data~\cite[Appendix~B.5.1]{herlihy2020art}. 
+
+In parallel programming, \emph{false sharing} is a
+performance killer, as writes become expensive due to the increased rate of
+cache line invalidations. At the cost of a higher memory footprint, \emph{false
+sharing} may be thwarted by padding data with unused memory to prevent cache
+lines from being shared~\cite{scott2013shared}.
+
+\subsection{Interconnection}
+In order for processors to communicate with the cache and memory, they need to
+be physically connected through some medium. There are two kinds of
+interconnection architectures: Firstly, there is the \emph{nonuniform memory
+access (NUMA)} architecture~\cite[Appendix~B.3]{herlihy2020art}, typically associated with multi-CPU or distributed
+systems. Secondly, there is the \emph{uniform memory access (UMA)} architecture,
+where all processors and memory are linked by a bus
+interconnect~\cite[Appendix~B.3]{herlihy2020art}.
+
+It is important to be cognizant of which interconnection architecture is being
+used, as some algorithms are not suited for certain architectures due to the
+overheads associated with accessing memory. This study will be
+conducted on a \emph{UMA} system.
+
+\subsection{Atomic Operations}
+An operation is said to be \emph{atomic} if it is not possible to observe an
+intermediate state~\cite{perfbook2021}. Atomicity is
+important in shared-memory multiprocessor programming, as non-atomic operations
+are prone to 
 
 % [x] Caching is needed to avoid accessing slow memory by copying data into faster memory hardware
 % [x] There are different levels cache, there is the register, L1, L2, and L3

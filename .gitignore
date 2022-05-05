@@ -17,8 +17,9 @@ build/**
 *.pdf
 src/utils/benchmarks/*
 src/utils/readings/*
-
 write_up/thesis/update-tlmgr-latest.sh
 *.lof
 *.lot
 **/__pycache__
+*.tmp
+*.idx

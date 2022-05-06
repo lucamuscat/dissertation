@@ -35,7 +35,8 @@
 \RequirePackage[pdftex]{graphicx}    % For pictures
 \RequirePackage{amssymb}             % At least, for black squares in bullet list
 \RequirePackage[pdfusetitle]{hyperref}             % For hyperreferences
-\RequirePackage[authoryear,semicolon,sort]{natbib} % for (Ebejer, 2012; Alba, 2013) kind of references; removed 'square' option after viva examination comments
+%\RequirePackage[authoryear,semicolon,sort]{natbib} % for (Ebejer, 2012; Alba, 2013) kind of references; removed 'square' option after viva examination comments
+\RequirePackage[numbers]{natbib} % for (Ebejer, 2012; Alba, 2013) kind of references; removed 'square' option after viva examination comments
 \RequirePackage{floatpag}			 % Used to hide page number on pages which contain only floats ... put a \thisfloatpagestyle{empty} in the float env, e.g. figure ...
 \RequirePackage{longtable}           % For very long tables
 \RequirePackage{pdflscape}			 % For landscape tables (instead of portrait)
@@ -124,8 +125,8 @@
 \makepagestyle{umpage}
 
 												 % This travesty is due to a bug in memoir, see https://tex.stackexchange.com/questions/468922/oneside-in-memoir-causing-header-trouble
-\makeevenhead{umpage}{\color{gray}\sffamily\small\leftmark}{}{\color{gray}\sffamily\small\rightmark}
-\makeoddhead{umpage}{\color{gray}\sffamily\small\leftmark}{}{\color{gray}\sffamily\small\rightmark}
+\makeevenhead{umpage}{\color{gray}\rmfamily\small\leftmark}{}{\color{gray}\rmfamily\small\rightmark}
+\makeoddhead{umpage}{\color{gray}\rmfamily\small\leftmark}{}{\color{gray}\rmfamily\small\rightmark}
 \makeevenfoot{umpage}{}{\thepage}{}  			 % UM pagestyle, put page at bottom
 \makeoddfoot{umpage}{}{\thepage}{}
 \makeheadfootruleprefix{umpage}{\color{gray}}{}
@@ -136,8 +137,8 @@
 }
 
 \copypagestyle{umpageback}{umpage}
-\makeevenhead{umpageback}{\color{gray}\sffamily\small\leftmark}{}{}
-\makeoddhead{umpageback}{}{}{\color{gray}\sffamily\small\rightmark}
+\makeevenhead{umpageback}{\color{gray}\rmfamily\small\leftmark}{}{}
+\makeoddhead{umpageback}{}{}{\color{gray}\rmfamily\small\rightmark}
 
 
 \setlrmarginsandblock{3.7cm}{2.5cm}{*}           % Set the page margins (for one and two sided docs) 
@@ -150,11 +151,11 @@
 \chapterstyle{ell} % how to draw the different chapter headings
 
 
-\renewcommand*{\chapnumfont}{\sffamily\HUGE\bfseries\color{DissertationColor}}  % Chapter titles should be normal
-\renewcommand*{\chaptitlefont}{\sffamily\HUGE\bfseries\color{DissertationColor}}
-\setsecheadstyle{\sffamily\LARGE\bfseries\color{DissertationColor}}% Set \section style
-\setsubsecheadstyle{\sffamily\Large\color{DissertationColor}}% Set \subsection style
-\setsubsubsecheadstyle{\sffamily\large\color{DissertationColor}}% Set \subsection style
+\renewcommand*{\chapnumfont}{\rmfamily\HUGE\bfseries\color{DissertationColor}}  % Chapter titles should be normal
+\renewcommand*{\chaptitlefont}{\rmfamily\HUGE\bfseries\color{DissertationColor}}
+\setsecheadstyle{\rmfamily\LARGE\bfseries\color{DissertationColor}}% Set \section style
+\setsubsecheadstyle{\rmfamily\Large\color{DissertationColor}}% Set \subsection style
+\setsubsubsecheadstyle{\rmfamily\large\color{DissertationColor}}% Set \subsubsection style
 \setsecnumformat{\csname the#1\endcsname\enskip{\color{gray}\textbar}\enskip}
 
 \newsubfloat{figure} % declares a new subfloat element which allows to use \subbottom commands
@@ -219,7 +220,7 @@
 \parbox[b][0.95\textheight][t]{0.8\textwidth}{
     \setlength{\parindent}{0pt}
     %%\fontfamily{pag}\selectfont
-    \sffamily
+    \rmfamily
     {\Huge\bfseries{\begin{Spacing}{1.15}\textcolor{DissertationColor}{\@title}\end{Spacing}}}
     \vspace*{2ex}
     {\large\textit{\@tagline}}\\[1in]
@@ -240,10 +241,10 @@
 %% *** Title Page (End) ***
 
 \newenvironment{acknowledgements}
-{\renewcommand{\abstractname}{\Large\bfseries\sffamily\textcolor{DissertationColor}{Acknowledgements}}\abstract}
+{\renewcommand{\abstractname}{\Large\bfseries\rmfamily\textcolor{DissertationColor}{Acknowledgements}}\abstract}
 {\endabstract\if@openright\cleardoublepage\else\clearpage\fi}
        
-\addto{\captionsenglish}{\renewcommand{\abstractname}{\Large\bfseries\sffamily\textcolor{DissertationColor}{Abstract}}}
+\addto{\captionsenglish}{\renewcommand{\abstractname}{\Large\bfseries\rmfamily\textcolor{DissertationColor}{Abstract}}}
 
 
 \newenvironment{dedication}
@@ -283,7 +284,7 @@
 %{\clearpage
 %\begin{center}
 %\vspace*{1.5cm}
-%{\Large\bfseries\sffamily\textcolor{DissertationColor}{Statement of Originality}\par}
+%{\Large\bfseries\rmfamily\textcolor{DissertationColor}{Statement of Originality}\par}
 %\vspace*{1.5cm}
 %{I, the undersigned, declare that this is my own work unless where otherwise acknowledged and referenced. \par}
 %\vspace*{1.5cm}
@@ -304,7 +305,7 @@
 	\includegraphics[width=2.5in]{umlogo_full_red}
 \end{figure}
 \vspace{3mm}
-{\noindent\Large\bfseries\sffamily\textcolor{DissertationColor}{Declaration by Postgraduate Students}}\\ %% FIXME this will have to change if not postgraduate ...
+{\noindent\Large\bfseries\rmfamily\textcolor{DissertationColor}{Declaration by Postgraduate Students}}\\ %% FIXME this will have to change if not postgraduate ...
 
 {\setlength{\parindent}{0em}
 	

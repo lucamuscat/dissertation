@@ -25,18 +25,18 @@
 
 \def\logo{{\includegraphics[width=90mm]{fict_red_logo}}}
 
-\renewcommand*\familydefault{\sfdefault}	     % sans serif font
+%\renewcommand*\familydefault{\sfdefault}	     % sans serif font
 
 \makepagestyle{umpage}
 \uppercaseheads								 
-\makeevenfoot{umpage}{}{\color{gray}\sffamily\small\thepage}{}
-\makeoddfoot{umpage}{}{\color{gray}\sffamily\small\thepage}{}
+\makeevenfoot{umpage}{}{\color{gray}\rmfamily\small\thepage}{}
+\makeoddfoot{umpage}{}{\color{gray}\rmfamily\small\thepage}{}
 \makeevenhead{umpage}{\small\leftmark}{}{}
 \makeoddhead{umpage}{}{}{\small\rightmark}
 
 \makepagestyle{umpage-noheader}
-\makeevenfoot{umpage-noheader}{}{\color{gray}\sffamily\small\thepage}{}
-\makeoddfoot{umpage-noheader}{}{\color{gray}\sffamily\small\thepage}{}
+\makeevenfoot{umpage-noheader}{}{\color{gray}\rmfamily\small\thepage}{}
+\makeoddfoot{umpage-noheader}{}{\color{gray}\rmfamily\small\thepage}{}
 \makeevenhead{umpage-noheader}{}{}{}
 \makeoddhead{umpage-noheader}{}{}{}
 
@@ -83,7 +83,7 @@
 {\begingroup
 	\setlength{\parindent}{0pt}
 	%%\fontfamily{pag}\selectfont
-	\sffamily
+	\rmfamily
 	\setlrmarginsandblock{3.7cm}{3cm}{*}
 	\checkandfixthelayout
 	\setlength{\vsize}{\textheight} %% you need these to reset the lengths
@@ -107,7 +107,7 @@
 %% *** Title Page (End) ***
 
 %\renewenvironment{acknowledgements}
-%{\renewcommand{\abstractname}{\flushleft\Large\sffamily\textcolor{DissertationColor}{Acknowledgements}}\abstract}
+%{\renewcommand{\abstractname}{\flushleft\Large\rmfamily\textcolor{DissertationColor}{Acknowledgements}}\abstract}
 %{\flushleft\endabstract\if@openright\cleardoublepage\else\clearpage\fi}
 
 \renewenvironment{acknowledgements}

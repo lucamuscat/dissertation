@@ -54,75 +54,83 @@
 % \end{definition}
 
 \section{Multiprocessors}
-Over the years, as the exponential increase in \emph{uniprocessor} performance
-diminished, programmers started to rely on parallelism offered by Multicore
-CPUs in order to further increase performance~\citep{cantrill2008real}.
+The diminishing growth in \emph{uniprocessor} speeds
+forced programmers to look at parallelism as a means of improving
+performance~\citep{cantrill2008real}. 
 
-\emph{Multiprocessors} consist of multiple hardware processors, each of which
-executes a \emph{sequential program}~\citep[Appendix~B.2]{herlihy2020art}.
+Unlike uniprocessors, \emph{multiprocessors} do
+not ensure that instructions appear in execution order~\cite{scott2013shared},
+making multiprocessors hard to model.
 
-A \emph{time slice} is a small unit of time that a thread may consume
-before being paused, and swapped with another thread~\citep{osconcepts2021}.
+% \emph{Multiprocessors} consist of multiple hardware processors, each
+% executing a \emph{sequential program}~\citep[Appendix~B.2]{herlihy2020art}.
 
-A \emph{thread} is a software construct that represents a sequential program~\citep[Appendix~B.2]{herlihy2020art}.
+\emph{Multiprocessors} execute a number of \emph{processes} on distinct
+hardware processors~\citep[Appendix~B.2]{herlihy2020art}, with each processor
+continuously executing, and swapping out \emph{processes}.
+\citeauthor{scott2013shared} defines a \emph{process} as a set of
+\emph{threads}, where a thread is an active computation that has the potential
+to share variables with other, concurrent threads~\citep[p.6]{scott2013shared}
 
-Once a thread's time quantum has expired, the operating system will typically
-use a \emph{context switch} in order to swap the thread out with another. A thread
-may be \emph{descheduled} before its time slice expires due to an interrupt,
-system call, or by voluntarily yielding the remainder of the time slice to the CPU~\citep[Section~3.2.3]{osconcepts2021}.
+Once a process' \emph{time quantum} (fixed share of CPU time) has expired, the operating system
+uses a \emph{context switch} to swap the process with another. A process
+may be \emph{de-scheduled} before its time quantum has expired due to interrupts,
+system calls, or through the voluntary yielding of control to the CPU~\citep[Section~3.2.3]{osconcepts2021}.
 
-The practicality and feasibility of parallel programming as of recent years has
-improved drastically, partly thanks to Multiprocessors getting cheaper, and
+Over the years, multiprocessor programming has become more practical and
+feasible, partly thanks to multiprocessors getting cheaper, and
 easier to program due to abstractions such as OpenMP, MPI (Message Passing
 Interface), implicit parallel programming environments such as SQL, and
 programming language standards that provide guarantees to how parallel code will
 behave, such as Java's\citep{javamemorymodel2014} and C++11's
-\citep{cppmemorymodel} standardized memory model
+\citep{cppmemorymodel} standardized memory models
 \citep[Chapter~2.2]{perfbook2021}.
 
 % \citep[Appendix~B.7.1]{perfbook2021}.
 For the sake of optimization, CPUs and compilers do not guarantee any specific
-results when multiple threads modify the same memory location concurrently
-\citep{drepper2007every}; an example of an optimization is out-of-order
-execution\citep[Appendix~B.7.1]{perfbook2021}. Developers of shared-memory
-multithreaded programs need to explicitly make use of synchronization
-primitives in order to prevent the corruption of data.
+results when multiple threads modify the same memory location
+concurrently~\citep{drepper2007every}; 
+an example of an optimization is the out-of-order
+execution of instructions~\citep[Appendix~B.7.1]{perfbook2021}.
 
+Developers of multiprocessor
+programs need to explicitly make use of synchronization
+primitives in order to prevent data from becoming corrupted or inconsistent
+amongst processors.
+
+\section{Synchronization}
 \subsection{CPU Cache}
-As the disparity between CPU frequency and memory access time continued to
-grow, CPU engineers started to add small, yet fast SRAM chips between the CPU
-and main memory in order to alleviate issues caused by the speed
-differences~\citep{cantrill2008real,drepper2007every,perfbook2021}. Since
-using large amounts of SRAM is considered to be uneconomical, more cache layers
-were added, with each layer being slower, larger, and cheaper than the
+As the disparity between CPU frequency and memory access times grew, 
+CPU engineers added small, yet fast SRAM chips between the CPU
+and the main memory to alleviate issues caused by the speed
+differences~\citep{cantrill2008real,drepper2007every,perfbook2021}. Using large
+amounts of SRAM is considered to be uneconomical, therefore, more cache layers
+were introduced, with each layer being cheaper, larger, and slower than the
 last~\citep{drepper2007every,perfbook2021}.
 
 Data is transferred in units of \emph{``cache lines''}, which are power-of-two
 fixed-size aligned blocks of memory, commonly ranging from 32 to 256 bytes in
-size. Cache lines are filled with data from the requested memory address,
+size~\citep[Section~3.2.1]{perfbook2021}. Cache lines are filled with data from the requested memory address,
 together with neighbouring bytes~\citep[Section~3.2.1]{perfbook2021}.
 
 % The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, Invalid)
 % attaches states to memory addresses; transitions notify the processor
 % when to invalidate a cache line in order to prevent stale data~\citep[Appendix~B.5.1]{herlihy2020art}.
 
-In the \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared,
-or Invalid state), a state is attached to a memory address. Transitions in
-state notify the processor when to invalidate a cache line in order to prevent
-stale data from being read.
+\emph{Cache-Coherence} is a problem where different caches contain stale
+(out-of-date) values~\citep[Appendix~B.5.1]{herlihy2020art}. A memory address
+may only be safely cached in different processors if no updates
+occur on the shared data; cache lines will be
+invalidated if said data is updated (preventing stale data from being read)~\citep[Appendix~B.5.1]{herlihy2020art}. 
+
+The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared,
+or Invalid) attaches states to memory addresses~\citep[Appendix~B.5.1]{herlihy2020art}. Transitions in
+state notify the processor if a cache line is to be invalidated in order to
+prevent stale data~\citep[Appendix~B.5.1]{herlihy2020art}.
 
 %\emph{Sharing} occurs when overlapping data is loaded into several cache lines.
 \emph{Sharing} occurs when one processor reads or writes to a memory address that
 is cached by another~\citep[Appendix~B.5.1]{herlihy2020art}.
-
-% In some cases, sharing is unavoidable; it is possible for closely located, yet
-% unrelated data to share a single cache line. \emph{False Sharing} occurs when
-% the invalidation of a cache line invalidates other cache lines due to unrelated
-% data being shared. In parallel programming, \emph{false sharing} is a
-% performance killer, as writes become expensive due to the increased rate of
-% invalidations. At the cost of a higher memory footprint, \emph{false
-% sharing} may be thwarted by padding data with unused memory to prevent cache
-% lines from being shared.
 
 In some cases, sharing is unavoidable; it is possible for closely located, yet
 logically distinct data to share a single cache line~\citep[Appendix~B.5.1]{herlihy2020art}. \emph{False Sharing} occurs when
@@ -135,44 +143,74 @@ sharing} may be thwarted by padding data with unused memory to prevent cache
 lines from being shared~\citep{scott2013shared}.
 
 \subsection{Interconnection}
-% In order for processors to communicate with the cache and memory, they need to
-% be physically connected through some medium. There are two kinds of
-% interconnection architectures: Firstly, there is the \emph{nonuniform memory
-% access (NUMA)} architecture~\citep[Appendix~B.3]{herlihy2020art}, typically associated with multi-CPU or distributed
-% systems. Secondly, there is the \emph{uniform memory access (UMA)} architecture,
-% where all processors and memory are linked by a bus
-% interconnect~\citep[Appendix~B.3]{herlihy2020art}.
 
+% TODO: Not really happy with the UMA definition, will need to give a better explanation.
 An interconnection medium is used to connect CPUs to cache and memory; where
-two kinds of interconnection architectures exist: Firstly,
-\emph{nonuniform memory access (NUMA)}
-architectures~\citep[Appendix~B.3]{herlihy2020art} is typically associated with
-multi-CPU and distributed systems. Secondly, \emph{uniform memory
+two kinds of interconnection architectures exist: (1)
+\emph{Nonuniform memory access (NUMA)}
+architectures~\citep[Appendix~B.3]{herlihy2020art} are typically associated with
+multi-CPU and distributed systems; (2) \emph{Uniform memory
 access (UMA)} architectures link processors and memory using a bus
 interconnect~\citep[Appendix~B.3]{herlihy2020art}.
 
-It is important to be cognizant of which interconnection architecture is being
-used, as some algorithms are not suited for certain architectures due to the
+The cognizance of interconnection architecture is important,
+as some algorithms are not suited for different architectures due to
 overheads associated with accessing memory. This study will be
-conducted on a \emph{UMA} system.
+conducted on a \emph{UMA} architecture.
 
 \subsection{Atomic Operations}
-An operation is said to be \emph{atomic} if it is not possible to observe an
-intermediate state~\citep{perfbook2021}. \emph{Non-atomic} operations
-are prone to \emph{load} and \emph{store
-tearing}~\citep[Section~4.3.4]{perfbook2021}\footnote{The Intel and ARM
-architectures guarantee that correctly aligned loads and stores are
-atomic~[\citealp{intel2021system},~Section~8.1.1; \citealp{arm2022architecture},~Chapter~2.2].}.
+% TODO: Mention how CPUs can perform atomics semantically, as opposed to
+% performing it in hardware.
+% TODO: Find reference for the word size line.
+An operation is said to be \emph{atomic} if it is impossible to observe an
+intermediate state~\citep{perfbook2021}. On most architectures, atomic
+operations may only affect the CPU's word size worth of memory.
 
 \emph{Read-Modify-Write (RMW)} operations read and write to memory
 atomically~\citep{perfbook2021}. Most synchronization primitives may be
-implemented as RMW operations~\citep[Section~5.6]{herlihy2020art}, and can be
-implemented in hardware.
+implemented as RMW operations~\citep[Section~5.6]{herlihy2020art}, and
+typically need to be implemented in hardware~\citep[Appendix~B.8]{herlihy2020art}.
 \citeauthor{herlihy1991wait} proved that not all synchronization primitives are
 equally powerful by associating a \emph{consensus number} (i.e.~the number of
 processes that the \emph{consensus problem} can be solved for) to each
-synchronization primitive.
+synchronization primitive. \emph{Non-atomic} operations are prone to \emph{load} and \emph{store
+tearing}~\citep[Section~4.3.4]{perfbook2021}\footnote{The Intel and ARM
+architectures guarantee that correctly aligned loads and stores are
+atomic~[\citealp{intel2021system},~Section~8.1.1;
+\citealp{arm2022architecture},~Chapter~2.2].}.
 
+\citeauthor{scott2013shared} lists a number of RMW operations~\citep[Table~2.2]{scott2013shared}.
+\emph{Compare-and-swap} (\emph{CAS}, also known as \emph{Compare and Exchange})
+is a ternary atomic operation that requires: A source, destination, and an
+update value. If the source and destination are equal, the source is set to the
+update value, otherwise, the destination is updated with the source's
+value~\citep{intel2021inst}.
+
+\begin{algorithm}
+    \caption{x86 compare-and-swap pseudocode.}\label{alg:cas}
+    \begin{algorithmic}[1]
+        \Function{compare-and-swap}{ptr<T> Source, ptr<T> Destination, T UpdateValue}
+            \If{$Source~=~Destination$}
+                \State $Source~\gets~UpdateValue$
+                \State return True
+            \EndIf
+            \State $Destination~\gets~Source$ \label{alg:line:sourceneqdest}
+            \State return False
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
+
+Older studies may give different definitions of
+CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995lock},
+Appendix~A}, such that line \ref{alg:line:sourceneqdest} is excluded.
+
+\subsection{ABA Problem}
+\citeauthor{dechev2010understanding} define the ABA problem as a false positive
+execution of a CAS on a shared location~\citep{dechev2010understanding}. The ABA
+problem may occur when the source's memory address has been changed from $A$ to
+$B$, and back to $A$, bearing in mind that $A$ has been freed and immediately
+allocated a logically distinct value, between the point in time when the
+destination was loaded and the CAS was executed~\citep{dechev2010understanding}.
 
 % [x] Caching is needed to avoid accessing slow memory by copying data into faster memory hardware
 % [x] There are different levels cache, there is the register, L1, L2, and L3
@@ -181,20 +219,43 @@ synchronization primitive.
 % [x] Mention what false sharing is and why it should be avoided.
 % [] Mention how false sharing impacted this study's performance before being fixed.
 
+\subsection{Progress Conditions}
+A \emph{progress condition} is a \emph{liveness property} that describes how,
+and when a number of threads are able to make \emph{forward
+progress}~\citep[Section~3.2]{scott2013shared}.
 
-%\subsubsection{Interconnection}
-% Describe UMA and NUMA
+A concurrent method is said to be \emph{blocking} if there is some reachable
+state in the system where a thread cannot make progress until some other thread
+takes action~\citep[Section~3.2]{scott2013shared}. Algorithms that rely upon
+mutual exclusion are considered to be
+blocking~\citep[Section~3.2]{scott2013shared}, however, non-lock-based
+algorithms may also be blocking~\citep{mellor1987concurrent}.
 
-% [] What is an atomic operation?
-% [] Why use an atomic operation?
-% [] How do you use an atomic operation?
-% [] Define Read-Modify-Write (RMW) operations.
+A concurrent method is said to be \emph{non-blocking} if there is no reachable
+state in the system where a thread cannot make
+progress~\cite[Section~3.2]{scott2013shared}. The non-blocking property is
+desired due to its immunity to random delays. % TODO: Find citation
 
-\subsection{Cache Coherence}
-% [] What is cache coherence?
-% [] What problems are associated with incoherent caches?
+The following are a subset of non-blocking progress conditions, ordered by the
+strength of the property (starting from the weakest) and the complexity of
+implementation (starting from the simplest):
+
+\begin{enumerate}
+\item \emph{Obstruction-Freedom}: A method is obstruction-free if, from any
+point after which it executes in isolation, it finishes in a finite number of
+steps~\citep[Section~3.8.3]{herlihy2020art};
+\item \emph{Lock-Freedom}: A method is lock-free if some method call finishes
+in a finite number of steps~\citep[Section~3.8.2]{herlihy2020art};
+\item \emph{Wait-Freedom}: A method is wait-free if every call finishes its
+execution in a finite number of steps~\citep[Section~3.8.1]{herlihy2020art}.
+\end{enumerate}
+
+Stronger guarantees do not necessarily equate to higher throughput, as the
+overheads and complexity of the implementation tends to be positively
+correlated to the strength of the guarantee.
 
 \subsection{Memory Consistency Models}
+
 % [] What is a memory consistency model?
 % [] Sequential Consistency
 % [] Weak Consistency
@@ -203,14 +264,7 @@ synchronization primitive.
 % [] Modern Intel CPUs use a variation of sequential consistency known as program-ordered-consistency
 % [] Give the multithreaded counting example, and mention how torn reads/writes and incoherent caches may lead to incorrect results.
 
-% \section{Progress Conditions}
-% There are two types of progress conditions, which are blocking and non-blocking \citep[Chapter~3.7]{herlihy2020art}. An algorithm is blocking if an unexpected delay in one thread can prevent other threads from making progress, whilst a non-blocking one will at no point in time wait for another thread \citep[Chapter~3.7]{herlihy2020art}. Two types of blocking progress conditions are deadlock-free and starvation-free. These properties offer guarantees that every thread will eventually leave every critical section in a timely manner \citep[Chapter~3.7.1]{herlihy2020art}. There are different types of non-blocking progress conditions, which may either be dependent or independent of other threads. 
 
-% A method is obstruction-free if, from any point after which it executes in isolation, it finishes in a finite number of steps (may be implemented using back-off algorithms whenever conflict is encountered)\citep{herlihy2020art,herlihy2003obstruction}. Obstruction-free algorithms are, by definition, dependent.
-
-% A method is lock-free if it guarantees that infinitely often some method call finishes in a finite number of steps \citep{herlihy2020art}.
-
-% A method is wait-free if it guarantees that a method call finishes in a bounded number of steps. This bound may also depend on the number of threads \citep{herlihy2020art}.
 
 % \section{Correctness Conditions}
 

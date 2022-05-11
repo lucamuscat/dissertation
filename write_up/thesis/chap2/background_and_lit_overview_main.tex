@@ -254,6 +254,40 @@ Stronger guarantees do not necessarily equate to higher throughput, as the
 overheads and complexity of the implementation tends to be positively
 correlated to the strength of the guarantee.
 
+\subsection{Correctness Conditions}
+\emph{Correctness conditions} describe the pre and post conditions for a concurrent
+object's operations~\citep{herlihy2020art}. Such conditions decide
+whether a concurrent history is legal \citep{herlihy1990linearizability}.
+Correctness conditions are based on two requirements: (1) When an
+operation takes effect, and (2) how the order of non-concurrent operations
+should be preserved \citep{herlihy1990linearizability}.
+
+% Find a formal definition of "takes effect"
+\emph{Concurrent systems} may be modelled as a \emph{history}, which is a
+sequence of events, where each event is either an \emph{invocation} or a
+\emph{response}~\citep[Section~3.6.1]{herlihy2020art}. A method \emph{takes
+effect} when it succeeds to modify a concurrent object. A history is said to be
+\emph{legal} with respect to a correctness property if it is \emph{equivalent}
+to a history that respects said correctness property.
+
+\citeauthor{lamport1979make} defines the \emph{sequential consistency}
+correctness condition as a history in which the result of an execution is the
+same as if the operations had been executed in \emph{program
+order}~\citep{lamport1979make}.
+
+\citeauthor{herlihy1990linearizability} define \emph{linearizability} as a
+correctness condition that provides the illusion that each operation takes
+effect instantaneously at some point between a method's invocation and response~\cite{herlihy1990linearizability}.
+
+
+% A subset of existing correctness conditions are:
+
+% \begin{itemize}
+% \item \emph{Sequential}: Sequential consistency requires that each process's method call takes effect in program order.
+% \item \emph{Linearizable}: A concurrent computation is linearizable if it is ``equivalent'' (as previously formally defined) to a legal sequential computation \citep{herlihy1990linearizability}. A linearizable concurrent computation gives the illusion that a method call takes effect instantaneously some time between the method's invocation and response; the point in time where the method takes effect is also known as the linearizability point \citep{herlihy2020art,herlihy1990linearizability}. Linearizability is composable, meaning that if each object in a system satisfies a condition, the entire system also satisfies said condition \citep[Chapter~3.3.1]{herlihy2020art}. Linearizability is also a non-blocking property, which means that method call is never forced to wait \citep{herlihy1990linearizability}. A problem with linearizability is that the order of overlapping operations is non-deterministic.
+% \item \emph{Serializable}: A history is serializable if it is equivalent to a history where transactions appear to happen sequentially (without interleaving) \citep[Section~3.3]{herlihy1990linearizability}. This correctness condition is typically used in databases and distributed systems \citep{guerraoui2019consensus}. Serializable consistency comes with the blocking progress condition and is a general case of linearizability \citep{herlihy1990linearizability}.
+% \end{itemize}
+
 \subsection{Memory Consistency Models}
 
 % [] What is a memory consistency model?
@@ -263,20 +297,6 @@ correlated to the strength of the guarantee.
 % [] Xbox360 CPUs are sequentially consistent as they reads and writes are in order (be careful, as in order might not be sequential consistence).
 % [] Modern Intel CPUs use a variation of sequential consistency known as program-ordered-consistency
 % [] Give the multithreaded counting example, and mention how torn reads/writes and incoherent caches may lead to incorrect results.
-
-
-
-% \section{Correctness Conditions}
-
-% Correctness conditions describe the pre and post conditions for a concurrent object's operations \citep{herlihy2020art}. Such pre and post conditions decide whether a concurrent history is legal \citep{herlihy1990linearizability}. Correctness conditions are usually based on two requirements: (1) When an operation takes effect, and (2) how the order of non concurrent operations should be preserved \citep{herlihy1990linearizability}.
-
-% A subset of existing correctness conditions are:
-
-% \begin{itemize}
-% \item \emph{Sequential}: Sequential consistency requires that each process's method call takes effect in program order.
-% \item \emph{Linearizable}: A concurrent computation is linearizable if it is ``equivalent'' (as previously formally defined) to a legal sequential computation \citep{herlihy1990linearizability}. A linearizable concurrent computation gives the illusion that a method call takes effect instantaneously some time between the method's invocation and response; the point in time where the method takes effect is also known as the linearizability point \citep{herlihy2020art,herlihy1990linearizability}. Linearizability is composable, meaning that if each object in a system satisfies a condition, the entire system also satisfies said condition \citep[Chapter~3.3.1]{herlihy2020art}. Linearizability is also a non-blocking property, which means that method call is never forced to wait \citep{herlihy1990linearizability}. A problem with linearizability is that the order of overlapping operations is non-deterministic.
-% \item \emph{Serializable}: A history is serializable if it is equivalent to a history where transactions appear to happen sequentially (without interleaving) \citep[Section~3.3]{herlihy1990linearizability}. This correctness condition is typically used in databases and distributed systems \citep{guerraoui2019consensus}. Serializable consistency comes with the blocking progress condition and is a general case of linearizability \citep{herlihy1990linearizability}.
-% \end{itemize}
 
 % \section{Queues}
 % \subsection{Definition}

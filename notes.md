@@ -43,6 +43,15 @@ the number of iterations, they all converge to one value.
 # Meeting notes 23-03-2022
 * AR - Generates a files (statically linked .a files)
 
+## 11-05-2022
+* I should reach a stage where I send a draft of the paper in its complete form for proper review
+* If large portions are lifted, including in quotes.
+### Placement of Related Work
+* Don't worry about the distinction between literature review and related work,
+it is possible to mingle them together.
+* Can be placed at the end.
+* Just write it for now and then decide where to place it.
+
 ## TODO
 * Create a bunch of queues, 
 lock-based and maybe some simple lock-free

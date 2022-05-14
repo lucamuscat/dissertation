@@ -130,11 +130,12 @@ prevent stale data~\citep[Appendix~B.5.1]{herlihy2020art}.
 
 %\emph{Sharing} occurs when overlapping data is loaded into several cache lines.
 \emph{Sharing} occurs when one processor reads or writes to a memory address that
-is cached by another~\citep[Appendix~B.5.1]{herlihy2020art}.
+is cached by another~\citep[Appendix~B.5.1]{herlihy2020art}. In some cases, sharing is unavoidable; it is possible for closely located, yet
+logically distinct data to share a single cache
+line~\citep[Appendix~B.5.1]{herlihy2020art}. 
 
-In some cases, sharing is unavoidable; it is possible for closely located, yet
-logically distinct data to share a single cache line~\citep[Appendix~B.5.1]{herlihy2020art}. \emph{False Sharing} occurs when
-a cache line is invalidated due to an update on logically distinct data~\citep[Appendix~B.5.1]{herlihy2020art}. 
+\emph{False Sharing} occurs when a cache line is invalidated due to an update
+on logically distinct data~\citep[Appendix~B.5.1]{herlihy2020art}. 
 
 In parallel programming, \emph{false sharing} is a
 performance killer, as writes become expensive due to the increased rate of
@@ -255,6 +256,7 @@ overheads and complexity of the implementation tends to be positively
 correlated to the strength of the guarantee.
 
 \subsection{Correctness Conditions}
+\label{sec:correctness_conditions}
 \emph{Correctness conditions} describe the pre and post conditions for a concurrent
 object's operations~\citep{herlihy2020art}. Such conditions decide
 whether a concurrent history is legal \citep{herlihy1990linearizability}.
@@ -262,22 +264,29 @@ Correctness conditions are based on two requirements: (1) When an
 operation takes effect, and (2) how the order of non-concurrent operations
 should be preserved \citep{herlihy1990linearizability}.
 
+A method is said to \emph{take effect} when the effects of its method call is
+seen by other method calls~\citep[Section~3.4.1]{herlihy2020art}. 
+
 % Find a formal definition of "takes effect"
 \emph{Concurrent systems} may be modelled as a \emph{history}, which is a
 sequence of events, where each event is either an \emph{invocation} or a
-\emph{response}~\citep[Section~3.6.1]{herlihy2020art}. A method \emph{takes
-effect} when it succeeds to modify a concurrent object. A history is said to be
-\emph{legal} with respect to a correctness property if it is \emph{equivalent}
-to a history that respects said correctness property.
+\emph{response}~\citep[Section~3.6.1]{herlihy2020art}. 
+
+A history is said to be \emph{legal} with respect to a correctness property if
+it is \emph{equivalent} to a history that respects said correctness property.
 
 \citeauthor{lamport1979make} defines the \emph{sequential consistency}
 correctness condition as a history in which the result of an execution is the
 same as if the operations had been executed in \emph{program
 order}~\citep{lamport1979make}.
 
-\citeauthor{herlihy1990linearizability} define \emph{linearizability} as a
-correctness condition that provides the illusion that each operation takes
-effect instantaneously at some point between a method's invocation and response~\cite{herlihy1990linearizability}.
+A \emph{linearizable} concurrent computation gives the illusion that a method
+call takes effect instantaneously some time between the method's invocation and
+response; the point in time when the method takes effect is also known as the
+\emph{linearizability point} \citep{herlihy2020art,herlihy1990linearizability}.
+Processors perceive linearizable operations in a \emph{total, and real-time
+order}, where overlapping method calls take effect in a non-deterministic
+order~\citep[Section~3.6.2]{herlihy2020art}.
 
 
 % A subset of existing correctness conditions are:
@@ -289,6 +298,28 @@ effect instantaneously at some point between a method's invocation and response~
 % \end{itemize}
 
 \subsection{Memory Consistency Models}
+\emph{Memory Consistency Models (referred to as memory models henceforth)} are correctness properties that describe how
+threads perceive the order of other threads' effects on shared
+memory~\citep[Section~3.7]{herlihy2020art}. Similarly to the correctness
+conditions described in section~\ref{sec:correctness_conditions}, memory
+models vary in strength; as the model used becomes more relaxed, more aggressive
+optimizations may be used, increasing performance at the cost of
+programmability and portability~\citep{gharachorloo96consistency}.
+
+\emph{Relaxed memory models} such as \emph{weakly ordered models}~\footnote{A
+number of ARM processors tend to be weakly ordered when interacting with main memory~\citep[Section~A3.5.5]{arm2022architecture}} offer little to no
+constraints with respect to the ordering of reads and writes; the explicit use
+of memory barriers are needed for finer grained control over the ordering of
+reads and writes~\citep{gharachorloo96consistency}. \citeauthor{gharachorloo96consistency} identifies relaxed
+memory models as \emph{system-centric models}, as they tend to favour
+performance, as opposed to a programmer's intuition about shared-memory
+(sequential consistency)~\citep{gharachorloo96consistency}.
+
+Memory models such as sequentially consistent models are considered to be
+\emph{strongly ordered}. Strongly ordered systems tend to
+heavily restrict the reordering of instructions, giving a simpler and
+higher-level interface between memory and the programmer. 
+
 
 % [] What is a memory consistency model?
 % [] Sequential Consistency

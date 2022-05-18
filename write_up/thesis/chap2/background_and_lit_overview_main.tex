@@ -202,7 +202,7 @@ value~\citep{intel2021inst}.
 \end{algorithm}
 
 Older studies may give different definitions of
-CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995lock},
+CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995datastructures},
 Appendix~A}, such that line \ref{alg:line:sourceneqdest} is excluded.
 
 \subsection{ABA Problem}
@@ -289,13 +289,12 @@ order}, where overlapping method calls take effect in a non-deterministic
 order~\citep[Section~3.6.2]{herlihy2020art}.
 
 
-% A subset of existing correctness conditions are:
-
-% \begin{itemize}
-% \item \emph{Sequential}: Sequential consistency requires that each process's method call takes effect in program order.
-% \item \emph{Linearizable}: A concurrent computation is linearizable if it is ``equivalent'' (as previously formally defined) to a legal sequential computation \citep{herlihy1990linearizability}. A linearizable concurrent computation gives the illusion that a method call takes effect instantaneously some time between the method's invocation and response; the point in time where the method takes effect is also known as the linearizability point \citep{herlihy2020art,herlihy1990linearizability}. Linearizability is composable, meaning that if each object in a system satisfies a condition, the entire system also satisfies said condition \citep[Chapter~3.3.1]{herlihy2020art}. Linearizability is also a non-blocking property, which means that method call is never forced to wait \citep{herlihy1990linearizability}. A problem with linearizability is that the order of overlapping operations is non-deterministic.
-% \item \emph{Serializable}: A history is serializable if it is equivalent to a history where transactions appear to happen sequentially (without interleaving) \citep[Section~3.3]{herlihy1990linearizability}. This correctness condition is typically used in databases and distributed systems \citep{guerraoui2019consensus}. Serializable consistency comes with the blocking progress condition and is a general case of linearizability \citep{herlihy1990linearizability}.
-% \end{itemize}
+% [] What is a memory consistency model?
+% [] Sequential Consistency
+% [] Weak Consistency
+% [] ARM is weakly consistent when writing to normal memory.
+% [] Xbox360 CPUs are sequentially consistent as they reads and writes are in order (be careful, as in order might not be sequential consistence).
+% [] Modern Intel CPUs use a variation of sequential consistency known as program-ordered-consistency
 
 \subsection{Memory Consistency Models}
 \emph{Memory Consistency Models (referred to as memory models henceforth)} are correctness properties that describe how
@@ -304,38 +303,89 @@ memory~\citep[Section~3.7]{herlihy2020art}. Similarly to the correctness
 conditions described in section~\ref{sec:correctness_conditions}, memory
 models vary in strength; as the model used becomes more relaxed, more aggressive
 optimizations may be used, increasing performance at the cost of
-programmability and portability~\citep{gharachorloo96consistency}.
+programmability and portability~\citep{gharachorloo1996consistency}.
 
-\emph{Relaxed memory models} such as \emph{weakly ordered models}~\footnote{A
-number of ARM processors tend to be weakly ordered when interacting with main memory~\citep[Section~A3.5.5]{arm2022architecture}} offer little to no
-constraints with respect to the ordering of reads and writes; the explicit use
-of memory barriers are needed for finer grained control over the ordering of
-reads and writes~\citep{gharachorloo96consistency}. \citeauthor{gharachorloo96consistency} identifies relaxed
+\emph{Relaxed memory models} such as \emph{weakly ordered models}\footnote{A number of ARM processors tend to be weakly ordered when interacting with main memory~\citep[Section~A3.5.5]{arm2022architecture}} offer little to no
+constraints with respect to the ordering of reads and writes, requiring the
+explicit use of memory barriers for a finer grained control over the ordering~\citep{gharachorloo1996consistency}. \citeauthor{gharachorloo1996consistency} identifies relaxed
 memory models as \emph{system-centric models}, as they tend to favour
 performance, as opposed to a programmer's intuition about shared-memory
-(sequential consistency)~\citep{gharachorloo96consistency}.
+(sequential consistency)~\citep{gharachorloo1996consistency}.
 
 Memory models such as sequentially consistent models are considered to be
 \emph{strongly ordered}. Strongly ordered systems tend to
 heavily restrict the reordering of instructions, giving a simpler and
 higher-level interface between memory and the programmer. 
 
+\subsection{Mutual Exclusion}
+\emph{Mutual exclusion} (also known as a \emph{mutex}, or a \emph{lock}) is a synchronization protocol that \emph{serializes}
+the concurrent execution of code inside \emph{critical sections}.
+A \emph{spin-lock} is a variant of a mutex, that 
+\emph{busy-waiting}, and can be released by any thread.
 
-% [] What is a memory consistency model?
-% [] Sequential Consistency
-% [] Weak Consistency
-% [] ARM is weakly consistent when writing to normal memory.
-% [] Xbox360 CPUs are sequentially consistent as they reads and writes are in order (be careful, as in order might not be sequential consistence).
-% [] Modern Intel CPUs use a variation of sequential consistency known as program-ordered-consistency
-% [] Give the multithreaded counting example, and mention how torn reads/writes and incoherent caches may lead to incorrect results.
+Every mutex has to decide what actions to take when a
+critical section has already been acquired; the three categories said action
+can fall under are: 
 
-% \section{Queues}
-% \subsection{Definition}
-% Knuth defines a queue as a linear list for which all insertions are made at one end of the list and all deletions are made at the other end \citep{knuth1968art}. A queue typically comes with two main operations, which are enqueue (places an item at the head of the queue) and dequeue (removes and returns an item at the tail of the queue). Queues follow First in First out (FIFO) ordering (unlike the stack, which is Last in First out).
-% \subsection{Definition of a concurrent queue}
-% A concurrent queue is a type of queue that remains consistent and correct when accessed simultaneously through different threads. Non-concurrent or ill-synchronized queues typically end up in an inconsistent state after being accessed through multiple threads (this may occur for a number of reasons, such as race conditions)\citep{yahav2003automatically}, this may lead to undefined and incorrect behaviour. Concurrent queues are often the basis of scheduling algorithms and many other concurrent algorithms \citep{yahav2003automatically}.
-% % \subsection{Correctness conditions with respect to queues}
-% % The defacto correctness condition for a queue is linearizability, as it ensures that the semantics of the queue's operations are not altered \citep{mellor1987concurrent}. A queue cannot be sequentially consistent, as sequential consistency allows histories that don't lead to FIFO ordering. A queue may also be serializable, however, serializability constrains the degree of concurrency that can occur, making it too strong of a correctness condition.
+\begin{itemize}
+\item \emph{Blocking}~-~Voluntarily yields to the CPU
+if the mutex is acquired. Blocking is not suitable for small critical
+sections\footnote{A critical section is considered to be small if it takes
+hundreds of nanoseconds or micro seconds to execute.}, as context switches typically take tens of milliseconds.
+\item \emph{Busy-Waiting (spinning)}~-~Polls an area in memory
+containing the state of a mutex. Busy-waiting is suited for small
+critical sections, as contention caused by polling may lead to degraded
+performance;
+\item \emph{Hybrid}~-~Utilizes a mix of blocking and busy-waiting, forgoing the
+inefficiencies associated with both methods.
+\end{itemize}
+
+Algorithms reliant on mutual exclusion are inherently
+blocking (with respect to progress conditions)~\citep[Section~3.8]{herlihy2020art}, with
+unique correctness conditions such as \emph{starvation} and \emph{deadlock
+freedom}.
+
+% TODO: Add a subsection on fairness
+
+\section{Queues}
+\citeauthor{knuth1968art} defines a queue as a linear list for which all
+insertions are made at one end of the list and deletions are made at the
+other~\citep{knuth1968art}. A queue comes with two operations, enqueue (places
+an item at the head of the queue) and dequeue (removes and returns an item at
+the tail of the queue), following First in First out ordering (FIFO).
+
+
+\subsection{Concurrent Queues}
+A concurrent queue is a type of queue that remains consistent and correct when
+accessed simultaneously through different threads. Non-concurrent or
+ill-synchronized queues typically end up in inconsistent states after being
+accessed through multiple threads~\citep{yahav2003automatically}, leading
+to hard-to-find bugs. Concurrent queues are often the basis of scheduling
+algorithms~\citep{debattista2002high} and many other concurrent
+algorithms~\citep{yahav2003automatically}. The defacto correctness condition
+for a queue is linearizability, as it ensures that the semantics of the queue's
+operations are not altered \citep{mellor1987concurrent, valois1995datastructures}.
+% TODO: Add "Section 2.2.2" to valois1995datastructures reference
+
+The multiplicity of the number of producers and
+consumers that can simultaneously interact with a concurrent queue is used as a
+taxonomy to categorize queues, furthermore, the underlying
+data structure used to implement a queue (such as a circular buffer,
+linked list, or both) affects if the queue is of \emph{fixed capacity (bounded)} or not
+\emph{(unbounded)}.
+
+\begin{table*}[h]\centering
+\caption{Possible configurations in the Producer-Consumer taxonomy}\label{tab:producer_consumer}
+    \begin{tabular}{lll}
+        \hline
+        Label & Description & Reference \\ \hline
+        SPSC & Single-Producer/Single-Consumer & \citep{aldinucci2012efficient} \\
+        SPMC & Single-Producer/Multi-Consumer & \citep{arnautov2017ffq} \\
+        MPSC & Multi-Producer/Single-Consumer & \\
+        MPMC & Multi-Producer/Multi-Consumers & \citep{michael1996simple,valois1994queues,hoffman2007baskets}\\ \hline
+    \end{tabular}        
+\end{table*}
+
 
 % % When talking about correctness conditions with respect to FIFO queues, restricting the order of method calls is only a subset of the applicable correctness conditions. Yahav and Sagiv\citep{yahav2003automatically} provide some examples of correctness conditions for concurrent FIFO queues, which are:
 % % \begin{itemize}

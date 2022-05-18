@@ -33,6 +33,7 @@
 %% Do not add your packages to the template, but rather add them here.
 
 \usepackage{blindtext} %% for some dummy text, remove in your writeup
+\usepackage{soul} % Remove in final version of document
 
 %% ***************** (Your) Packages (End) *******************
 
@@ -94,11 +95,12 @@
 %\pagestyle{umpage}
 %\floatpagestyle{umpage}
 \mainmatter 
-    %\input{chap1/introduction_main} 
-    \input{chap2/background_and_lit_overview_main}
-    %\input{chap3/design_and_implementation_main}
-    %\input{chap4/evaluation_main}
-    %\input{chap5/conclusions_main}
+    \input{chap1/introduction_main} 
+    \input{chap2/background}
+    \input{chap3/lit_review_related_work}
+    \input{chap4/design_and_implementation_main}
+    \input{chap5/evaluation_main}
+    \input{chap6/conclusions_main}
 
 %%\pagestyle{umpageback}
 {%backmatter % comment this out otherwise are not numbered
@@ -107,7 +109,7 @@
 	%% For references use IEEE style [5] or Harvard style [6]
     \bibliographystyle{um-plainnat} %% specific plainnat does not show url for articles
     % Use something like https://flamingtempura.github.io/bibtex-tidy/ to clean all your bibtex entries
-    {\scriptsize\bibliography{chap2/background_and_lit_overview_biblio}}
+    {\scriptsize\bibliography{chap2/background_biblio,chap3/lit_review_related_work_biblio}}
 	\printindex
 }
 

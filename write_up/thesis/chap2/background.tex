@@ -7,96 +7,42 @@
 % [] CPU Architectures, and why they should be taken into consideration.
 % [] Mutual Exclusion
 
-
-% \section{Threads}
-% % [] What is a thread and why is it used?
-% % [] Formal definitions:
-% % Sequential Programs, Concurrent Programs, Threads, Concurrent Systems
-
-% \subsection{Concurrent Objects}
-% Herlihy defines a concurrent object as a data object shared by concurrent processes\citep{herlihy1990linearizability}. 
-
-% Concurrent systems are modelled by a finite sequence of method invocations and response events\citep[Chapter~3.6]{herlihy2020art}. Herlihy provides the following formal definitions\citep[Chapter~3.6]{herlihy2020art}:
-% % \begin{itemize}
-% %   \item A method call in a history \emph{H} is a pair made up of an invocation that follows the next response (An invocation is the starting point of the method call, whilst the response may be seen as a point in the method where an object is returned).
-% %   \item An invocation is pending in \emph{H} if it does not follow a matching response.
-% %   \item A history \emph{H} is \emph{sequential} if the first event of \emph{H} is an invocation, and each invocation, possibly excluding the last, is immediately followed by a matching response.
-% %   \item A history \emph{H} is \emph{well formed} if all of its sub-histories are \emph{sequential}.
-% %   \item A thread sub-history, $H|A$  (``\emph{H at A}'') is the subsequence of all events in \emph{H} whose thread names are \emph{A}.
-% %   \item Two histories \emph{H} and \emph{H'} are equivalent if $\forall a:A \cdot H|A = H'|A$.
-% % \end{itemize}
-% \begin{definition}[Method Call]
-% A method call in a history \emph{H} is a pair made up of an invocation that
-% follows the next response; An invocation is the starting point of the
-% method call, whilst the response is the point in the method where an object is
-% returned.
-% \end{definition}
-
-% \begin{definition}[Pending Invocation]
-% An invocation is pending in \emph{H} if it does not follow a matching response.    
-% \end{definition}
-
-% \begin{definition}[History]
-% A history \emph{H} is \emph{sequential} if the first event of \emph{H} is an
-% invocation, and each invocation, possibly excluding the last, is immediately
-% followed by a matching response. A history \emph{H} is \emph{well formed} if
-% all of its sub-histories are \emph{sequential}.
-% \end{definition}
-
-% \begin{definition}[Sub-History]
-% A thread sub-history, $H|A$  (``\emph{H at A}'') is the subsequence of all
-% events in \emph{H} whose thread names are \emph{A}.
-% \end{definition}
-
-% \begin{definition}[Equivalence]
-% Two histories \emph{H} and \emph{H'} are equivalent if $\forall a:A \cdot H|A =
-% H'|A$.
-% \end{definition}
-
 \section{Multiprocessors}
 The diminishing growth in \emph{uniprocessor} speeds
 forced programmers to look at parallelism as a means of improving
-performance~\citep{cantrill2008real}. 
-
-Unlike uniprocessors, \emph{multiprocessors} do
+performance~\citep{cantrill2008real}. Unlike uniprocessors, \emph{multiprocessors} do
 not ensure that instructions appear in execution order~\cite{scott2013shared},
 making multiprocessors hard to model.
 
 % \emph{Multiprocessors} consist of multiple hardware processors, each
 % executing a \emph{sequential program}~\citep[Appendix~B.2]{herlihy2020art}.
 
+Over the years, multiprocessor programming has become more practical and
+feasible, partly thanks to multiprocessors getting cheaper, and
+easier to program due to abstractions such as OpenMP, MPI (Message Passing
+Interface), implicit parallel programming environments such as SQL, and
+programming language standards that provide guarantees as to how parallel code will
+behave, such as Java's\citep{javamemorymodel2014} and C++11's
+\citep{cppmemorymodel} standardized memory models
+\citep[Chapter~2.2]{perfbook2021}.
+
 \emph{Multiprocessors} execute a number of \emph{processes} on distinct
 hardware processors~\citep[Appendix~B.2]{herlihy2020art}, with each processor
 continuously executing, and swapping out \emph{processes}.
 \citeauthor{scott2013shared} defines a \emph{process} as a set of
 \emph{threads}, where a thread is an active computation that has the potential
-to share variables with other, concurrent threads~\citep[p.6]{scott2013shared}
-
-Once a process' \emph{time quantum} (fixed share of CPU time) has expired, the operating system
-uses a \emph{context switch} to swap the process with another. A process
-may be \emph{de-scheduled} before its time quantum has expired due to interrupts,
-system calls, or through the voluntary yielding of control to the CPU~\citep[Section~3.2.3]{osconcepts2021}.
-
-Over the years, multiprocessor programming has become more practical and
-feasible, partly thanks to multiprocessors getting cheaper, and
-easier to program due to abstractions such as OpenMP, MPI (Message Passing
-Interface), implicit parallel programming environments such as SQL, and
-programming language standards that provide guarantees to how parallel code will
-behave, such as Java's\citep{javamemorymodel2014} and C++11's
-\citep{cppmemorymodel} standardized memory models
-\citep[Chapter~2.2]{perfbook2021}.
+to share variables with other, concurrent threads~\citep[p.6]{scott2013shared}.
+Once a process' \emph{time quantum} (fixed share of CPU time) expires, the operating system
+uses a \emph{context switch} to swap the process with another. Processes
+may be \emph{de-scheduled} before the expiration of their time quantum due to interrupts,
+system calls, or the voluntary yielding of control to the CPU~\citep[Section~3.2.3]{osconcepts2021}.
 
 % \citep[Appendix~B.7.1]{perfbook2021}.
-For the sake of optimization, CPUs and compilers do not guarantee any specific
-results when multiple threads modify the same memory location
-concurrently~\citep{drepper2007every}; 
-an example of an optimization is the out-of-order
-execution of instructions~\citep[Appendix~B.7.1]{perfbook2021}.
-
-Developers of multiprocessor
-programs need to explicitly make use of synchronization
-primitives in order to prevent data from becoming corrupted or inconsistent
-amongst processors.
+For the sake of optimization, Compilers and CPUs do not guarantee specific
+results in the case where multiple threads modify the same memory location
+concurrently~\citep{drepper2007every}. The explicit use synchronization primitives (such as read-modify-write operations
+, or memory barriers) are needed to prevent incoherence
+across caches, which may eventually lead to corrupt data.
 
 \section{Synchronization}
 \subsection{CPU Cache}

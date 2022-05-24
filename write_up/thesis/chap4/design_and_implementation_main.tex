@@ -1,1 +1,76 @@
 \chapter{Design \& Implementation}
+
+\section{Relevant Software Versions}
+Source code was compiled in the C programming language, using the clang
+[version] compiler with flags `-O3 -march=native`\footnote{As opposed to the
+gcc compiler, clang emits the \emph{cmpxchg16b} instruction without any extra flags.}. A number of researchers
+utilize languages with heavy runtimes, such as Java's JVM (cite kogan-petrank),
+in order to shift the responsibility of memory management to the garbage
+collectors, instead of the algorithm itself (making the C language's
+light-weight runtime a reasonable choice).
+
+Arguably, implementations of non-blocking algorithms in lock-based, garbage
+collected languages are not truly non-blocking. Fogg argues that heavy-runtimes
+are to be avoided in benchmarks, as the cost of operating the runtime is
+typically larger than the cost of executing the algorithm itself.
+
+\section{Algorithms Implemented}
+This study focuses on four concurrent queueing algorithms:
+\citeauthor{michael1996simple}'s Lock-Free Queue~\citep{michael1996simple};
+~\citeauthor{michael1996simple}'s Two-Lock Concurrent
+Queue~\citep{michael1996simple} (protected by a \emph{test-and-test-and-set-lock}~\citep{mellor1991algorithms}); \citeauthor{hoffman2007baskets}'s Baskets
+Queue~\citep{hoffman2007baskets}; and \citeauthor{valois1994queues}' Lock-Free
+Queue~\citep{valois1994queues}. Keen-eyed readers may realize that the chosen
+queues are unbounded and MPMC.
+
+Due to limited time, the dynamic memory management of non-blocking
+data-structures is omitted, as it is an actively researched field which can fit
+an entire dissertation in of itself.
+
+Memory is allocated before each benchmark, as to avoid bastardizing
+non-blocking progress conditions through the use of lock-based memory
+allocation. Pre-allocating memory prevents the ABA problem (as memory addresses may no
+longer be reused), removes the overhead of memory allocation in measurements,
+and forgoes the need of memory management schemes, as memory is freed at the end
+of the benchmark.
+
+Version tagging is used for ABA avoidance (not to be confused with
+ABA-Freedom)~\citep{dechev2010understanding}:
+A counter (also known as a tag) is attached to a pointer, which increments with
+every successful CAS. Comparisons between pointers that have the same address,
+but not the same tag value are expected to fail, as differing tag values hint
+at the possibility of a change in logical data.
+
+It is well known that counters may overflow, allowing tags to wrap around back
+to their initial value, allowing for the ABA problem to still occur, however,
+it significantly reduces the odds of it occurring.
+
+For systems with a significant number of processors (such as GPUs, or NUMA
+architectures), larger counters are required  to safely avoid the ABA problem.
+The \emph{Double-Width Compare-and-Swap} instruction (\emph{DWCAS}, \emph{CMPXCHG16b} on
+\emph{Intel x86\_64}) may be used to attach a 64 bit counter to a pointer; Intel
+systems require that the pointer and counter are aligned to a 16 byte boundary.
+
+\begin{lstlisting}[language=C,caption={Struct aligned to 16 bytes in order to be used with DWCAS.}]
+struct tagged_ptr{
+    void* ptr;
+    uint64_t tag;
+} __attribute__((aligned(16))) tagged_ptr;
+\end{lstlisting}
+
+Alternatively, systems that do not provide the DWCAS instruction, suffer from
+an unacceptable degradation in performance due to DWCAS, or do not allow for
+the modification of pointers may employ a single-word CAS, by attaching a
+counter to the pointer itself (known as \emph{pointer packing}, or \emph{tagged
+pointers}). Intel x86\_64 architectures supports 64 bit pointers, however, the
+architecture only makes use of the least significant 48 bits (known as the
+\emph{linear address})~\citep[Section~3.3.7.1]{intel2021system}, allowing for
+the most significant 16 bits to be used as a counter.
+
+Pointer packing is flawed: The range of values a 16 bit counter can hold ranges
+from zero to $2^{17}-1$ (which may easily overflow); pointer packing is not
+portable, as there is no guarantee that the endianess, or the linear address
+size will remain the same; pointers may only be dereferenced in their canonical
+form, meaning that the most significant 16 bits either need to be set to zero
+(user-space pointer) or one (kernel-space pointer), as canonical faults will be
+thrown when dereferencing a pointer.

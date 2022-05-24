@@ -32,32 +32,33 @@ continuously executing, and swapping out \emph{processes}.
 \citeauthor{scott2013shared} defines a \emph{process} as a set of
 \emph{threads}, where a thread is an active computation that has the potential
 to share variables with other, concurrent threads~\citep[p.6]{scott2013shared}.
-Once a process' \emph{time quantum} (fixed share of CPU time) expires, the operating system
-uses a \emph{context switch} to swap the process with another. Processes
-may be \emph{de-scheduled} before the expiration of their time quantum due to interrupts,
-system calls, or the voluntary yielding of control to the CPU~\citep[Section~3.2.3]{osconcepts2021}.
+Once a process' \emph{time quantum} (fixed share of CPU time) expires, the
+process is \emph{context-switched}. Processes
+may be prematurely \emph{de-scheduled} due to interrupts,
+system calls, or through the voluntary yielding of control to the CPU~\citep[Section~3.2.3]{osconcepts2021}.
 
 % \citep[Appendix~B.7.1]{perfbook2021}.
 For the sake of optimization, Compilers and CPUs do not guarantee specific
-results in the case where multiple threads modify the same memory location
-concurrently~\citep{drepper2007every}. The explicit use synchronization primitives (such as read-modify-write operations
+results in cases where multiple threads concurrently modify the same memory location~\citep{drepper2007every}. The explicit use synchronization primitives (such as read-modify-write operations
 , or memory barriers) are needed to prevent incoherence
 across caches, which may eventually lead to corrupt data.
+
+\pagebreak
 
 \section{Synchronization}
 \subsection{CPU Cache}
 As the disparity between CPU frequency and memory access times grew, 
 CPU engineers added small, yet fast SRAM chips between the CPU
-and the main memory to alleviate issues caused by the speed
-differences~\citep{cantrill2008real,drepper2007every,perfbook2021}. Using large
-amounts of SRAM is considered to be uneconomical, therefore, more cache layers
+and main memory in order to alleviate issues caused by the differences in speed
+~\citep{cantrill2008real,drepper2007every,perfbook2021}. Using large
+quantities of SRAM is considered to be uneconomical, therefore, more cache layers
 were introduced, with each layer being cheaper, larger, and slower than the
 last~\citep{drepper2007every,perfbook2021}.
 
-Data is transferred in units of \emph{``cache lines''}, which are power-of-two
+Data is transferred in units of \emph{cache lines}, which are power-of-two
 fixed-size aligned blocks of memory, commonly ranging from 32 to 256 bytes in
-size~\citep[Section~3.2.1]{perfbook2021}. Cache lines are filled with data from the requested memory address,
-together with neighbouring bytes~\citep[Section~3.2.1]{perfbook2021}.
+size~\citep[Section~3.2.1]{perfbook2021}. Cache lines are filled with data
+starting from the requested memory address, together with neighbouring bytes~\citep[Section~3.2.1]{perfbook2021}.
 
 % The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, Invalid)
 % attaches states to memory addresses; transitions notify the processor
@@ -65,29 +66,27 @@ together with neighbouring bytes~\citep[Section~3.2.1]{perfbook2021}.
 
 \emph{Cache-Coherence} is a problem where different caches contain stale
 (out-of-date) values~\citep[Appendix~B.5.1]{herlihy2020art}. A memory address
-may only be safely cached in different processors if no updates
-occur on the shared data; cache lines will be
-invalidated if said data is updated (preventing stale data from being read)~\citep[Appendix~B.5.1]{herlihy2020art}. 
-
-The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared,
+may safely cached in different processors if no updates
+occur; cache lines will be
+invalidated if the contents of the shared memory address is updated (preventing
+stale data from being read)~\citep[Appendix~B.5.1]{herlihy2020art}. The
+\emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared,
 or Invalid) attaches states to memory addresses~\citep[Appendix~B.5.1]{herlihy2020art}. Transitions in
-state notify the processor if a cache line is to be invalidated in order to
-prevent stale data~\citep[Appendix~B.5.1]{herlihy2020art}.
+state notify the processor when to invalidate a cache line~\citep[Appendix~B.5.1]{herlihy2020art}.
 
 %\emph{Sharing} occurs when overlapping data is loaded into several cache lines.
 \emph{Sharing} occurs when one processor reads or writes to a memory address that
-is cached by another~\citep[Appendix~B.5.1]{herlihy2020art}. In some cases, sharing is unavoidable; it is possible for closely located, yet
-logically distinct data to share a single cache
+is cached by another~\citep[Appendix~B.5.1]{herlihy2020art}. In some cases,
+sharing is unavoidable; closely located, yet
+logically distinct data may share a single cache
 line~\citep[Appendix~B.5.1]{herlihy2020art}. 
 
-\emph{False Sharing} occurs when a cache line is invalidated due to an update
-on logically distinct data~\citep[Appendix~B.5.1]{herlihy2020art}. 
-
-In parallel programming, \emph{false sharing} is a
-performance killer, as writes become expensive due to the increased rate of
-cache line invalidations. At the cost of a higher memory footprint, \emph{false
-sharing} may be thwarted by padding data with unused memory to prevent cache
-lines from being shared~\citep{scott2013shared}.
+\emph{False Sharing} takes place when cache lines are invalidated due to updates
+on logically distinct data~\citep[Appendix~B.5.1]{herlihy2020art}. As the
+rate of invalidations increases with each write to shared-memory, performance
+tends to degrade heavily, harming scalability. At the cost of a higher memory footprint, false
+sharing may be solved by segregating logically distinct data with unused memory
+to prevent the sharing of cache lines~\citep{scott2013shared}.
 
 \subsection{Interconnection}
 
@@ -109,7 +108,9 @@ conducted on a \emph{UMA} architecture.
 % TODO: Mention how CPUs can perform atomics semantically, as opposed to
 % performing it in hardware.
 % TODO: Find reference for the word size line.
-An operation is said to be \emph{atomic} if it is impossible to observe an
+An operation is said to be \emph{atomic}\footnote{Modern CPUs only guarantee
+that atomic operations are semantically atomic, meaning that they do not
+have to execute atomically on hardware.} if it is impossible to observe an
 intermediate state~\citep{perfbook2021}. On most architectures, atomic
 operations may only affect the CPU's word size worth of memory.
 
@@ -132,6 +133,9 @@ is a ternary atomic operation that requires: A source, destination, and an
 update value. If the source and destination are equal, the source is set to the
 update value, otherwise, the destination is updated with the source's
 value~\citep{intel2021inst}.
+Older studies may give different definitions of
+CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995datastructures},
+Appendix~A}, such that line \ref{alg:line:sourceneqdest} is excluded.
 
 \begin{algorithm}
     \caption{x86 compare-and-swap pseudocode.}\label{alg:cas}
@@ -147,9 +151,6 @@ value~\citep{intel2021inst}.
     \end{algorithmic}
 \end{algorithm}
 
-Older studies may give different definitions of
-CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995datastructures},
-Appendix~A}, such that line \ref{alg:line:sourceneqdest} is excluded.
 
 \subsection{ABA Problem}
 \citeauthor{dechev2010understanding} define the ABA problem as a false positive
@@ -318,7 +319,11 @@ consumers that can simultaneously interact with a concurrent queue is used as a
 taxonomy to categorize queues, furthermore, the underlying
 data structure used to implement a queue (such as a circular buffer,
 linked list, or both) affects if the queue is of \emph{fixed capacity (bounded)} or not
-\emph{(unbounded)}.
+\emph{(unbounded)}. 
+
+This study focuses on unbounded, MPMC, blocking and
+non-blocking queues, with chapter \ref{chap:lit_review} covering the evaluated
+queues in further detail.
 
 \begin{table*}[h]\centering
 \caption{Possible configurations in the Producer-Consumer taxonomy}\label{tab:producer_consumer}

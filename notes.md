@@ -52,17 +52,24 @@ it is possible to mingle them together.
 * Can be placed at the end.
 * Just write it for now and then decide where to place it.
 
+## 18-05-2022
+* Finalize the research objectives in the introduction
+* Aims and Objectives - Describe the aims in a paragraph, following the concrete definitions of the objectives
+* Research Objectives
+1. Implement a benchmarking framework for concurrent queues
+2. Validate the benchmarking framework
+3. Implement a number of blocking and non-blocking queues
+4. Evaluate the performance of every implemented queue and compare with researcher's results
+
 ## TODO
-* Create a bunch of queues, 
-lock-based and maybe some simple lock-free
-* At least 2 lock-based queues.
-* At most 1 wait-free queue.
-* Get readings on them (contention vs time)
+* Find a formality to prove that the timings are correct (can use a mock queue)
+* Stop being a perfectionist and just start expanding on the chapters, don't allow it to halt progress.
 
 ## More notes
 * Power Managment - sys/devices/cpu/intel/pstate
 * A Comparitive Study of Concurrent Queuing Algorithms & Their Performance
 * To avoid confusion, the newer title encompasses 
+* Keep Zobel pg 97 in mind when writing the intro.
 
 # Bash Notes
 * `if [condition]` is the same as `if test condition`

@@ -25,7 +25,9 @@ typedef uintptr_t tagged_ptr_t;
  * @brief Create a tagged_ptr_t with a boolean flag and a 15 bit counter
  * 
  */
-#define pack_ptr_with_flag(ptr, tag, flag) (((uintptr_t)ptr) | (((uint64_t)(((tag) % (UINT15_T_MASK)) | (((uint16_t)flag) << TAG_INDEX))) << LINEAR_ADDRESS_SIZE))
+#define pack_ptr_with_flag(ptr, tag, flag) (((uintptr_t)ptr) | \
+    (((uint64_t)(((tag) % (UINT15_T_MASK)) | \
+    (((uint16_t)flag) << TAG_INDEX))) << LINEAR_ADDRESS_SIZE))
 
 /**
  * @brief Extract the flag from a tagged_ptr with a flag.
@@ -37,6 +39,7 @@ typedef uintptr_t tagged_ptr_t;
  * @brief Extract a tag from a tagged_ptr that was created using pack_ptr_with_flag
  * 
  */
-#define extract_flagged_tag(i) ((uint16_t)((((uintptr_t)i) >> LINEAR_ADDRESS_SIZE) & UINT15_T_MASK))
+#define extract_flagged_tag(i) ((uint16_t)((((uintptr_t)i) >> LINEAR_ADDRESS_SIZE)\
+ & UINT15_T_MASK))
 
 #endif

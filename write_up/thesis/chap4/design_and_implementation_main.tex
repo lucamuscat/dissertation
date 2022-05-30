@@ -4,15 +4,21 @@
 Source code was compiled in the C programming language, using the clang
 [version] compiler with flags `-O3 -march=native`\footnote{As opposed to the
 gcc compiler, clang emits the \emph{cmpxchg16b} instruction without any extra flags.}. A number of researchers
-utilize languages with heavy runtimes, such as Java's JVM (cite kogan-petrank),
+utilize languages with heavy runtimes~\citep{kogan2011wait}, such as Java's JVM,
 in order to shift the responsibility of memory management to the garbage
 collectors, instead of the algorithm itself (making the C language's
 light-weight runtime a reasonable choice).
 
 Arguably, implementations of non-blocking algorithms in lock-based, garbage
-collected languages are not truly non-blocking. Fogg argues that heavy-runtimes
-are to be avoided in benchmarks, as the cost of operating the runtime is
-typically larger than the cost of executing the algorithm itself.
+collected languages are not truly non-blocking. \citeauthor{fog2020optimizing} argues that heavy-runtimes
+are to be avoided, as the cost of operating the runtime is
+typically greater than executing the algorithm
+itself~\citep{fog2020optimizing}.
+
+\emph{PAPI (Performance Application Programming Interface)} was used to measure
+the elapsed time in nanoseconds~\citep{terpstra2010papi}. Although an entire library for measuring time 
+is overkill, PAPI also provides an interface for measuring and
+sampling hardware counters, which was used during the development of this project.
 
 \section{Algorithms Implemented}
 This study focuses on four concurrent queueing algorithms:
@@ -25,27 +31,28 @@ queues are unbounded and MPMC.
 
 Due to limited time, the dynamic memory management of non-blocking
 data-structures is omitted, as it is an actively researched field which can fit
-an entire dissertation in of itself.
+an entire dissertation in of itself~\citep{valois1995datastructures,michael2004hazard}.
 
 Memory is allocated before each benchmark, as to avoid bastardizing
 non-blocking progress conditions through the use of lock-based memory
-allocation. Pre-allocating memory prevents the ABA problem (as memory addresses may no
-longer be reused), removes the overhead of memory allocation in measurements,
-and forgoes the need of memory management schemes, as memory is freed at the end
-of the benchmark.
+allocation. Pre-allocating memory prevents the ABA problem (as memory addresses
+may no longer be reused)~\citep{dechev2010understanding}, removes the overhead
+of memory allocation in measurements, and forgoes the need of memory management
+schemes, as memory is released at the end of the benchmark.
 
-Version tagging is used for ABA avoidance (not to be confused with
+\subsection{ABA Avoidance}
+
+\emph{Version tagging} is used for ABA avoidance (not to be confused with
 ABA-Freedom)~\citep{dechev2010understanding}:
-A counter (also known as a tag) is attached to a pointer, which increments with
-every successful CAS. Comparisons between pointers that have the same address,
-but not the same tag value are expected to fail, as differing tag values hint
-at the possibility of a change in logical data.
+A \emph{counter} (also known as a \emph{tag}) is attached to a pointer, which increments with
+each successful CAS. Comparisons between pointers that have the same address,
+but do not match in tag value are expected to fail, as differing tag values hint
+at the possibility of a change in logical data. Counters may overflow, leading to tags wrapping back
+to their initial value, allowing for ABA violations to still occur (however,
+the chances are practically close to zero).
 
-It is well known that counters may overflow, allowing tags to wrap around back
-to their initial value, allowing for the ABA problem to still occur, however,
-it significantly reduces the odds of it occurring.
-
-For systems with a significant number of processors (such as GPUs, or NUMA
+% When should version counting with DWCAS be used
+For systems with a significant number of processors (for instance multi-CPU NUMA
 architectures), larger counters are required  to safely avoid the ABA problem.
 The \emph{Double-Width Compare-and-Swap} instruction (\emph{DWCAS}, \emph{CMPXCHG16b} on
 \emph{Intel x86\_64}) may be used to attach a 64 bit counter to a pointer; Intel
@@ -58,15 +65,17 @@ struct tagged_ptr{
 } __attribute__((aligned(16))) tagged_ptr;
 \end{lstlisting}
 
+% Introduce pointer packing/tagged pointers
 Alternatively, systems that do not provide the DWCAS instruction, suffer from
 an unacceptable degradation in performance due to DWCAS, or do not allow for
 the modification of pointers may employ a single-word CAS, by attaching a
 counter to the pointer itself (known as \emph{pointer packing}, or \emph{tagged
-pointers}). Intel x86\_64 architectures supports 64 bit pointers, however, the
+pointers}) through the use of masking and shifting. Intel x86\_64 architectures supports 64 bit pointers, however, the
 architecture only makes use of the least significant 48 bits (known as the
 \emph{linear address})~\citep[Section~3.3.7.1]{intel2021system}, allowing for
 the most significant 16 bits to be used as a counter.
 
+% Explain pointer packing flaws
 Pointer packing is flawed: The range of values a 16 bit counter can hold ranges
 from zero to $2^{17}-1$ (which may easily overflow); pointer packing is not
 portable, as there is no guarantee that the endianess, or the linear address
@@ -74,3 +83,71 @@ size will remain the same; pointers may only be dereferenced in their canonical
 form, meaning that the most significant 16 bits either need to be set to zero
 (user-space pointer) or one (kernel-space pointer), as canonical faults will be
 thrown when dereferencing a pointer.
+
+\section{Methodology}
+
+% TODO: Can add more citations to this part; can be taken from the literature
+% review once that's done.
+Studies introducing novel concurrent
+algorithms~\citep{michael1996simple,valois1994queues,kogan2011wait,hoffman2007baskets,yang2016wait}
+frequently conduct comparisons between their novel and existing algorithms in
+similar fashions. The most common benchmarks for evaluating concurrent queueing
+algorithms are the \emph{Pairwise Enqueue Dequeue} and \emph{50\% Enqueue}
+benchmark. As to amortize measurement overheads, ten million iterations are
+executed amongst $N$ threads ($t_0,~t_1,~\cdots,~t_{N-1}$) as follows: 
+
+\[
+    \text{iterations(i)} = 
+    \begin{cases}
+        \lfloor\frac{10^7}{N}\rfloor, & \text{if}~i < N-1 \\
+        10^7 - (\lfloor \frac{10^7}{N} \rfloor \cdot (N-1)), & \text{otherwise}
+    \end{cases} \\
+\]
+
+for ten times, with the recorded sample being the average of the average
+elapsed time from each thread for each repetition.
+
+\subsection{Pairwise Enqueue Dequeue Benchmark}
+
+On an initially empty queue, each thread enqueues an item, executes an
+artificial delay (which \citeauthor{michael1996simple} refers to as "other
+work"~\citep{michael1996simple}), dequeues an item, and executes another
+artificial delay; The queue is destroyed and recreated with every repetition
+(i.e. every ten millions iterations). \citeauthor{michael1996simple} uses an
+artificial delay to reduce the bias introduced by long runs of queue operations
+by a single thread~\citep{michael1996simple}. The number of threads, and length
+of the artificial delay are used as the benchmark's independent variables, the
+degree of contention is dependent on both the number of threads and the length
+of the delay, furthermore, the measured time taken is also dependent on
+contention and operating system activities. This benchmark serves the purpose
+of simulating a producer-consumer workload, where each thread acts both as a
+producer, and a consumer.
+
+\subsection{50\% Enqueue Benchmark}
+Each thread either executes an enqueue or a dequeue, with each operation
+getting a 50\% chance of executing\footnote{Using a uniform distribution},
+followed by an artificial delay, on a queue that is prefilled with 1000
+elements. The queue is prefilled with 1000 items to prevent long runs of empty
+dequeues (potentially introducing biases). Randomness aids with exercising a
+larger number of code paths.
+
+Random numbers are stored as double-precision floating point variables, ranging
+from zero to one, furthermore, they are generated before the execution
+of the benchmark, as to calculate the number of enqueues (consequently the
+amount of memory that needs to be allocated), and to reuse the same random
+numbers with every repetition, in order to maintain consistency. 
+
+It is important to note that the 50\% enqueue benchmark will execute at most
+half the number of enqueues and dequeues executed as the pairwise
+enqueue-dequeue benchmark, as an operation is no longer executing a pair of
+enqueues and dequeues, but either one of them.
+
+A number of measures to reduce variance and
+interference caused by the operating system are taken: Hyperthreading is
+disabled, as it leads to higher rates of cache misses due to each core's cache
+being split with another thread~\citep{fog2020optimizing}; The CPU's speed is
+fixed to its maximum frequency by setting the CPU frequency governor to
+\emph{performance} mode (using \emph{cpufreq-set -g performance}) in order to
+restrict fluctuations in the CPU's clock speed, which may lead to inaccurate
+measurements and delays at the cost of a higher energy cost; Turbo boost is disabled as it dynamically increases
+processor performance according to the CPU's thermals~\citep[Section~14.3.3]{intel2021system}.

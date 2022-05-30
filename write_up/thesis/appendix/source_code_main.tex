@@ -1,0 +1,30 @@
+\chapter{Source Code}
+\section{Pointer Packing}
+\begin{lstlisting}[language=C,caption={Macros for performing pointer packing operations}]
+#define LINEAR_ADDRESS_MASK 0xffffffffffffUL
+#define UINT15_T_MASK 0x7fff
+
+#define TAG_INDEX 15
+#define TAG_SIZE 16
+#define LINEAR_ADDRESS_SIZE 48
+// Casting to uintptr_t is important as it is one of the only types that 
+// support pointer arithmetic.
+#define extract_ptr(ptr) ((void*)(((uintptr_t)ptr) & LINEAR_ADDRESS_MASK))
+
+#define extract_tag(ptr) \ 
+    ((uint16_t)(((uintptr_t)ptr) >> LINEAR_ADDRESS_SIZE))
+
+#define pack_ptr(ptr, tag) \
+    (((uintptr_t)ptr) | (((uint64_t)tag) << LINEAR_ADDRESS_SIZE))
+
+// Pointer packing variant that supports a bool and a 15 bit
+// counter
+#define pack_ptr_with_flag(ptr, tag, flag) (((uintptr_t)ptr) | \
+    (((uint64_t)(((tag) % (UINT15_T_MASK)) | \
+    (((uint16_t)flag) << TAG_INDEX))) << LINEAR_ADDRESS_SIZE))
+
+#define extract_flag(ptr) ((bool)(((uintptr_t)ptr) >> 63))
+
+#define extract_flagged_tag(ptr) \
+    ((uint16_t)((((uintptr_t)ptr) >> LINEAR_ADDRESS_SIZE) & UINT15_T_MASK))
+\end{lstlisting}

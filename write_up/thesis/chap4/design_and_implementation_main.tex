@@ -58,7 +58,7 @@ The \emph{Double-Width Compare-and-Swap} instruction (\emph{DWCAS}, \emph{CMPXCH
 \emph{Intel x86\_64}) may be used to attach a 64 bit counter to a pointer; Intel
 systems require that the pointer and counter are aligned to a 16 byte boundary.
 
-\begin{lstlisting}[language=C,caption={Struct aligned to 16 bytes in order to be used with DWCAS.}]
+\begin{lstlisting}[language=C,caption={Struct aligned to 16 bytes, as required by the DWCAS instruction.}]
 struct tagged_ptr{
     void* ptr;
     uint64_t tag;
@@ -83,6 +83,66 @@ size will remain the same; pointers may only be dereferenced in their canonical
 form, meaning that the most significant 16 bits either need to be set to zero
 (user-space pointer) or one (kernel-space pointer), as canonical faults will be
 thrown when dereferencing a pointer.
+
+\subsection{Nanosecond Accurate Delay}
+% High-resolution timers typically tick at a granularity of microseconds
+% \textbf{(find a citation)}, leaving considerable slack between nanosecond
+% delays and the elapsed time in reality. 
+% The benchmarking framework relies on
+% nanosecond-accurate ($10^{-9} seconds$) delays as a means of controlling
+% contention. 
+Delays of arbitrary lengths can be placed between operations, in order to
+control contention~\citep{valois1994queues}. High-resolution timers may be accurate up
+to a number of microseconds ($10^{-6}$ seconds), requiring a custom delay
+function for nanosecond accuracy ($10^{-9}$ seconds). With respect to CPUs,
+time may be described in different dimensions,
+where the number of CPU cycles can be extrapolated from wall-clock time and the
+CPU's clock speed, allowing for an instruction, with a known latency, to be
+executed as many times as required to consume an arbitrary number of
+time. Unfortunately, extrapolating CPU cycles from wall-clock time
+requires a fixed CPU clock speed, hurting the validity of results in cases
+where CPU clock speeds are highly unstable.
+
+% Drawing inspiration from \citeauthor{intel2013lockscaling}'s~lock
+% scaling analysis on
+% Xeon\textregistered~processors~\citep{intel2013lockscaling}, inter-arrival
+% times are on the scale of nanoseconds.
+
+Similar to \citeauthor{intel2018spinloop}'s
+\emph{Architecture Agnostic Spin-Wait Loops}~\citep{intel2018spinloop} and
+\emph{pollDelay} function~\citep[Example~2.3]{intelmanualoptimization}, a
+nanosecond delay can be created by constantly polling the CPU's timestamp
+counter, until the extrapolated number of cycles are
+consumed~\cite{ramalhete2019delay}.
+
+% uint64_t stop;
+% uint64_t start = _rdtsc();
+% do
+% {
+%     stop = _rdtsc();
+% } while (stop - start < cycles);
+
+\begin{algorithm}
+    \caption{Delay implemented through polling the CPU's timestamp counter.}\label{alg:delay}
+    \begin{algorithmic}[1]
+        \Function{delay\_ns}{uint64\_t time\_ns}
+            \State $cycles \gets time\_ns \cdot cpu\_frequency\_ghz$
+            \Comment{Pre-calulate to prevent inaccuracies.}
+            \State $start \gets read\_timestamp()$
+            \Repeat
+                \State $stop \gets read\_timestamp()$
+            \Until{$stop - start < cycles$}
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
+
+The delay's accuracy is significantly improved through calibration, where the
+delay function is put through a trial run, and the number of cycles to be
+executed are modified according to the error between the delay's average time
+elapsed, and the expected delay.
+
+\subsection{Test \& Test \& Set with Exponential Delay}
+
 
 \section{Methodology}
 

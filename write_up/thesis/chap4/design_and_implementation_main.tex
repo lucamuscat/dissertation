@@ -141,8 +141,64 @@ delay function is put through a trial run, and the number of cycles to be
 executed are modified according to the error between the delay's average time
 elapsed, and the expected delay.
 
-\subsection{Test \& Test \& Set with Exponential Delay}
+\subsection{Test-and-Test-and-Set Lock with Exponential Delay}
+\citeauthor{rudolph1984dynamic} propose an alternative to the test and set
+(TAS) spinning method called test-and-test-and-set
+(TTAS)~\citep{rudolph1984dynamic}. The steps TTAS takes to reduce cache line
+invalidations caused by indiscriminate TAS instructions are two-fold: (1) Read
+the polled flag until a falsey value has been read (lock has been released);
+(2) Acquire the lock using the test-and-set instruction, going back to the
+first step if the test-and-set operation returns a truthy value (another thread
+has acquired the lock between steps one and two). 
 
+Exponential back-off is needed in order to control
+contention~\citep{valois1994queues}. \citeauthor{anderson1990performance}
+suggests a bound on the delay, as uncontended processors that back-off a number
+of times will take longer to acquire a lock; furthermore, unfairness is further
+exacerbated when using exponential delay~\citep[Section~7.4]{herlihy2020art}.
+\citeauthor{intelmanualoptimization}'s \emph{Contended Locks with Increasing
+Back-off Example} was adapted in the lock's implementation~\citep{intelmanualoptimization}.
+
+\begin{lstlisting}[language=C,caption={Test-and-Test-and-Set Lock Struct.}]
+typedef struct ttas_lock_t
+{
+    // Do not share the cache line
+    __attribute__((aligned(64))) atomic_bool busy;
+} ttas_lock_t;
+
+\end{lstlisting}
+
+\begin{algorithm}
+    \caption{Pseudocode for Acquiring a Test-and-Test-and-Set Lock.}\label{alg:ttas_acquire}
+    \begin{algorithmic}[1]
+        \State $\text{mask} \gets 1$
+        \State $\text{max\_backoff} \gets 64$
+        \Repeat
+            \While{atomic\_load\_explicit(lock.busy, memory\_order\_acquire)}
+                \State $i \gets \text{mask}$
+                \For{$i \rightarrow 0$}
+                    \State PAUSE \Comment{Reduces contention from spin-waiting}
+                \EndFor
+                \If{$\text{mask} < \text{max\_backoff}$}
+                    \State $\text{mask} \gets \text{mask} \cdot 2$
+                \Else
+                    \State $\text{mask} \gets \text{max\_backoff}$
+                \EndIf
+
+            \EndWhile
+
+        \Until{\text{atomic\_exchange\_explicit(lock.busy, 1,
+        memory\_order\_acquire)}}
+        \State \Return \Comment{Enter Critical Section}
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{Pseudocode for Releasing a Test-and-Test-and-Set Lock.}\label{alg:ttas_release}
+    \begin{algorithmic}[1]
+        \State \text{atomic\_store\_explicit(lock.busy, 0, memory\_order\_release)}
+    \end{algorithmic}
+\end{algorithm}
 
 \section{Methodology}
 

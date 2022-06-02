@@ -190,16 +190,14 @@ consumed~\cite{ramalhete2019delay}.
 
 \begin{algorithm}
     \caption{Delay implemented through polling the CPU's timestamp counter.}\label{alg:delay}
-    \begin{algorithmic}[1]
-        \Function{delay\_ns}{uint64\_t time\_ns}
-            \State $cycles \gets time\_ns \cdot cpu\_frequency\_ghz$
+    \KwIn{uint64\_t time\_ns}
             \Comment{Pre-calulate to prevent inaccuracies.}
-            \State $start \gets read\_timestamp()$
-            \Repeat
-                \State $stop \gets read\_timestamp()$
-            \Until{$stop - start < cycles$}
-        \EndFunction
-    \end{algorithmic}
+            $cycles \gets time\_ns \cdot cpu\_frequency\_ghz$ \\
+            $start \gets read\_timestamp()$ \\
+            \Repeat{$stop - start < cycles$}
+            {
+                $stop \gets read\_timestamp()$
+            }
 \end{algorithm}
 
 The delay's accuracy is significantly improved through calibration, where the
@@ -236,34 +234,28 @@ typedef struct ttas_lock_t
 
 \begin{algorithm}
     \caption{Pseudocode for Acquiring a Test-and-Test-and-Set Lock.}\label{alg:ttas_acquire}
-    \begin{algorithmic}[1]
-        \State $\text{mask} \gets 1$
-        \State $\text{max\_backoff} \gets 64$
-        \Repeat
-            \While{atomic\_load\_explicit(lock.busy, memory\_order\_acquire)}
-                \State $i \gets \text{mask}$
+        $\text{mask} \gets 1$
+        $\text{max\_backoff} \gets 64$
+        \Repeat{\text{atomic\_exchange\_explicit(lock.busy,
+        1,memory\_order\_acquire)}}
+            {
+            
+            \While{atomic\_load\_explicit(lock.busy, memory\_order\_acquire)}{
+                $i \gets \text{mask}$
                 \For{$i \rightarrow 0$}
-                    \State PAUSE \Comment{Reduces contention from spin-waiting}
-                \EndFor
-                \If{$\text{mask} < \text{max\_backoff}$}
-                    \State $\text{mask} \gets \text{mask} \cdot 2$
-                \Else
-                    \State $\text{mask} \gets \text{max\_backoff}$
-                \EndIf
-
-            \EndWhile
-
-        \Until{\text{atomic\_exchange\_explicit(lock.busy, 1,
-        memory\_order\_acquire)}}
-        \State \Return \Comment{Enter Critical Section}
-    \end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-    \caption{Pseudocode for Releasing a Test-and-Test-and-Set Lock.}\label{alg:ttas_release}
-    \begin{algorithmic}[1]
-        \State \text{atomic\_store\_explicit(lock.busy, 0, memory\_order\_release)}
-    \end{algorithmic}
+                {
+                    PAUSE \Comment{Reduces contention from spin-waiting}
+                }
+                \eIf{$\text{mask} < \text{max\_backoff}$}
+                {
+                    $\text{mask} \gets \text{mask} \cdot 2$
+                }
+                {
+                    $\text{mask} \gets \text{max\_backoff}$
+                }
+            }
+        }
+        % \State \Return \Comment{Enter Critical Section}
 \end{algorithm}
 
 \subsection{Memory Management}

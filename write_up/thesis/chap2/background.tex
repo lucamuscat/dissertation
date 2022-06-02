@@ -137,18 +137,19 @@ Older studies may give different definitions of
 CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995datastructures},
 Appendix~A}, such that line \ref{alg:line:sourceneqdest} is excluded.
 
-\begin{algorithm}
+\SetNoFillComment
+\SetKwComment{Comment}{/* }{*/}
+\begin{algorithm}[hbt!]
     \caption{x86 compare-and-swap pseudocode.}\label{alg:cas}
-    \begin{algorithmic}[1]
-        \Function{compare-and-swap}{ptr<T> Source, ptr<T> Destination, T UpdateValue}
-            \If{$Source~=~Destination$}
-                \State $Source~\gets~UpdateValue$
-                \State return True
-            \EndIf
-            \State $Destination~\gets~Source$ \label{alg:line:sourceneqdest}
-            \State return False
-        \EndFunction
-    \end{algorithmic}
+        \KwIn{ptr<T> source, ptr<T> destination, T updateValue}
+        \KwOut{boolean success}
+        \If{$Source~=~Destination$}
+        {
+            $Source~\gets~UpdateValue$
+            \Return{true}
+        }
+        $Destination~\gets~Source$ \label{alg:line:sourceneqdest}
+        \Return{False}
 \end{algorithm}
 
 

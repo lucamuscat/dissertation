@@ -1,4 +1,8 @@
 \chapter{Design \& Implementation}
+This chapter focuses on describing and justifying design decisions,
+implementation details (research objective~\textbf{O1}),
+validation (research objective~\textbf{O2}), and measures
+taken to mitigate sources of error.
 
 \section{Relevant Software Versions}
 Source code was compiled in the C programming language, using the clang
@@ -20,7 +24,80 @@ the elapsed time in nanoseconds~\citep{terpstra2010papi}. Although an entire lib
 is overkill, PAPI also provides an interface for measuring and
 sampling hardware counters, which was used during the development of this project.
 
-\section{Algorithms Implemented}
+
+\section{Methodology}
+
+% TODO: Can add more citations to this part; can be taken from the literature
+% review once that's done.
+Studies introducing novel concurrent
+algorithms~\citep{michael1996simple,valois1994queues,kogan2011wait,hoffman2007baskets,yang2016wait}
+frequently conduct comparisons between their novel and existing algorithms in
+similar fashions. The most common benchmarks for evaluating concurrent queueing
+algorithms are the \emph{Pairwise Enqueue Dequeue} and \emph{50\% Enqueue}
+benchmark. As to amortize measurement overheads, ten million iterations are
+executed amongst $N$ threads ($t_0,~t_1,~\cdots,~t_{N-1}$) as follows: 
+
+\[
+    \text{iterations(i)} = 
+    \begin{cases}
+        \lfloor\frac{10^7}{N}\rfloor, & \text{if}~i < N-1 \\
+        10^7 - (\lfloor \frac{10^7}{N} \rfloor \cdot (N-1)), & \text{otherwise}
+    \end{cases} \\
+\]
+
+for ten times, with the recorded sample being the average of the average
+elapsed time from each thread for each repetition.
+
+\subsection{Pairwise Enqueue Dequeue Benchmark}
+
+On an initially empty queue, each thread enqueues an item, executes an
+artificial delay (which \citeauthor{michael1996simple} refers to as "other
+work"~\citep{michael1996simple}), dequeues an item, and executes another
+artificial delay; The queue is destroyed and recreated with every repetition
+(i.e. every ten millions iterations). \citeauthor{michael1996simple} uses an
+artificial delay to reduce the bias introduced by long runs of queue operations
+by a single thread~\citep{michael1996simple}. The number of threads, and length
+of the artificial delay are used as the benchmark's independent variables, the
+degree of contention is dependent on both the number of threads and the length
+of the delay, furthermore, the measured time taken is also dependent on
+contention and operating system activities. This benchmark serves the purpose
+of simulating a producer-consumer workload, where each thread acts both as a
+producer, and a consumer.
+
+\subsection{50\% Enqueue Benchmark}
+Each thread either executes an enqueue or a dequeue, with each operation
+getting a 50\% chance of executing\footnote{Using a uniform distribution},
+followed by an artificial delay, on a queue that is prefilled with 1000
+elements. The queue is prefilled with 1000 items to prevent long runs of empty
+dequeues (potentially introducing biases). Randomness aids with exercising a
+larger number of code paths.
+
+Random numbers are stored as double-precision floating point variables, ranging
+from zero to one, furthermore, they are generated before the execution
+of the benchmark, as to calculate the number of enqueues (consequently the
+amount of memory that needs to be allocated), and to reuse the same random
+numbers with every repetition, in order to maintain consistency. 
+
+It is important to note that the 50\% enqueue benchmark will execute at most
+half the number of enqueues and dequeues executed as the pairwise
+enqueue-dequeue benchmark, as an operation is no longer executing a pair of
+enqueues and dequeues, but either one of them.
+
+A number of measures to reduce variance and
+interference caused by the operating system are taken: Hyperthreading is
+disabled, as it leads to higher rates of cache misses due to each core's cache
+being split with another thread~\citep{fog2020optimizing}; The CPU's speed is
+fixed to its maximum frequency by setting the CPU frequency governor to
+\emph{performance} mode (using \emph{cpufreq-set -g performance}) in order to
+restrict fluctuations in the CPU's clock speed, which may lead to inaccurate
+measurements and delays at the cost of a higher energy cost; Turbo boost is disabled as it dynamically increases
+processor performance according to the CPU's thermals~\citep[Section~14.3.3]{intel2021system}.
+
+\subsection{Sources of Error}
+\subsection{Reproducability}
+\section{Benchmarking Framework API}
+
+\section{Design Decisions}
 This study focuses on four concurrent queueing algorithms:
 \citeauthor{michael1996simple}'s Lock-Free Queue~\citep{michael1996simple};
 ~\citeauthor{michael1996simple}'s Two-Lock Concurrent
@@ -28,17 +105,6 @@ Queue~\citep{michael1996simple} (protected by a \emph{test-and-test-and-set-lock
 Queue~\citep{hoffman2007baskets}; and \citeauthor{valois1994queues}' Lock-Free
 Queue~\citep{valois1994queues}. Keen-eyed readers may realize that the chosen
 queues are unbounded and MPMC.
-
-Due to limited time, the dynamic memory management of non-blocking
-data-structures is omitted, as it is an actively researched field which can fit
-an entire dissertation in of itself~\citep{valois1995datastructures,michael2004hazard}.
-
-Memory is allocated before each benchmark, as to avoid bastardizing
-non-blocking progress conditions through the use of lock-based memory
-allocation. Pre-allocating memory prevents the ABA problem (as memory addresses
-may no longer be reused)~\citep{dechev2010understanding}, removes the overhead
-of memory allocation in measurements, and forgoes the need of memory management
-schemes, as memory is released at the end of the benchmark.
 
 \subsection{ABA Avoidance}
 
@@ -200,70 +266,15 @@ typedef struct ttas_lock_t
     \end{algorithmic}
 \end{algorithm}
 
-\section{Methodology}
+\subsection{Memory Management}
+Due to limited time, the dynamic memory management of non-blocking
+data-structures is omitted, as it is an actively researched field which can fit
+an entire dissertation in of itself~\citep{valois1995datastructures,michael2004hazard}.
 
-% TODO: Can add more citations to this part; can be taken from the literature
-% review once that's done.
-Studies introducing novel concurrent
-algorithms~\citep{michael1996simple,valois1994queues,kogan2011wait,hoffman2007baskets,yang2016wait}
-frequently conduct comparisons between their novel and existing algorithms in
-similar fashions. The most common benchmarks for evaluating concurrent queueing
-algorithms are the \emph{Pairwise Enqueue Dequeue} and \emph{50\% Enqueue}
-benchmark. As to amortize measurement overheads, ten million iterations are
-executed amongst $N$ threads ($t_0,~t_1,~\cdots,~t_{N-1}$) as follows: 
+Memory is allocated before each benchmark, as to avoid degrading
+non-blocking progress conditions through the use of lock-based memory
+allocation. Pre-allocating memory prevents the ABA problem (as memory addresses
+may no longer be reused)~\citep{dechev2010understanding}, removes the overhead
+of memory allocation in measurements, and forgoes the need of memory management
+schemes, as memory is released at the end of the benchmark.
 
-\[
-    \text{iterations(i)} = 
-    \begin{cases}
-        \lfloor\frac{10^7}{N}\rfloor, & \text{if}~i < N-1 \\
-        10^7 - (\lfloor \frac{10^7}{N} \rfloor \cdot (N-1)), & \text{otherwise}
-    \end{cases} \\
-\]
-
-for ten times, with the recorded sample being the average of the average
-elapsed time from each thread for each repetition.
-
-\subsection{Pairwise Enqueue Dequeue Benchmark}
-
-On an initially empty queue, each thread enqueues an item, executes an
-artificial delay (which \citeauthor{michael1996simple} refers to as "other
-work"~\citep{michael1996simple}), dequeues an item, and executes another
-artificial delay; The queue is destroyed and recreated with every repetition
-(i.e. every ten millions iterations). \citeauthor{michael1996simple} uses an
-artificial delay to reduce the bias introduced by long runs of queue operations
-by a single thread~\citep{michael1996simple}. The number of threads, and length
-of the artificial delay are used as the benchmark's independent variables, the
-degree of contention is dependent on both the number of threads and the length
-of the delay, furthermore, the measured time taken is also dependent on
-contention and operating system activities. This benchmark serves the purpose
-of simulating a producer-consumer workload, where each thread acts both as a
-producer, and a consumer.
-
-\subsection{50\% Enqueue Benchmark}
-Each thread either executes an enqueue or a dequeue, with each operation
-getting a 50\% chance of executing\footnote{Using a uniform distribution},
-followed by an artificial delay, on a queue that is prefilled with 1000
-elements. The queue is prefilled with 1000 items to prevent long runs of empty
-dequeues (potentially introducing biases). Randomness aids with exercising a
-larger number of code paths.
-
-Random numbers are stored as double-precision floating point variables, ranging
-from zero to one, furthermore, they are generated before the execution
-of the benchmark, as to calculate the number of enqueues (consequently the
-amount of memory that needs to be allocated), and to reuse the same random
-numbers with every repetition, in order to maintain consistency. 
-
-It is important to note that the 50\% enqueue benchmark will execute at most
-half the number of enqueues and dequeues executed as the pairwise
-enqueue-dequeue benchmark, as an operation is no longer executing a pair of
-enqueues and dequeues, but either one of them.
-
-A number of measures to reduce variance and
-interference caused by the operating system are taken: Hyperthreading is
-disabled, as it leads to higher rates of cache misses due to each core's cache
-being split with another thread~\citep{fog2020optimizing}; The CPU's speed is
-fixed to its maximum frequency by setting the CPU frequency governor to
-\emph{performance} mode (using \emph{cpufreq-set -g performance}) in order to
-restrict fluctuations in the CPU's clock speed, which may lead to inaccurate
-measurements and delays at the cost of a higher energy cost; Turbo boost is disabled as it dynamically increases
-processor performance according to the CPU's thermals~\citep[Section~14.3.3]{intel2021system}.

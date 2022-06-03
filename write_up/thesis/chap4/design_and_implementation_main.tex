@@ -181,13 +181,6 @@ nanosecond delay can be created by constantly polling the CPU's timestamp
 counter, until the extrapolated number of cycles are
 consumed~\cite{ramalhete2019delay}.
 
-% uint64_t stop;
-% uint64_t start = _rdtsc();
-% do
-% {
-%     stop = _rdtsc();
-% } while (stop - start < cycles);
-
 \begin{algorithm}
     \caption{Delay implemented through polling the CPU's timestamp counter.}\label{alg:delay}
     \KwIn{uint64\_t time\_ns}
@@ -233,7 +226,9 @@ typedef struct ttas_lock_t
 \end{lstlisting}
 
 \begin{algorithm}
-    \caption{Pseudocode for Acquiring a Test-and-Test-and-Set Lock.}\label{alg:ttas_acquire}
+    \caption{Pseudocode for Acquiring a Test-and-Test-and-Set
+    Lock.}\label{alg:ttas_acquire}
+        \Comment{Acquire}
         $\text{mask} \gets 1$
         $\text{max\_backoff} \gets 64$
         \Repeat{\text{atomic\_exchange\_explicit(lock.busy,
@@ -255,7 +250,10 @@ typedef struct ttas_lock_t
                 }
             }
         }
-        % \State \Return \Comment{Enter Critical Section}
+        \Comment{Start Critical Section}
+        \Comment{Critical Section}
+        \Comment{End Critical Section}
+        atomic\_store\_explicit(lock.busy,0,memory\_order\_release)\Comment{Release}
 \end{algorithm}
 
 \subsection{Memory Management}

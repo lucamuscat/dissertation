@@ -83,18 +83,43 @@ half the number of enqueues and dequeues executed as the pairwise
 enqueue-dequeue benchmark, as an operation is no longer executing a pair of
 enqueues and dequeues, but either one of them.
 
-A number of measures to reduce variance and
-interference caused by the operating system are taken: Hyperthreading is
-disabled, as it leads to higher rates of cache misses due to each core's cache
-being split with another thread~\citep{fog2020optimizing}; The CPU's speed is
+\subsection{Sources of Error}
+Experimental studies must be aware of any threats to the validity of
+their results. An \emph{observational error} is the difference between what is
+measured, and the true result, which can be caused by \emph{systemic} or
+\emph{random errors}. Systemic errors are caused by the inherent inaccuracies
+of measurement apparatus; with respect to the framework's
+measurements, an example of systemic error may be attributed to the resolution
+(granularity) of the clock used to measure elapsed time. The CPU's clock speed is
 fixed to its maximum frequency by setting the CPU frequency governor to
 \emph{performance} mode (using \emph{cpufreq-set -g performance}) in order to
 restrict fluctuations in the CPU's clock speed, which may lead to inaccurate
-measurements and delays at the cost of a higher energy cost; Turbo boost is disabled as it dynamically increases
-processor performance according to the CPU's thermals~\citep[Section~14.3.3]{intel2021system}.
+measurements and delays at the cost of higher energy consumption. Random errors cause inconsistencies in repeated
+measurements; variance is
+commonly attributed to operating system activities, such as process migration
+across cores, and context switching.
 
-\subsection{Sources of Error}
-\subsection{Reproducability}
+Hyperthreading was disabled, as it led to higher rates of cache misses due to each core's cache
+having to be split with another thread~\citep{fog2020optimizing}; Turbo boost was
+disabled, since it dynamically controls
+processor performance according to the CPU's
+thermal status~\citep[Section~14.3.3]{intel2021system}; Threads were pinned to
+specific cores using thread affinity to mitigate process migration.
+
+The \emph{observer effect} is the impact that the cost of taking measurements
+has on the behaviour of the algorithm. Concurrent algorithms are highly
+timing-sensitive\footnote{As a testament to the timing-sensitive nature of
+concurrent algorithms, the term \emph{heisenbug} has been coined for bugs that
+tend to disappear when debugging overheads are
+introduced~\cite{perfbook2021}.}, as measurement overheads may influence thread
+interleavings, causing the true reality of the algorithm to significantly
+differ when under observation. By measuring a significantly large number of
+operations, the mean time is derived and used as a sample, amortizing
+measurement costs along the way. \citeauthor{aceto2021benchmarking} note that the repeatability of experiments
+is affected by data variability~\citep{aceto2021benchmarking}; the ratio of
+standard deviation to mean (\emph{coefficient of variation}), $\text{CV} =
+\frac{\sigma}{\bar{x}} \cdot 100$ is used to quantify the repeatability of
+each experiment.
 \section{Benchmarking Framework API}
 
 \section{Design Decisions}
@@ -268,3 +293,4 @@ may no longer be reused)~\citep{dechev2010understanding}, removes the overhead
 of memory allocation in measurements, and forgoes the need of memory management
 schemes, as memory is released at the end of the benchmark.
 
+\section{Performance Considerations}

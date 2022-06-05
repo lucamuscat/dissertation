@@ -1,0 +1,54 @@
+\chapter{Interfaces}
+\section{Queue Interface}
+\label{sec:queue_interface}
+Queues are expected to implement the following seven methods found in
+\emph{src/queues/queue.h}:
+
+\begin{description}
+\item bool create\_queue(void** out\_queue)
+	\begin{description}
+		\item[void** out\_queue] Queue to be initialized;
+	\end{description}
+\item bool enqueue(void* queue, void* in\_item)
+	\begin{description}
+		\item[void* queue] Pointer to an initialized queue;
+		\item[void* in\_item] Pointer to the item that is to be enqueued;
+		\item[Return] \emph{true} if enqueue is successful, else returns \emph{false}
+	\end{description}
+\item bool dequeue(void* queue, void** out\_item)
+	\begin{description}
+		\item[void* queue] Pointer to an initialized queue;
+		\item[void** out\_item] - Pointer to a pointer of the variable that will be assigned the dequeued value.
+		\item[Return] \emph{true} if dequeue is successful, else, if the queue is empty, or an error occurs, return \emph{false}
+	\end{description}
+\item void destroy\_queue(void** out\_queue)
+	\begin{description}
+		\item[void** out\_queue] - Pointer to a pointer of a queue that is to be de-allocated (freed).
+	\end{description}
+\item void register\_thread(size\_t num\_of\_iterations)
+	\begin{description}
+		\item This function is to be called in each thread that is used during the benchmark in order to allocate the memory necessary.
+		\item[size\_t num\_of\_iterations] - The number of iterations in which the enqueue function is called, which will determine how many nodes queue elements need to be initialized for each thread.
+	\end{description}
+\item void cleanup\_thread()
+	\begin{description}
+		\item Frees the memory allocated by \emph{register\_thread}; It is the user's responsibility to call this function only after all the expected operations have been executed, as it is possible for an active thread to encounter a use-after-free error.
+	\end{description}
+\item char* get\_queue\_name()
+	\begin{description}
+		\item[Return] the name of the queue being benchmarked. The result of
+    this function is appended to the results of the benchmark, in order to
+    identify which results belong to a queue.
+	\end{description}
+\end{description}    
+
+\section{Lock Interface}
+\label{sec:lock_interface}
+\begin{description}
+\item[bool create\_lock(void** lock)]
+\item[void destroy\_lock(void** lock)]
+
+\item[void wait\_lock(void* lock)]
+\item[void unlock(void* lock)]
+\item[char* get\_lock\_name()]
+\end{description}

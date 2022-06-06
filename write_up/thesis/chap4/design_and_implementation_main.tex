@@ -120,8 +120,8 @@ is affected by data variability~\citep{aceto2021benchmarking}; the ratio of
 standard deviation to mean (\emph{coefficient of variation}), $\text{CV} =
 \frac{\sigma}{\bar{x}} \cdot 100$ is used to quantify the repeatability of
 each experiment.
-\section{Benchmarking Framework API}
 
+% TODO: Don't forget to mention the modifications made to the baskets queue.
 \section{Design Decisions}
 This study focuses on four concurrent queueing algorithms:
 \citeauthor{michael1996simple}'s Lock-Free Queue~\citep{michael1996simple};
@@ -293,4 +293,73 @@ may no longer be reused)~\citep{dechev2010understanding}, removes the overhead
 of memory allocation in measurements, and forgoes the need of memory management
 schemes, as memory is released at the end of the benchmark.
 
-\section{Performance Considerations}
+\section{Benchmarking Framework API}
+\subsection{Modularity}
+New queues and locks may be added to the framework with ease by implementing
+interfaces~\ref{sec:queue_interface} and~\ref{sec:lock_interface}. Locks in the
+\emph{src/locks} directory are statically linked with every blocking queue
+inside \emph{src/queues/blocking}; furthermore, together with each blocking
+queue variation and non-blocking queue (found in
+\emph{src/queues/non-blocking}), the benchmarks are statically linked together,
+generating a single executable binary for each queue's benchmark. 
+\subsection{Lifecycle}
+Each benchmark goes through a common lifecycle, which can be categorized into
+four phases: 
+Firstly, the master thread initializes synchronization primitives
+(such as locks and barriers), auxiliary data (such as
+sequences of random numbers for the \emph{50\% Enqueue benchmark}), and the
+queue to be benchmarked; 
+Secondly, $N$ threads are spawned, and are provided
+with the necessary arguments;
+Thirdly, a contiguous pool of memory proportional
+to the number of enqueue operations executed in the warm-up and benchmark are
+allocated\footnote{The number of enqueues are extrapolated from the
+pre-generated sequence of random numbers in the case a 50\% enqueue benchmark
+is used.};
+Finally, each thread executes its share of operations and waits until each
+thread has finished, in order to safely free up the allocated memory. The
+entire cycle is repeated using a newly initialized queue.
+
+\subsection{Performance Considerations}
+Static linking is utilized as it provides performance benefits over dynamic
+linking; \citeauthor{fog2020optimizing} notes that functions inside dynamically
+linked libraries take longer to execute, and make less efficient use of code
+and data caching~\citep[Section~14.11]{fog2020optimizing}.
+
+False sharing was reduced through alignment and padding, preventing logically
+distinct data from being stored in the same cache line;
+thread-specific data was stored in thread local storage, as to further reduce
+false sharing. Struct fields were aligned to 128 bytes, due to
+\citeauthor{intelmanualoptimization}'s spatial prefetcher loading data into L2
+cache in chunks of 128 bytes~\citep[Section~E.2.5.4]{intelmanualoptimization}.
+
+Threads are synchronized to start at the same time using
+barriers, mitigating transient start up effects~\citep{hoffman2007baskets}.
+Furthermore, a number of operations are executed before the start of each
+benchmark, as to warm up the cache and branch predictor, moving cache misses
+due to unpopulated caches and speculative branch mispredictions outside the
+recorded benchmarks.
+
+\subsection{Validation}
+In response to research objective \textbf{O3}, parts of the framework's
+components are validated, as to increase confidence in the measurements
+obtained.
+
+A constant value is used as the enqueue operand, allowing for the comparison
+between the original and dequeued values to test for any corruption due to race conditions. 
+
+The artificial delay's accuracy is validated through a separate
+benchmark,
+where the average delay over ten million operations is recorded several times.
+An arbitrary threshold for the coefficient of variance of one percent
+is used to validate suitability of the delay; such a test allows
+for immediate feedback loops, where changes to the delay's behaviour may
+be verified in a timely manner.
+
+A \emph{Test Driven Development (TDD)} approach was used when implementing the
+pointer packing logic, which served the purpose of reducing the chances of
+regressions due to code changes or differences in CPU architecture. Atomic
+variables are asserted to be lock-free through the
+\emph{atomic\_is\_lock\_free} method, which may fail due to compiler settings,
+or unavailability of specific atomic instructions on CPUs. Error checking is
+used to prevent the framework from reaching undefined states.

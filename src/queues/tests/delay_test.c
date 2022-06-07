@@ -41,6 +41,8 @@ int main(int argc, char** argv)
         }
         delta_readings(readings, TEST_ITERATIONS);
     }
+
+    readings = aggregate_readings(readings, 10);
     
     double mean_ns = readings->nano_seconds[0];
     double stdev_ns = readings->nano_seconds[1];

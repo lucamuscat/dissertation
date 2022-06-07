@@ -63,8 +63,8 @@ __attribute__((always_inline)) inline void calibrate_delay(delay_t* delay, size_
         }
         delta_readings(delay_readings, iterations);
     }
-    readings_t* aggreated_readings = aggregate_readings(delay_readings, RERUNS);
-    double mean_ns = aggreated_readings->nano_seconds[0];
+    readings_t* aggregated_readings = aggregate_readings(delay_readings, RERUNS);
+    double mean_ns = aggregated_readings->nano_seconds[0];
     double error_ns = (fabs((double)expected_delay_ns - mean_ns) / expected_delay_ns);
     delay->delay_ns = expected_delay_ns;
     delay->num_of_nops = expected_delay_ns * CPU_GHZ * (1 - error_ns);
@@ -222,7 +222,7 @@ void destroy_readings(readings_t** readings)
 {
     free((*readings)->cycles);
     free((*readings)->nano_seconds);
-    free(readings);
+    free(*readings);
 }
 
 readings_t* aggregate_readings(readings_t* readings, size_t N)
@@ -233,8 +233,8 @@ readings_t* aggregate_readings(readings_t* readings, size_t N)
 
     for (size_t i = 0; i < N; ++i)
     {
-        cycles[i] = *readings->cycles;
-        nano_seconds[i] = *readings->nano_seconds;
+        cycles[i] = readings->cycles[i];
+        nano_seconds[i] = readings->nano_seconds[i];
     }
 
     result->cycles[0] = mean(cycles, N);

@@ -4,7 +4,9 @@ SHELL=bash
 # lock over here
 LOCK_NAMES = pthread_lock spin_lock ttas_lock
 BLOCKING_QUEUE_NAMES = ms_two_lock
-NONBLOCKING_QUEUE_NAMES = ms_queue ms_queue_with_tagged_ptr valois_queue baskets_queue baskets_queue_with_tagged_ptr
+NONBLOCKING_QUEUE_NAMES = valois_queue baskets_queue baskets_queue_with_tagged_ptr
+NONBLOCKING_HYBRID_QUEUE_NAMES = ms_queue
+
 
 ifdef DEBUG
 DEBUG_FLAGS = -g
@@ -94,6 +96,7 @@ p_enqueue_dequeue: p_enqueue_dequeue_blocking_tests p_enqueue_dequeue_nonblockin
 
 enqueue_dequeue_blocking_tests: $(foreach NAME, $(BLOCKING_QUEUE_NAMES), enqueue_dequeue_blocking_$(NAME)_test)
 enqueue_dequeue_nonblocking_tests: $(foreach NAME, $(NONBLOCKING_QUEUE_NAMES), enqueue_dequeue_nonblocking_$(NAME)_test)
+enqueue_dequeue_nonblocking_hybrid_tests: $(foreach NAME, $(NONBLOCKING_HYBRID_QUEUE_NAMES), enqueue_dequeue_nonblocking_$(NAME)_hybrid_test)
 
 p_enqueue_dequeue_blocking_tests: $(foreach NAME, $(BLOCKING_QUEUE_NAMES), p_enqueue_dequeue_blocking_$(NAME)_test)
 p_enqueue_dequeue_nonblocking_tests: $(foreach NAME, $(NONBLOCKING_QUEUE_NAMES), p_enqueue_dequeue_nonblocking_$(NAME)_test)
@@ -106,6 +109,10 @@ enqueue_dequeue_blocking_%_test: init_build_folder
 
 enqueue_dequeue_nonblocking_%_test: init_build_folder
 	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/nonblocking_$*
+
+enqueue_dequeue_nonblocking_%_hybrid_test: init_build_folder
+	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/nonblocking_$*
+	$(CXX) -DDWCAS $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/nonblocking_dwcas_$*
 
 p_enqueue_dequeue_blocking_%_test: init_build_folder
 	for i in $(LOCK_FILES); \

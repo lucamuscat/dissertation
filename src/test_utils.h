@@ -170,4 +170,6 @@ size_t count_enqueues_from_probabilities(double* probabilities, double p, size_t
 
 #define DELAY_OPS(OPS) _delay(OPS);
 
+#define coefficient_of_variance(_mean, _std) (_std/_mean)*100
+
 #endif

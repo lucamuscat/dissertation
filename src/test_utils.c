@@ -68,6 +68,7 @@ __attribute__((always_inline)) inline void calibrate_delay(delay_t* delay, size_
     double error_ns = (fabs((double)expected_delay_ns - mean_ns) / expected_delay_ns);
     delay->delay_ns = expected_delay_ns;
     delay->num_of_nops = expected_delay_ns * CPU_GHZ * (1 - error_ns);
+    destroy_readings(&delay_readings);
 }
 
 /**

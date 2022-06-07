@@ -14,8 +14,11 @@ mkdir -p $dir_path
 file_name=enqueue_dequeue_results.csv
 p_file_name=p_enqueue_dequeue_results.csv
 
-echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_ns" > $file_name
-echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_ns" > $p_file_name
+
+csv_header="name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min"
+
+echo $csv_header > $file_name
+echo $csv_header > $p_file_name
 
 # echo "$current_epoch: $2" | tee -a $dir_path/index.txt
 

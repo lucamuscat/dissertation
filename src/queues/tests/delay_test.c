@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 {
     if (argc != 2)
     {
-        fprintf(stderr, "Missing args, \n\targ1 uint - Delay in nano seconds");
+        fprintf(stderr, "Missing args, \n\targ1 uint - Delay in nano seconds\n");
         exit(EXIT_FAILURE);
     }
 
@@ -30,28 +30,36 @@ int main(int argc, char** argv)
 
     puts("Starting test");
 
-    readings_t* readings = create_readings(1);
+    readings_t* readings = create_readings(TEST_RERUNS);
 
-    start_readings(readings);
     for (size_t j = 0; j < TEST_RERUNS; ++j)
     {
+        start_readings(readings);
         for (size_t i = 0; i < TEST_ITERATIONS; ++i)
         {
             DELAY_OPS(delay.num_of_nops);
         }
+        delta_readings(readings, TEST_ITERATIONS);
     }
-    delta_readings(readings, TEST_ITERATIONS*TEST_RERUNS);
     
-    //double mean_ns = aggregated_readings->nano_seconds[0];
-    //double stdev_ns = aggregated_readings->nano_seconds[1];
+    double mean_ns = readings->nano_seconds[0];
+    double stdev_ns = readings->nano_seconds[1];
     //double mean_cycles = aggregated_readings->cycles[0];
     //double stdev_cycles = aggregated_readings->cycles[1];
     printf("Iterations: %lld\n", TEST_ITERATIONS);
     printf("Reruns: %d\n", TEST_RERUNS);
-    printf("Average Cycles: %f\n", readings->cycles[0]);
-    printf("Average Delay Time: %fns\n", readings->nano_seconds[0]);
-    printf("Total Time: %fs\n", readings->nano_seconds[0] * (TEST_ITERATIONS * TEST_RERUNS) / 1e9);
-    // printf("Stdev: +-%f (%f%%)\n", stdev_ns, (stdev_ns / mean_ns) * 100);
+    //printf("Average Cycles: %f\n", readings->cycles[0]);
+    printf("Average Delay Time: %fns\n", mean_ns);
+    printf(
+        "Delay Time Coefficient of Variance: %f%%\n",
+        coefficient_of_variance(mean_ns, stdev_ns));
     printf("Expected Delay Time: %ldns\n", delay_ns);
+    
+    double error = fabs(delay_ns - mean_ns);
+    printf("Error: %f (%f%%)\n", error, (error / delay_ns) * 100);
+    printf("Initial Number of nops: %zu\n", (size_t)(delay_ns * CPU_GHZ));
+    printf("Number of nops: %zu\n", delay.num_of_nops);
+    printf("Total Time: %fs\n", mean_ns * (TEST_ITERATIONS * TEST_RERUNS) / 1e9);
+    // printf("Stdev: +-%f (%f%%)\n", stdev_ns, (stdev_ns / mean_ns) * 100);
     return 0;
 }

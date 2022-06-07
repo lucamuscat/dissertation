@@ -16,26 +16,43 @@ LINE_WIDTH = 0.7
 
 os.makedirs(IMAGES_PATH, exist_ok=True)
 
+PLOT_CONTEXT = "paper"
+# PLOT_CONTEXT = "poster"
+
+err_style = {
+    "err_style" : "band" if PLOT_CONTEXT == "poster" else "bars",
+}
+
+if PLOT_CONTEXT != "poster":
+    err_style["err_kws"] = {"linewidth": LINE_WIDTH, "capsize": 2, "ecolor": "k"}
+
 sns_kwargs = {
     "markers": True,
     "dashes": True,
     "ci": "sd",
     "markeredgecolor": "none",
-    "err_style": "bars",
     "linewidth": LINE_WIDTH,
     "markersize": MARKER_SIZE,
-    "err_kws": {"linewidth": LINE_WIDTH, "capsize": 2, "ecolor": "k"},
+    **err_style
 }
 
 labels_kwargs = {"xlabel": "Threads", "ylabel": "Net Runtime (s)"}
 
-sns.set_style("whitegrid")
-sns.set_context("paper")
+uom_color_palette = ["#9C0C35", "#E94C5E", "#F08590", "#F5B4C7", "#FAC18A"]
 
+grid_style = "white" if PLOT_CONTEXT == "poster" else "whitegrid"
+
+sns.set_style(grid_style)
+sns.set_context("paper")
+sns.set_palette(sns.color_palette(uom_color_palette))
+
+def set_legend_location(ax: plt.Axes):
+    if PLOT_CONTEXT == "poster":
+        sns.move_legend(ax, "best", fontsize="small")
 
 def save_plot(ax: plt.Axes, output_file_name: str, plot_title: str, dpi: int):
     ax.set(title=plot_title, **labels_kwargs)
-    ax.get_figure().savefig(output_file_name, dpi=dpi)
+    ax.get_figure().savefig(output_file_name, dpi=dpi, bbox_inches="tight")
     ax.get_figure().clf()
 
 
@@ -73,6 +90,13 @@ def plot_grouped_results(
         **sns_kwargs,
     )
 
+    plot_title = plot_title.replace("(", "").replace(")", "")
+    plot_title = f"{plot_title} ({delay}ns delay)"
+
+    ax.get_legend().set_title("Queue")
+
+    set_legend_location(ax)
+
     save_plot(ax, f"{IMAGES_PATH}/{output_file_name}.jpg", plot_title, dpi)
 
 
@@ -106,16 +130,18 @@ def plot_individual_results(
             **sns_kwargs,
         )
 
+        set_legend_location(ax)
+
         cleaned_queue_name = str.lower(queue_name).replace(" ", "_")
 
         file_path = f"{IMAGES_PATH}/{output_file_name}_{cleaned_queue_name}.jpg"
-        title = f"{queue_name}: {plot_title}"
+        title = f"{queue_name} {plot_title}"
         save_plot(ax, file_path, title, dpi)
 
 
-ENQUEUE_DEQUEUE_TITLE = "Pairwise Enqueue Dequeue Benchmark"
+ENQUEUE_DEQUEUE_TITLE = "(Pairwise Benchmark)"
 ENQEUUE_DEQUEUE_FILE_NAME = "enqueue_dequeue_results"
-P_ENQUEUE_DEQUEUE_TITLE = "50% Enqueue Benchmark"
+P_ENQUEUE_DEQUEUE_TITLE = "(50% Enqueue Benchmark)"
 P_ENQUEUE_DEQUEUE_FILE_NAME = "p_enqueue_dequeue_results"
 
 plot_grouped_results(

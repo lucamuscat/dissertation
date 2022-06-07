@@ -60,9 +60,12 @@ typedef struct queue_t
     DOUBLE_CACHE_ALIGNED node_pointer_t _Atomic tail;
 } queue_t;
 
-thread_local node_t* node_pool;
-thread_local int node_count;
 thread_local node_t* sentinel;
+thread_local char pad1[PAD_TO_CACHELINE(node_t*)];
+thread_local int64_t node_count;
+thread_local char pad2[PAD_TO_CACHELINE(int64_t)];
+thread_local node_t* node_pool;
+thread_local char pad3[PAD_TO_CACHELINE(node_t*)];
 
 void register_thread(size_t num_of_iterations)
 {
@@ -82,17 +85,20 @@ void cleanup_thread()
  * called the register_thread(1) method.
  * @param out_node
  */
-void create_node(node_t** out_node)
+inline node_t* create_node(void* value)
 {
-    *out_node = &node_pool[++node_count];
+    node_pool[++node_count].value = value;
+    //atomic_store(&node_pool[node_count].next, ((node_pointer_t){NULL, 0}));
+    atomic_store(&node_pool[node_count].next, init_node_pointer_t(NULL, 0));
+
+    return &node_pool[node_count];
 }
 
 void create_sentinel_node()
 {
     sentinel = (node_t*)calloc(1, sizeof(node_t));
-    node_pointer_t null_node = { NULL, 0 };
     assert(atomic_is_lock_free(&sentinel->next));
-    atomic_store(&sentinel->next, null_node);
+    atomic_store(&sentinel->next, init_node_pointer_t(NULL, 0));
 }
 
 // Beware that malloc might not be lock-free, making the algorithm
@@ -107,7 +113,7 @@ bool create_queue(void** out_queue)
     // Make sure that double width compare and swap is available on the system
     // may return false in the case that the compiler does not emit the assembly
     // instruction directly.
-    node_pointer_t sentinel_ptr = { sentinel, 0 };
+    node_pointer_t sentinel_ptr = init_node_pointer_t(sentinel, 0);
     atomic_store(&(*queue)->head, sentinel_ptr);
     atomic_store(&(*queue)->tail, sentinel_ptr);
     return true;
@@ -119,7 +125,7 @@ void destroy_queue(void** out_queue)
     free(sentinel);
 }
 
-bool equals(node_pointer_t a, node_pointer_t b)
+inline bool equals(node_pointer_t a, node_pointer_t b)
 {
     return a.count == b.count && a.ptr == b.ptr;
 }
@@ -127,7 +133,7 @@ bool equals(node_pointer_t a, node_pointer_t b)
 bool enqueue(void* in_queue, void* in_item)
 {
     queue_t* queue = (queue_t*)in_queue;
-    node_t* node;
+    node_t* node = create_node(in_item);
     create_node(&node);
     node->value = in_item;
     node_pointer_t null_node = { NULL, 0 };

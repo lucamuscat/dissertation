@@ -6,6 +6,7 @@
 #include "../queue.h"
 #include "../../test_utils.h"
 #include "../../tagged_ptr.h"
+#include "../../assertion_utils.h"
 
 // Implemented following 
 

@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdatomic.h>
 #include "../../test_utils.h"
+#include "../../assertion_utils.h"
 #include "../lock.h"
 
 static pthread_barrier_t barrier;

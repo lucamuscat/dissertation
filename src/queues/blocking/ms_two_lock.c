@@ -8,6 +8,7 @@
 #include "../queue.h"
 #include "../../locks/lock.h"
 #include "../../test_utils.h"
+#include "../../assertion_utils.h"
 
 #include <stdlib.h>
 #include <threads.h>

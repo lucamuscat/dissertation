@@ -143,26 +143,6 @@ void destroy_readings(readings_t** readings);
 size_t count_enqueues_from_probabilities(double* probabilities, double p, size_t iterations);
 
 /**
- * @brief Exit if x is NULL. This macro can be used to ensure that mallocs and
- * callocs succeed.
- */
-#define ASSERT_NOT_NULL(x) if(x == NULL) {\
-    fprintf(stderr, "%s, %d", __FILE__, __LINE__); \
-    perror("Error:"); \
-    exit(EXIT_FAILURE); \
-}
-
-/// Return x if it is false.
-#define PASS(x) if(!x) {\
-    return x; \
-}
-
-#define ASSERT_TRUE(x, message) if(!(x)) {\
-    fprintf(stderr, "%s (File: %s Line: %d)", message, __FILE__, __LINE__); \
-    exit(EXIT_FAILURE); \
-}
-
-/**
  * @brief Delay for NS nano seconds. For some reason, multiplying NS*CPU_GHZ
  * inside of _delay causes the delay to last at least two times longer.
  */

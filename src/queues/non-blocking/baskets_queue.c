@@ -5,6 +5,7 @@
 #include <threads.h>
 #include "../queue.h"
 #include "../../test_utils.h"
+#include "../../assertion_utils.h"
 
 struct node_t;
 struct pointer_t;

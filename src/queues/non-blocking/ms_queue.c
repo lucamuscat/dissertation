@@ -165,33 +165,31 @@ void destroy_queue(void** out_queue)
 bool enqueue(void* in_queue, void* in_item)
 {
     queue_t* queue = (queue_t*)in_queue;
-    node_t* node = create_node(in_item);
-    node_pointer_t tail, next;
+    node_t* node = create_node(in_item); // E1 - E3
+    // Uninitialized variables that will be declared further below.
+    node_pointer_t tail, next; 
     
-    while (true) // loop
+    while (true) // loop E4
     {
-        // Check if the memory ordering can be weakened safely.
-        tail = atomic_load(&queue->tail);
-        next = atomic_load(&get_next_ptr(tail));
-        if (equals(tail, atomic_load(&queue->tail)))
+        tail = atomic_load(&queue->tail); // E5
+        next = atomic_load(&get_next_ptr(tail)); // E6
+        if (equals(tail, atomic_load(&queue->tail))) // E7: tail == Q->Tail
         {
-            if (extract_ptr(next) == NULL)
+            if (extract_ptr(next) == NULL) // E8: next.ptr == NULL
             {
-                //node_pointer_t new_ptr = { node, next.count + 1 };
-                node_pointer_t new_ptr = pack_ptr(node, extract_tag(next) + 1);
-                // TODO: Check if performance boost is gained when using
-                // atomic_compare_exchange_weak inside of a while loop.
-                if (atomic_compare_exchange_strong(&get_next_ptr(tail), &next, new_ptr))
+                node_pointer_t new_ptr = pack_ptr(node, extract_tag(next) + 1); // E9
+                if (atomic_compare_exchange_strong(&get_next_ptr(tail), &next, new_ptr)) // E9
                 {
+                    // Replace E10 with E17 & return true exit function
                     node_pointer_t new_ptr = pack_ptr(node, extract_tag(tail) + 1);
                     atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
-                    return true;
+                    return true; // E10: Emulates break behaviour
                 }
             }
             else
             {
-                node_pointer_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1);
-                atomic_compare_exchange_strong(&queue->tail, &next, new_ptr);
+                node_pointer_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1); // E13
+                atomic_compare_exchange_strong(&queue->tail, &next, new_ptr); // E13
             }
         }
     }
@@ -201,26 +199,26 @@ bool dequeue(void* in_queue, void** out_item)
 {
     queue_t* queue = (queue_t*)in_queue;
     node_pointer_t head, tail, next;
-    while (true)
+    while (true) // D1
     {
-        head = atomic_load(&queue->head);
-        tail = atomic_load(&queue->tail);
-        next = atomic_load(&get_next_ptr(head));
-        if (equals(head, atomic_load(&queue->head)))
+        head = atomic_load(&queue->head); // D2
+        tail = atomic_load(&queue->tail); // D3
+        next = atomic_load(&get_next_ptr(head)); // D4
+        if (equals(head, atomic_load(&queue->head))) // D5
         {
-            if (extract_ptr(head) == extract_ptr(tail))
+            if (extract_ptr(head) == extract_ptr(tail)) // D6
             {
-                if (extract_ptr(next) == NULL)
-                    return false;
-                node_pointer_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1);
-                atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
+                if (extract_ptr(next) == NULL) // D7
+                    return false; // D8
+                node_pointer_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1); // D10
+                atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr); // D10
             }
             else
             {
-                *out_item = ((node_t*)extract_ptr(next))->value;
-                node_pointer_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(head) + 1);
-                if (atomic_compare_exchange_strong(&queue->head, &head, new_ptr))
-                    return true;
+                *out_item = ((node_t*)extract_ptr(next))->value; // D12
+                node_pointer_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(head) + 1); // D13
+                if (atomic_compare_exchange_strong(&queue->head, &head, new_ptr)) // D13
+                    return true; // D14 + D19 + D20
             }
         }
     }

@@ -45,7 +45,10 @@ all: \
 	sequential_latency_tests \
 	lock_contention_tests \
 	enqueue_dequeue \
-	p_enqueue_dequeue 
+	enqueue_dequeue_nonblocking_hybrid_tests \
+	p_enqueue_dequeue  \
+	delay_test \
+	tagged_ptr_test
 
 .PHONY: all clean document plot
 

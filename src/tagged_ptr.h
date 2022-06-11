@@ -2,7 +2,9 @@
 #define TAGGED_PTR_H
 
 #include <stdint.h>
+#include "alignment_utils.h"
 
+#ifndef DWCAS // Used tagged pointers
 // Followed using:
 // https ://www.boost.org/doc/libs/1_78_0/boost/lockfree/detail/tagged_ptr_ptrcompression.hpp
 // (1L<<48L)-1, zeros out the 16 most significant bits.
@@ -20,7 +22,6 @@ typedef uintptr_t tagged_ptr_t;
 
 // tag % UINT15_T_MASK makes sure that a 16 bit unsigned int's overflow/wrap
 // around behaviour is the same as that of a 15 bit unsigned int
-
 /**
  * @brief Create a tagged_ptr_t with a boolean flag and a 15 bit counter
  * 
@@ -42,4 +43,24 @@ typedef uintptr_t tagged_ptr_t;
 #define extract_flagged_tag(i) ((uint16_t)((((uintptr_t)i) >> LINEAR_ADDRESS_SIZE)\
  & UINT15_T_MASK))
 
+#define equals(a, b) ((a) == (b))
+
+#else // DWCAS is defined
+
+typedef struct tagged_ptr_t
+{
+    void* ptr;
+    uint64_t tag;
+} DWCAS_ALIGNED tagged_ptr_t;
+
+#define pack_ptr(_ptr, _count) ((tagged_ptr_t){.ptr = (_ptr), .tag = (_count)})
+#define extract_ptr(_ptr) (((tagged_ptr_t)(_ptr)).ptr)
+#define extract_tag(_ptr) (((tagged_ptr_t)(_ptr)).tag)
+#define equals(a, b) ({\
+tagged_ptr_t temp1 = (tagged_ptr_t)a; \
+tagged_ptr_t temp2 = (tagged_ptr_t)b; \
+((temp1.ptr == temp2.ptr) && (temp1.tag == temp2.tag)); \
+})
+
+#endif
 #endif

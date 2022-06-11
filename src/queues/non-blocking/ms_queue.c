@@ -5,6 +5,7 @@
 #include <threads.h>
 #include "../queue.h"
 #include "../../test_utils.h"
+#include "../../tagged_ptr.h"
 
 // Implemented following 
 
@@ -38,63 +39,30 @@
 // is still a possibility of this occurring.
 
 struct node_t;
-
 struct node_t* create_node(void* value);
 
+#define get_next_ptr(_ptr) (((node_t*)extract_ptr((_ptr)))->next)
+
+char* get_queue_name()
+{
 #ifdef DWCAS
-char* get_queue_name()
-{
     return "MS Queue using DWCAS";
-}
-
-// Align to 16 bytes to ensure that cmpxcgh16b is used.
-typedef struct node_pointer_t
-{
-    struct node_t* ptr;
-    uint64_t count;
-} DWCAS_ALIGNED node_pointer_t;
 #else
-#include "../../tagged_ptr.h"
-typedef tagged_ptr_t node_pointer_t;
-char* get_queue_name()
-{
     return "MS Queue using Tagged Pointers";
-}
-
 #endif
+}
 
 typedef struct node_t
 {
-    node_pointer_t _Atomic next;
+    tagged_ptr_t _Atomic next;
     void* value;
 } node_t;
-
-bool equals(node_pointer_t a, node_pointer_t b);
-
-#ifdef DWCAS
-inline bool equals(node_pointer_t a, node_pointer_t b)
-{
-    return a.count == b.count && a.ptr == b.ptr;
-}
-#define pack_ptr(_ptr, _count) ((node_pointer_t){.ptr = (_ptr), .count = (_count)})
-#define extract_ptr(_ptr) (node_t*)(((node_pointer_t)(_ptr)).ptr)
-#define extract_tag(_ptr) (((node_pointer_t)(_ptr)).count)
-#define get_next_ptr(_ptr) (((node_t*)((node_pointer_t)(_ptr)).ptr)->next)
-#else
-inline bool equals(node_pointer_t a, node_pointer_t b)
-{
-    return a == b;
-}
-
-#define get_next_ptr(_ptr) (((node_t*)(extract_ptr((_ptr))))->next)
-
-#endif
 
 typedef struct queue_t
 {
     // Needs to be atomic, these pointers will be accessed from multiple threads.
-    DOUBLE_CACHE_ALIGNED node_pointer_t _Atomic head;
-    DOUBLE_CACHE_ALIGNED node_pointer_t _Atomic tail;
+    DOUBLE_CACHE_ALIGNED tagged_ptr_t _Atomic head;
+    DOUBLE_CACHE_ALIGNED tagged_ptr_t _Atomic tail;
 } queue_t;
 
 thread_local node_t* sentinel;
@@ -125,7 +93,6 @@ void cleanup_thread()
 inline node_t* create_node(void* value)
 {
     node_pool[++node_count].value = value;
-    //atomic_store(&node_pool[node_count].next, ((node_pointer_t){NULL, 0}));
     atomic_store(&node_pool[node_count].next, pack_ptr(NULL, 0));
 
     return &node_pool[node_count];
@@ -150,7 +117,7 @@ bool create_queue(void** out_queue)
     // Make sure that double width compare and swap is available on the system
     // may return false in the case that the compiler does not emit the assembly
     // instruction directly.
-    node_pointer_t sentinel_ptr = pack_ptr(sentinel, 0);
+    tagged_ptr_t sentinel_ptr = pack_ptr(sentinel, 0);
     atomic_store(&(*queue)->head, sentinel_ptr);
     atomic_store(&(*queue)->tail, sentinel_ptr);
     return true;
@@ -167,7 +134,7 @@ bool enqueue(void* in_queue, void* in_item)
     queue_t* queue = (queue_t*)in_queue;
     node_t* node = create_node(in_item); // E1 - E3
     // Uninitialized variables that will be declared further below.
-    node_pointer_t tail, next; 
+    tagged_ptr_t tail, next; 
     
     while (true) // loop E4
     {
@@ -177,18 +144,18 @@ bool enqueue(void* in_queue, void* in_item)
         {
             if (extract_ptr(next) == NULL) // E8: next.ptr == NULL
             {
-                node_pointer_t new_ptr = pack_ptr(node, extract_tag(next) + 1); // E9
+                tagged_ptr_t new_ptr = pack_ptr(node, extract_tag(next) + 1); // E9
                 if (atomic_compare_exchange_strong(&get_next_ptr(tail), &next, new_ptr)) // E9
                 {
                     // Replace E10 with E17 & return true exit function
-                    node_pointer_t new_ptr = pack_ptr(node, extract_tag(tail) + 1);
+                    tagged_ptr_t new_ptr = pack_ptr(node, extract_tag(tail) + 1);
                     atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
                     return true; // E10: Emulates break behaviour
                 }
             }
             else
             {
-                node_pointer_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1); // E13
+                tagged_ptr_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1); // E13
                 atomic_compare_exchange_strong(&queue->tail, &next, new_ptr); // E13
             }
         }
@@ -198,7 +165,7 @@ bool enqueue(void* in_queue, void* in_item)
 bool dequeue(void* in_queue, void** out_item)
 {
     queue_t* queue = (queue_t*)in_queue;
-    node_pointer_t head, tail, next;
+    tagged_ptr_t head, tail, next;
     while (true) // D1
     {
         head = atomic_load(&queue->head); // D2
@@ -210,13 +177,13 @@ bool dequeue(void* in_queue, void** out_item)
             {
                 if (extract_ptr(next) == NULL) // D7
                     return false; // D8
-                node_pointer_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1); // D10
+                tagged_ptr_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1); // D10
                 atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr); // D10
             }
             else
             {
                 *out_item = ((node_t*)extract_ptr(next))->value; // D12
-                node_pointer_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(head) + 1); // D13
+                tagged_ptr_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(head) + 1); // D13
                 if (atomic_compare_exchange_strong(&queue->head, &head, new_ptr)) // D13
                     return true; // D14 + D19 + D20
             }

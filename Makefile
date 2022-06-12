@@ -56,6 +56,11 @@ COMMON_DELAY = $(CXX) $(QUEUES_DIR)/tests/delay_test.c $(TEST_UTILS) -lm $(DEBUG
 delay_test: init_build_folder
 	$(COMMON_DELAY) $(PAPI_LIB) -o $(OUTPUT_DIR)/delay_test $(ERROR_FLAGS)
 
+COMMON_TAGGED_PTR_TEST = $(CXX) $(QUEUES_DIR)/tests/tagged_ptr_test.c -g -O3 $(ERROR_FLAGS) 
+tagged_ptr_test: init_build_folder
+	$(COMMON_TAGGED_PTR_TEST) -o $(OUTPUT_DIR)/tagged_ptr_test
+	$(COMMON_TAGGED_PTR_TEST) -DDWCAS -o $(OUTPUT_DIR)/tagged_ptr_test_dwcas
+
 # Generate the pdf for the FYP
 document:
 	cd write_up/thesis && make references
@@ -71,8 +76,6 @@ clean:
 sequential_latency_tests: $(foreach LOCK_NAME, $(LOCK_NAMES), sequential_latency_$(LOCK_NAME)_test)
 lock_contention_tests: $(foreach LOCK_NAME, $(LOCK_NAMES), lock_contention_$(LOCK_NAME)_test)
 
-tagged_ptr_test: init_build_folder
-	$(CXX) $(QUEUES_DIR)/tests/tagged_ptr_test.c -g -O3 $(ERROR_FLAGS) -o $(OUTPUT_DIR)/tagged_ptr_test
 
 init_build_folder:
 	mkdir -p $(OUTPUT_DIR)

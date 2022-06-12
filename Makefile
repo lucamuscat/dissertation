@@ -4,8 +4,8 @@ SHELL=bash
 # lock over here
 LOCK_NAMES = pthread_lock spin_lock ttas_lock
 BLOCKING_QUEUE_NAMES = ms_two_lock
-NONBLOCKING_QUEUE_NAMES = valois_queue baskets_queue baskets_queue_with_tagged_ptr
-NONBLOCKING_HYBRID_QUEUE_NAMES = ms_queue
+NONBLOCKING_QUEUE_NAMES = valois_queue
+NONBLOCKING_HYBRID_QUEUE_NAMES = ms_queue baskets_queue
 
 
 ifdef DEBUG

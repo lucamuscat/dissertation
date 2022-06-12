@@ -7,6 +7,8 @@
 #define TAG_WORD_MAX(tag_word_size) ((((tag_word)1) << ((tag_word_size) - 1)) | \
  ((((tag_word)1) << ((tag_word_size) - 1)) - 1))
 
+#define get_next_ptr(_ptr) (((node_t*)extract_ptr((_ptr)))->next)
+
 #ifndef DWCAS // Used tagged pointers
 
 // Followed using:
@@ -81,7 +83,7 @@ typedef uint64_t tag_word;
     .ptr = (_ptr), \
     .flagged_tag = ((_tag)%(TAG_WORD_MAX(TAG_SIZE-1))), \
     .flag=((bool)(_flag))})
-#define extract_flag(_ptr) (((tagged_ptr_t)(_ptr)).flag)
+#define extract_flag(_ptr) ((bool)((tagged_ptr_t)(_ptr)).flag)
 #define extract_flagged_tag(_ptr) (((tagged_ptr_t)(_ptr)).flagged_tag)
 
 #endif

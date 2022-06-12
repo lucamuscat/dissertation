@@ -41,7 +41,6 @@
 struct node_t;
 struct node_t* create_node(void* value);
 
-#define get_next_ptr(_ptr) (((node_t*)extract_ptr((_ptr)))->next)
 
 char* get_queue_name()
 {

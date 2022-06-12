@@ -4,15 +4,22 @@
 #include <stdbool.h>
 #include "../../tagged_ptr.h"
 
-#define LOG(expr) { expr; printf("\nTest %s passed", #expr); }
+#define LOG(expr) { expr; printf("Test %s passed\n", #expr); }
 
-#define TAG_VALUE 1
-#define DUMMY_VALUE 123456
 #define TAG_WORD_MAX(tag_word_size) ((((tag_word)1) << ((tag_word_size) - 1)) | \
  ((((tag_word)1) << ((tag_word_size) - 1)) - 1))
 
-const int dummy_value = DUMMY_VALUE;
-const int* dummy_value_ptr = &dummy_value;
+tag_word dummy_value = 1;
+tag_word* dummy_value_ptr = &dummy_value;
+
+void when_extract_ptr_then_return_ptr()
+{
+    tagged_ptr_t flagged_tagged_ptr = pack_ptr_with_flag(dummy_value_ptr, 0, true);
+    tagged_ptr_t tagged_ptr = pack_ptr(dummy_value_ptr, 0);
+
+    assert(dummy_value_ptr == extract_ptr(flagged_tagged_ptr));
+    assert(dummy_value_ptr == extract_ptr(tagged_ptr));
+}
 
 void test_tagged_ptr(const int* dummy_ptr, uint16_t tag)
 {
@@ -63,12 +70,7 @@ void given_flagged_tag_ptr_equal_when_equals_then_return_true()
 
 int main()
 {
-    //static_assert((equals(NULL, NULL) == true));
-    uint16_t one = 1;
-    uint16_t max = UINT16_MAX;
-
-    LOG(test_tagged_ptr(dummy_value_ptr, one));
-    LOG(test_tagged_ptr(dummy_value_ptr, max));
+    LOG(when_extract_ptr_then_return_ptr());
 
     LOG(given_tag_greater_than_max_tag_word_when_extract_flagged_tag_then_wrap_tag());
     LOG(given_true_flag_when_extract_flag_then_return_true_flag());

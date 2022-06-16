@@ -94,8 +94,8 @@ sequential_latency_%_test: init_build_folder
 QUEUES_DIR = $(SRC_DIR)/queues
 BLOCKING_DIR = $(QUEUES_DIR)/blocking
 NONBLOCKING_DIR = $(QUEUES_DIR)/non-blocking
-ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/enqueue_dequeue.c $(TEST_UTILS)
-P_ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/p_enqueue_dequeue.c $(TEST_UTILS)
+ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/enqueue_dequeue.c $(QUEUES_DIR)/auxiliary_stats.c $(TEST_UTILS)
+P_ENQUEUE_DEQUEUE_TEST_FILES = $(QUEUES_DIR)/tests/p_enqueue_dequeue.c $(QUEUES_DIR)/auxiliary_stats.c $(TEST_UTILS)
 
 enqueue_dequeue: enqueue_dequeue_blocking_tests enqueue_dequeue_nonblocking_tests
 p_enqueue_dequeue: p_enqueue_dequeue_blocking_tests p_enqueue_dequeue_nonblocking_tests

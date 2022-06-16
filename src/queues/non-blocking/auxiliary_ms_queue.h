@@ -26,49 +26,14 @@ typedef union stats_t
 
 thread_local stats_t internal_stats = { 0 };
 
-void add_stats(int* a, int* b, int* dest)
+size_t get_num_of_counters()
 {
-    for (size_t i = 0; i < sizeof(stats_t); ++i)
-    {
-        dest[i] = a[i] + b[i];
-    }
+    return sizeof(stats_t);
 }
 
-void reset_stats(int* a)
+void* get_thread_local_counters()
 {
-    memset(a, 0, sizeof(stats_t));
-}
-
-void copy_stats(int* dest, int* src)
-{
-    memcpy(dest, src, sizeof(stats_t));
-}
-
-void display_stats(int** src, size_t size)
-{
-    printf(",");
-    for (size_t i = 0; i < size; ++i)
-    {
-        for (size_t j = 0; j < sizeof(stats_t) / sizeof(int); ++j)
-        {
-            printf("%d ", src[i][j]);
-        }
-    }
-}
-
-int** create_stats(size_t size)
-{
-    int** ret_value = malloc(sizeof(int*) * size);
-    for (size_t i = 0; i < size; ++i)
-    {
-        ret_value[i] = calloc(size, sizeof(stats_t));
-    }
-    return ret_value;
-}
-
-void get_stats(int* dest)
-{
-    memcpy(dest, &internal_stats, sizeof(stats_t));
+    return &internal_stats;
 }
 
 #endif

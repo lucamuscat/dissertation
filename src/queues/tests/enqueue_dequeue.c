@@ -36,6 +36,7 @@
 #include <pthread.h>
 #include <assert.h>
 #include <stdatomic.h>
+#include <string.h>
 #include "../../test_utils.h"
 #include "../queue.h"
 
@@ -45,6 +46,7 @@ static delay_t delay;
 typedef struct thread_args
 {
     void* queue;
+    int* stats;
     size_t num_of_iterations;
     size_t num_of_warm_up_iterations;
     readings_t* readings;
@@ -89,6 +91,7 @@ void* thread_fn(void* in_args)
     // finishes before another thread that frees memory that is used by another
     // thread
     pthread_barrier_wait(&barrier);
+    get_stats(args->stats);
     cleanup_thread();
     // Make sure to synchronize all changes to args
     atomic_thread_fence(memory_order_seq_cst);
@@ -111,8 +114,9 @@ int main(int argc, char** argv)
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
     ASSERT_NOT_NULL(args);
 
-
     readings_t** readings = create_readings_2d(num_of_threads, TEST_RERUNS);
+    int** per_thread_stats = create_stats(num_of_threads);
+    int** accumulated_stats = create_stats(TEST_RERUNS);
 
     for (size_t i = 0; i < TEST_RERUNS; ++i)
     {
@@ -122,9 +126,15 @@ int main(int argc, char** argv)
         for (size_t j = 0; j < num_of_threads; ++j)
         {
             args[j].queue = queue;
+            reset_stats(per_thread_stats[j]);
+            args[j].stats = per_thread_stats[j];
             args[j].readings = readings[j];
             args[j].num_of_warm_up_iterations = WARMUP_ITERATIONS/num_of_threads;
-            args[j].num_of_iterations = iterations_per_thread(num_of_threads, j, TEST_ITERATIONS);
+            args[j].num_of_iterations = iterations_per_thread(
+                num_of_threads,
+                j,
+                TEST_ITERATIONS
+            );
             accumulated_iterations += args[j].num_of_iterations;
 
             pthread_attr_t attr = create_thread_affinity_attr(j);
@@ -138,6 +148,14 @@ int main(int argc, char** argv)
         {
             pthread_join(args[j].tid, NULL);
         }
+
+        for (size_t j = 1; j < num_of_threads; ++j)
+        {
+            add_stats(per_thread_stats[0], per_thread_stats[j], per_thread_stats[0]);
+        }
+
+        copy_stats(accumulated_stats[i], per_thread_stats[0]);
+
         destroy_queue(&queue);
     }
 
@@ -150,6 +168,8 @@ int main(int argc, char** argv)
     printf("\n\"%s\",%zu,%zu,", get_queue_name(), num_of_threads, delay_ns);
     display_readings(aggregates);
     printf(",%f", total_run_time_minutes);
+    display_stats(accumulated_stats, TEST_RERUNS);
+
     pthread_barrier_destroy(&barrier);
 
     return EXIT_SUCCESS;

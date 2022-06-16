@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <stdatomic.h>
 #include <assert.h>
-#include <threads.h>
 #include "../queue.h"
 #include "../../test_utils.h"
+#include "../../tagged_ptr.h"
+#include "./auxiliary_ms_queue.h"
 
-// Implemented following 
 
 /**
  *  Sources [1, 2, 3] implement the Michael Scott Lock-Free queue in C++, whilst
@@ -38,31 +38,37 @@
 // is still a possibility of this occurring.
 
 struct node_t;
-struct node_pointer_t;
+struct node_t* create_node(void* value);
 
-typedef struct node_pointer_t
+
+char* get_queue_name()
 {
-    struct node_t* ptr;
-    uint64_t count;
-} DWCAS_ALIGNED node_pointer_t;
-// Align to 16 bytes to ensure that cmpxcgh16b is used.
+#ifdef DWCAS
+    return "MS Queue using DWCAS";
+#else
+    return "MS Queue using Tagged Pointers";
+#endif
+}
 
 typedef struct node_t
 {
-    struct node_pointer_t _Atomic next;
+    tagged_ptr_t _Atomic next;
     void* value;
 } node_t;
 
 typedef struct queue_t
 {
     // Needs to be atomic, these pointers will be accessed from multiple threads.
-    DOUBLE_CACHE_ALIGNED node_pointer_t _Atomic head;
-    DOUBLE_CACHE_ALIGNED node_pointer_t _Atomic tail;
+    DOUBLE_CACHE_ALIGNED tagged_ptr_t _Atomic head;
+    DOUBLE_CACHE_ALIGNED tagged_ptr_t _Atomic tail;
 } queue_t;
 
-thread_local node_t* node_pool;
-thread_local int node_count;
 thread_local node_t* sentinel;
+thread_local char pad1[PAD_TO_CACHELINE(node_t*)];
+thread_local int64_t node_count;
+thread_local char pad2[PAD_TO_CACHELINE(int64_t)];
+thread_local node_t* node_pool;
+thread_local char pad3[PAD_TO_CACHELINE(node_t*)];
 
 void register_thread(size_t num_of_iterations)
 {
@@ -82,21 +88,21 @@ void cleanup_thread()
  * called the register_thread(1) method.
  * @param out_node
  */
-void create_node(node_t** out_node)
+inline node_t* create_node(void* value)
 {
-    *out_node = &node_pool[++node_count];
+    node_pool[++node_count].value = value;
+    atomic_store(&node_pool[node_count].next, pack_ptr(NULL, 0));
+
+    return &node_pool[node_count];
 }
 
 void create_sentinel_node()
 {
     sentinel = (node_t*)calloc(1, sizeof(node_t));
-    node_pointer_t null_node = { NULL, 0 };
     assert(atomic_is_lock_free(&sentinel->next));
-    atomic_store(&sentinel->next, null_node);
+    atomic_store(&sentinel->next, pack_ptr(NULL, 0));
 }
 
-// Beware that malloc might not be lock-free, making the algorithm
-// also not lock-free.
 bool create_queue(void** out_queue)
 {
     queue_t** queue = (queue_t**)out_queue;
@@ -107,7 +113,7 @@ bool create_queue(void** out_queue)
     // Make sure that double width compare and swap is available on the system
     // may return false in the case that the compiler does not emit the assembly
     // instruction directly.
-    node_pointer_t sentinel_ptr = { sentinel, 0 };
+    tagged_ptr_t sentinel_ptr = pack_ptr(sentinel, 0);
     atomic_store(&(*queue)->head, sentinel_ptr);
     atomic_store(&(*queue)->tail, sentinel_ptr);
     return true;
@@ -119,45 +125,37 @@ void destroy_queue(void** out_queue)
     free(sentinel);
 }
 
-bool equals(node_pointer_t a, node_pointer_t b)
-{
-    return a.count == b.count && a.ptr == b.ptr;
-}
-
 bool enqueue(void* in_queue, void* in_item)
 {
     queue_t* queue = (queue_t*)in_queue;
-    node_t* node;
-    create_node(&node);
-    node->value = in_item;
-    node_pointer_t null_node = { NULL, 0 };
-    atomic_store(&node->next, null_node);
-
-    node_pointer_t tail, next;
-    
-    while (true) // loop
+    node_t* node = create_node(in_item); // E1 - E3
+    tagged_ptr_t tail, next;
+    internal_stats.counters.enqueue_count++;
+    while (true) // loop E4
     {
-        // Check if the memory ordering can be weakened safely.
-        tail = atomic_load(&queue->tail);
-        next = atomic_load(&tail.ptr->next);
-        if (equals(tail, atomic_load(&queue->tail)))
+        tail = atomic_load(&queue->tail); // E5
+        next = atomic_load(&get_next_ptr(tail)); // E6
+        if (equals(tail, atomic_load(&queue->tail))) // E7: tail == Q->Tail
         {
-            if (next.ptr == NULL)
+            internal_stats.counters.enqueue_consistent_tail_count++;
+            if (extract_ptr(next) == NULL) // E8: next.ptr == NULL
             {
-                node_pointer_t new_ptr = { node, next.count + 1 };
-                // TODO: Check if performance boost is gained when using
-                // atomic_compare_exchange_weak inside of a while loop.
-                if (atomic_compare_exchange_strong(&tail.ptr->next, &next, new_ptr))
+                internal_stats.counters.enqueue_next_ptr_null_count++;
+                tagged_ptr_t new_ptr = pack_ptr(node, extract_tag(next) + 1); // E9
+                if (atomic_compare_exchange_strong(&get_next_ptr(tail), &next, new_ptr)) // E9
                 {
-                    node_pointer_t new_ptr = { node, tail.count + 1 };
+                    // Replace E10 with E17 & return true exit function
+                    internal_stats.counters.enqueue_cas_tail_count++;
+                    tagged_ptr_t new_ptr = pack_ptr(node, extract_tag(tail) + 1);
                     atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
-                    return true;
+                    return true; // E10: Emulates break behaviour
                 }
             }
             else
             {
-                node_pointer_t new_ptr = { next.ptr, tail.count + 1 };
-                atomic_compare_exchange_strong(&queue->tail, &next, new_ptr);
+                internal_stats.counters.enqueue_next_ptr_not_null_count++;
+                tagged_ptr_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1); // E13
+                atomic_compare_exchange_strong(&queue->tail, &next, new_ptr); // E13
             }
         }
     }
@@ -166,35 +164,41 @@ bool enqueue(void* in_queue, void* in_item)
 bool dequeue(void* in_queue, void** out_item)
 {
     queue_t* queue = (queue_t*)in_queue;
-    node_pointer_t head, tail, next;
-    while (true)
+    tagged_ptr_t head, tail, next;
+    while (true) // D1
     {
-        head = atomic_load(&queue->head);
-        tail = atomic_load(&queue->tail);
-        next = atomic_load(&head.ptr->next);
-        if (equals(head, atomic_load(&queue->head)))
+        internal_stats.counters.dequeue_count++;
+        head = atomic_load(&queue->head); // D2
+        tail = atomic_load(&queue->tail); // D3
+        next = atomic_load(&get_next_ptr(head)); // D4
+        if (equals(head, atomic_load(&queue->head))) // D5
         {
-            if (head.ptr == tail.ptr)
+            internal_stats.counters.dequeue_consistent_head_count++;
+            if (extract_ptr(head) == extract_ptr(tail)) // D6
             {
-                if (next.ptr == NULL)
-                    return false;
-                node_pointer_t new_ptr = { next.ptr, tail.count + 1 };
-                atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
+                if (extract_ptr(next) == NULL) // D7
+                {
+                    internal_stats.counters.dequeue_empty_queue_count++;
+                    return false; // D8
+                }
+                tagged_ptr_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1); // D10
+                atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr); // D10
+                internal_stats.counters.dequeue_tail_falling_behind_count++;
             }
             else
             {
-                *out_item = next.ptr->value;
-                node_pointer_t new_ptr = { next.ptr, head.count + 1 };
+                *out_item = ((node_t*)extract_ptr(next))->value; // D12
+                internal_stats.counters.dequeue_queue_not_empty_count++;
+                tagged_ptr_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(head) + 1); // D13
                 if (atomic_compare_exchange_strong(&queue->head, &head, new_ptr))
-                    return true;
+                { // D13
+                    return true; // D14 + D19 + D20
+                }
+                internal_stats.counters.dequeue_failed_to_swing_count++;
             }
         }
     }
 }
 
-char* get_queue_name()
-{
-    return "MS Queue using DWCAS";
-}
 
 

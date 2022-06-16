@@ -5,27 +5,22 @@
 #include <threads.h>
 #include "../queue.h"
 #include "../../test_utils.h"
+#include "../../tagged_ptr.h"
+#include "auxiliary_baskets_queue.h"
 
 struct node_t;
 struct pointer_t;
 
-typedef struct pointer_t
-{
-    struct node_t* ptr;
-    bool deleted;
-    uint32_t tag;
-} DWCAS_ALIGNED pointer_t;
-
 typedef struct node_t
 {
-    pointer_t _Atomic next;
+    tagged_ptr_t _Atomic next;
     void* value;
 } node_t;
 
 typedef struct queue_t
 {
-    DOUBLE_CACHE_ALIGNED pointer_t _Atomic tail;
-    DOUBLE_CACHE_ALIGNED pointer_t _Atomic head;
+    DOUBLE_CACHE_ALIGNED tagged_ptr_t _Atomic tail;
+    DOUBLE_CACHE_ALIGNED tagged_ptr_t _Atomic head;
 } queue_t;
 
 thread_local node_t* sentinel;
@@ -59,17 +54,16 @@ void destroy_queue(void** out_queue)
  * called the register_thread(1) method.
  * @param out_node
  */
-void create_node(node_t** out_node)
+node_t* create_node()
 {
-    *out_node = &node_pool[++node_count];
+    return &node_pool[++node_count];
 }
 
 void create_sentinel_node()
 {
     sentinel = (node_t*)calloc(1, sizeof(node_t));
-    pointer_t null_node = { NULL, false, 0 };
     assert(atomic_is_lock_free(&sentinel->next));
-    atomic_store(&sentinel->next, null_node);
+    atomic_store(&sentinel->next, pack_ptr_with_flag(NULL, 0, false));
 }
 
 bool create_queue(void** out_queue)
@@ -80,67 +74,67 @@ bool create_queue(void** out_queue)
 
     create_sentinel_node();
 
-    pointer_t sentinel_ptr = { sentinel, false, 0 };
+    tagged_ptr_t sentinel_ptr = pack_ptr_with_flag(sentinel, 0, false);
     atomic_store(&(*queue)->head, sentinel_ptr);
     atomic_store(&(*queue)->tail, sentinel_ptr);
     return true;
 }
 
-bool equals(pointer_t a, pointer_t b)
-{
-    return a.tag == b.tag && a.ptr == b.ptr && a.deleted == b.deleted;
-}
-
 bool enqueue(void* in_queue, void* in_item)
 {
     queue_t* queue = (queue_t*)in_queue;
-    node_t* nd;
-    create_node(&nd);
-    nd->value = in_item;
-
-    while (true)
+    node_t* nd = create_node(); // E1
+    nd->value = in_item; // E2
+    while (true) // E3
     {
-        pointer_t tail = atomic_load(&queue->tail);
-        if (equals(tail, atomic_load(&queue->tail)))
+        tagged_ptr_t tail = atomic_load(&queue->tail); // E4
+        tagged_ptr_t next = atomic_load(&get_next_ptr(tail)); // E5
+        internal_stats.counters.enqueue_count++;
+        if (equals(tail, atomic_load(&queue->tail))) // E6
         {
-            pointer_t next = atomic_load(&tail.ptr->next);
-            if (next.ptr == NULL)
+            internal_stats.counters.enqueue_consistent_tail_count++;
+            if (extract_ptr(next) == NULL) // E7
             {
-                pointer_t next_ptr = { NULL, false, tail.tag + 2 };
-                atomic_store(&nd->next, next_ptr);
+                internal_stats.counters.enqueue_next_ptr_not_null_count++;
+                tagged_ptr_t next_ptr = pack_ptr_with_flag(NULL, extract_flagged_tag(tail) + 2, false);
+                atomic_store(&nd->next, next_ptr); // E8
 
-                pointer_t new_ptr = { nd, false, tail.tag + 1 };
-                if (atomic_compare_exchange_strong(&tail.ptr->next, &next, new_ptr))
+                tagged_ptr_t new_ptr = pack_ptr_with_flag(nd, extract_flagged_tag(tail) + 1, false); // E9
+                if (atomic_compare_exchange_strong(&get_next_ptr(tail), &next, new_ptr)) // E9
                 {
-                    atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
-                    return true;
+                    internal_stats.counters.enqueue_cas_tail_count++;
+                    atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr); // E10
+                    return true; // E11
                 }
-                // next = tail.ptr->next is done implicitly by CAS on failure
-                while ((next.tag == tail.tag + 1) && !next.deleted)
+                // next = tail.ptr->next is done implicitly by CAS on failure; E12
+                while((extract_flagged_tag(next) == extract_flagged_tag(tail) + 1) && !extract_flag(next)) // E13
                 {
-                    // backoff scheme
-                    atomic_store(&nd->next, next);
-                    if (atomic_compare_exchange_strong(&tail.ptr->next, &next, new_ptr))
+                    // backoff scheme E14
+                    atomic_store(&nd->next, next); // E15
+                    
+                    if(atomic_compare_exchange_strong(&get_next_ptr(tail), &next, new_ptr))
                         return true;
+                    internal_stats.counters.enqueue_build_basket_count++;
                     // next = tail.ptr->next is done implicitly by CAS on failure
                 }
             }
             else
             {
-                pointer_t next_next;
+                internal_stats.counters.enqueue_next_ptr_not_null_count++;
+                tagged_ptr_t next_next;
                 while (true)
                 {
-                    next_next = atomic_load(&next.ptr->next);
+                    next_next = atomic_load(&get_next_ptr(next));
                     // You can only break out of E20 if next.ptr->next.ptr == NULL
                     // or Q->tail != tail
-                    if (next_next.ptr != NULL && equals(atomic_load(&queue->tail), tail))
+                    if(extract_ptr(next_next) != NULL && equals(atomic_load(&queue->tail), tail))
                     {
                         next = next_next;
                         continue;
                     }
                     break;
                 }
-                pointer_t new_tail = { next.ptr, false, tail.tag + 1 };
+                tagged_ptr_t new_tail = pack_ptr_with_flag(extract_ptr(next), extract_flagged_tag(tail) + 1, false);
                 atomic_compare_exchange_strong(&queue->tail, &tail, new_tail);
             }
         }
@@ -155,63 +149,74 @@ bool dequeue(void* in_queue, void** out_item)
     queue_t* queue = (queue_t*)in_queue;
     while (true)
     {
-        pointer_t head = atomic_load(&queue->head);
-        pointer_t tail = atomic_load(&queue->tail);
-        pointer_t next = atomic_load(&head.ptr->next);
+        internal_stats.counters.dequeue_count++;
+        tagged_ptr_t head = atomic_load(&queue->head);
+        tagged_ptr_t tail = atomic_load(&queue->tail);
+        //tagged_ptr_t next = atomic_load(&head.ptr->next);
+        tagged_ptr_t next = atomic_load(&get_next_ptr(head));
 
         if (equals(head, atomic_load(&queue->head)))
         {
-            if (head.ptr == tail.ptr)
+            internal_stats.counters.dequeue_consistent_head_count++;
+            if (extract_ptr(head) == extract_ptr(tail))
             {
-                if (next.ptr == NULL)
+                internal_stats.counters.dequeue_single_item_count++;
+                if (extract_ptr(next) == NULL)
+                {
+                    internal_stats.counters.dequeue_empty_count++;
                     return false; // Queue is empty
-                pointer_t next_next;
+                }
+                tagged_ptr_t next_next;
                 while (true) // D09
                 {
-                    next_next = atomic_load(&next.ptr->next);
-                    if (next_next.ptr != NULL && equals(atomic_load(&queue->tail), tail))
+                    next_next = atomic_load(&get_next_ptr(next));
+                    if (extract_ptr(next_next) != NULL && equals(atomic_load(&queue->tail), tail))
                     {
                         next = next_next; // D10
                         continue;
                     }
                     break;
                 }
-                pointer_t new_tail = { next.ptr, false, tail.tag + 1 };
+                tagged_ptr_t new_tail = pack_ptr_with_flag(extract_ptr(next), extract_flagged_tag(tail) + 1, false);
                 atomic_compare_exchange_strong(&queue->tail, &tail, new_tail);
             }
             else
             {
-                pointer_t iter = head;
+                tagged_ptr_t iter = head;
                 size_t hops = 0;
-                while ((next.deleted && iter.ptr != tail.ptr) && equals(atomic_load(&queue->head), head))
+                while ((extract_flag(next) && extract_ptr(iter) != extract_ptr(tail)) && equals(atomic_load(&queue->head), head))
                 {
                     iter = next;
-                    next = atomic_load(&iter.ptr->next);
+                    next = atomic_load(&get_next_ptr(iter));
                     hops++;
                 }
                 if (!equals(atomic_load(&queue->head), head))
+                {
+                    internal_stats.counters.dequeue_inconsistent_head_count++;
                     continue;
-                else if (iter.ptr == tail.ptr)
+                }
+                else if (extract_ptr(iter) == extract_ptr(tail))
                 {
                     // free chain without memory reclamation
-                    pointer_t new_ptr = { iter.ptr, false, head.tag + 1 };
+                    internal_stats.counters.dequeue_consistent_iter_tail_count++;
+                    tagged_ptr_t new_ptr = pack_ptr_with_flag(extract_ptr(iter), extract_flagged_tag(head) + 1, false);
                     atomic_compare_exchange_strong(&queue->head, &head, new_ptr);
-                    //free_chain(queue, &head, &iter);
                 }
                 else
                 {
-                    void* value = next.ptr->value;
-                    pointer_t new_ptr = { next.ptr, true, next.tag + 1 };
-                    if (atomic_compare_exchange_strong(&iter.ptr->next, &next, new_ptr))
+                    void* value = ((node_t*)extract_ptr(next))->value;
+                    tagged_ptr_t new_ptr = pack_ptr_with_flag(extract_ptr(next), extract_flagged_tag(next) + 1, true);
+                    if (atomic_compare_exchange_strong(&get_next_ptr(iter), &next, new_ptr))
                     {
                         if (hops >= MAX_HOPS)
                         {
-                            pointer_t new_ptr = { next.ptr, false, head.tag + 1 };
+                            tagged_ptr_t new_ptr = pack_ptr_with_flag(extract_ptr(next), extract_flagged_tag(head) + 1, false);
                             atomic_compare_exchange_strong(&queue->head, &head, new_ptr);
                         }
                         *out_item = value;
                         return true;
                     }
+                    internal_stats.counters.dequeue_cas_failed_count++;
                     // back off scheme
                 }
 
@@ -220,8 +225,11 @@ bool dequeue(void* in_queue, void** out_item)
     }
 }
 
-
 char* get_queue_name()
 {
+#ifdef DWCAS
     return "Baskets Queue using DWCAS";
+#else
+    return "Baskets Queue using tagged pointers";
+#endif
 }

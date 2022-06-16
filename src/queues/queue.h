@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include "./auxiliary_stats.h"
 
 /**
  * @brief Enqueue an item inside the queue.
@@ -50,7 +51,4 @@ void register_thread(size_t num_of_iterations);
  * threads are still making use of the memory being freed.
  */
 void cleanup_thread();
-
-//void* get_debug_counters();
-
 #endif

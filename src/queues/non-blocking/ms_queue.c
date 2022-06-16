@@ -2,12 +2,11 @@
 #include <stdlib.h>
 #include <stdatomic.h>
 #include <assert.h>
-#include <threads.h>
 #include "../queue.h"
 #include "../../test_utils.h"
 #include "../../tagged_ptr.h"
+#include "./auxiliary_ms_queue.h"
 
-// Implemented following 
 
 /**
  *  Sources [1, 2, 3] implement the Michael Scott Lock-Free queue in C++, whilst
@@ -104,8 +103,6 @@ void create_sentinel_node()
     atomic_store(&sentinel->next, pack_ptr(NULL, 0));
 }
 
-// Beware that malloc might not be lock-free, making the algorithm
-// also not lock-free.
 bool create_queue(void** out_queue)
 {
     queue_t** queue = (queue_t**)out_queue;
@@ -132,21 +129,23 @@ bool enqueue(void* in_queue, void* in_item)
 {
     queue_t* queue = (queue_t*)in_queue;
     node_t* node = create_node(in_item); // E1 - E3
-    // Uninitialized variables that will be declared further below.
-    tagged_ptr_t tail, next; 
-    
+    tagged_ptr_t tail, next;
+    internal_stats.counters.enqueue_count++;
     while (true) // loop E4
     {
         tail = atomic_load(&queue->tail); // E5
         next = atomic_load(&get_next_ptr(tail)); // E6
         if (equals(tail, atomic_load(&queue->tail))) // E7: tail == Q->Tail
         {
+            internal_stats.counters.enqueue_consistent_tail_count++;
             if (extract_ptr(next) == NULL) // E8: next.ptr == NULL
             {
+                internal_stats.counters.enqueue_next_ptr_null_count++;
                 tagged_ptr_t new_ptr = pack_ptr(node, extract_tag(next) + 1); // E9
                 if (atomic_compare_exchange_strong(&get_next_ptr(tail), &next, new_ptr)) // E9
                 {
                     // Replace E10 with E17 & return true exit function
+                    internal_stats.counters.enqueue_cas_tail_count++;
                     tagged_ptr_t new_ptr = pack_ptr(node, extract_tag(tail) + 1);
                     atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr);
                     return true; // E10: Emulates break behaviour
@@ -154,6 +153,7 @@ bool enqueue(void* in_queue, void* in_item)
             }
             else
             {
+                internal_stats.counters.enqueue_next_ptr_not_null_count++;
                 tagged_ptr_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1); // E13
                 atomic_compare_exchange_strong(&queue->tail, &next, new_ptr); // E13
             }
@@ -167,24 +167,34 @@ bool dequeue(void* in_queue, void** out_item)
     tagged_ptr_t head, tail, next;
     while (true) // D1
     {
+        internal_stats.counters.dequeue_count++;
         head = atomic_load(&queue->head); // D2
         tail = atomic_load(&queue->tail); // D3
         next = atomic_load(&get_next_ptr(head)); // D4
         if (equals(head, atomic_load(&queue->head))) // D5
         {
+            internal_stats.counters.dequeue_consistent_head_count++;
             if (extract_ptr(head) == extract_ptr(tail)) // D6
             {
                 if (extract_ptr(next) == NULL) // D7
+                {
+                    internal_stats.counters.dequeue_empty_queue_count++;
                     return false; // D8
+                }
                 tagged_ptr_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(tail) + 1); // D10
                 atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr); // D10
+                internal_stats.counters.dequeue_tail_falling_behind_count++;
             }
             else
             {
                 *out_item = ((node_t*)extract_ptr(next))->value; // D12
+                internal_stats.counters.dequeue_queue_not_empty_count++;
                 tagged_ptr_t new_ptr = pack_ptr(extract_ptr(next), extract_tag(head) + 1); // D13
-                if (atomic_compare_exchange_strong(&queue->head, &head, new_ptr)) // D13
+                if (atomic_compare_exchange_strong(&queue->head, &head, new_ptr))
+                { // D13
                     return true; // D14 + D19 + D20
+                }
+                internal_stats.counters.dequeue_failed_to_swing_count++;
             }
         }
     }

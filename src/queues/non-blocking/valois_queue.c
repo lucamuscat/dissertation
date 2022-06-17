@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "../queue.h"
 #include "../../test_utils.h"
+#include "auxiliary_valois_queue.h"
 
 typedef struct node_t
 {
@@ -84,6 +85,7 @@ bool enqueue(void* in_queue, void* in_item)
     node_t* oldp = p;
     node_t* null_ptr = NULL;
 
+    internal_stats.counters.enqueue_count++;
     while (true)
     {
         /*
@@ -107,6 +109,7 @@ bool enqueue(void* in_queue, void* in_item)
         // failure will lead to a null pointer dereference.
         p = null_ptr; // null_ptr = p->next
         null_ptr = NULL;
+        internal_stats.counters.enqueue_retry_count++;
     }
 }
 
@@ -114,11 +117,14 @@ bool dequeue(void* in_queue, void** out_item)
 {
     valois_queue_t* queue = (valois_queue_t*)in_queue;
     node_t* old_node = atomic_load(&queue->head);
-
+    internal_stats.counters.dequeue_count++;
     while (true)
     {
         if (old_node->next == NULL)
+        {
+            internal_stats.counters.dequeue_empty_count++;
             return false;
+        }
         if (atomic_compare_exchange_weak(&queue->head, &old_node, old_node->next))
         {
             // Recall that old_node = queue->head on CAS failure.
@@ -126,9 +132,11 @@ bool dequeue(void* in_queue, void** out_item)
             // will not cause any serious errors.
             old_node = atomic_load(&old_node->next);
             *out_item = old_node->value;
+            internal_stats.counters.dequeue_non_empty_count++;
             return true;
         }
-        // Potentially employ backoff schemes        
+        internal_stats.counters.dequeue_retry_count++;
+        // Potentially employ backoff schemes
     }
 }
 

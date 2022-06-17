@@ -8,6 +8,7 @@
 #include "../queue.h"
 #include "../../locks/lock.h"
 #include "../../test_utils.h"
+#include "auxiliary_ms_two_lock.h"
 
 #include <stdlib.h>
 #include <threads.h>
@@ -82,6 +83,7 @@ bool enqueue(void* in_queue, void* in_data)
     queue* queue = in_queue;
     node_t* node; // New node
     create_node(in_data, &node); // New node
+    internal_stats.counters.enqueue_count++;
     wait_lock(queue->tail_lock); // Acquire enq lock
 
     node_t* ltail = atomic_load_explicit(&queue->tail, memory_order_relaxed);
@@ -97,17 +99,20 @@ bool enqueue(void* in_queue, void* in_data)
 bool dequeue(void* in_queue, void** out_data)
 {
     queue* queue = in_queue;
+    internal_stats.counters.dequeue_count++;
     wait_lock(queue->head_lock);
     node_t* node = atomic_load_explicit(&queue->head, memory_order_relaxed);
     node_t* new_head = atomic_load_explicit(&node->next, memory_order_relaxed);
     if (new_head == NULL)
     {
         unlock(queue->head_lock);
+        internal_stats.counters.dequeue_empty_count++;
         return false;
     }
     *out_data = atomic_load_explicit(&new_head->value, memory_order_relaxed);
     atomic_store_explicit(&queue->head, new_head, memory_order_relaxed);
     unlock(queue->head_lock);
+    internal_stats.counters.dequeue_non_empty_count++;
     //free(node);
     return true;
 }

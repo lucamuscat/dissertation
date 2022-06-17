@@ -112,8 +112,8 @@ bool enqueue(void* in_queue, void* in_item)
                     // backoff scheme E14
                     atomic_store(&nd->next, next); // E15
                     
-                    if(atomic_compare_exchange_strong(&get_next_ptr(tail), &next, new_ptr))
-                        return true;
+                    if(atomic_compare_exchange_strong(&get_next_ptr(tail), &next, new_ptr)) // E16
+                        return true; // E17
                     internal_stats.counters.enqueue_build_basket_count++;
                     // next = tail.ptr->next is done implicitly by CAS on failure
                 }
@@ -122,20 +122,20 @@ bool enqueue(void* in_queue, void* in_item)
             {
                 internal_stats.counters.enqueue_next_ptr_not_null_count++;
                 tagged_ptr_t next_next;
-                while (true)
+                while (true) // E20
                 {
-                    next_next = atomic_load(&get_next_ptr(next));
+                    next_next = atomic_load(&get_next_ptr(next)); // E20
                     // You can only break out of E20 if next.ptr->next.ptr == NULL
                     // or Q->tail != tail
-                    if(extract_ptr(next_next) != NULL && equals(atomic_load(&queue->tail), tail))
+                    if(extract_ptr(next_next) != NULL && equals(atomic_load(&queue->tail), tail)) // E20
                     {
-                        next = next_next;
+                        next = next_next; // E21
                         continue;
                     }
                     break;
                 }
                 tagged_ptr_t new_tail = pack_ptr_with_flag(extract_ptr(next), extract_flagged_tag(tail) + 1, false);
-                atomic_compare_exchange_strong(&queue->tail, &tail, new_tail);
+                atomic_compare_exchange_strong(&queue->tail, &tail, new_tail); // E22
             }
         }
     }

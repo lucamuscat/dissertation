@@ -72,7 +72,6 @@ void* thread_fn(void* in_args)
     // Empty the queue
     while (dequeue(args->queue, &dequeued_item[0]))
         assert(*((int*)dequeued_item[0]) == enqueued_item);
-
     // Make sure that each thread executes the test at the same time.
     pthread_barrier_wait(&barrier);
     start_readings(args->readings);

@@ -28,6 +28,7 @@ size_t _Atomic prefill_counter;
 typedef struct thread_args
 {
     void* queue;
+    int* stats;
     double p;
     double* random_probabilities;
     size_t num_of_iterations;
@@ -94,8 +95,8 @@ void* thread_fn(void* in_args)
 
     delta_readings(args->readings, args->num_of_iterations);
     adjust_readings_for_delay(args->readings, &delay);
-
     pthread_barrier_wait(&barrier);
+    get_stats(args->stats);
     cleanup_thread();
 
     atomic_thread_fence(memory_order_seq_cst);
@@ -146,7 +147,9 @@ int main(int argc, char** argv)
     ASSERT_NOT_NULL(args);
 
     readings_t** readings = create_readings_2d(num_of_threads, TEST_RERUNS);
-
+    int** per_thread_stats = create_stats(num_of_threads);
+    int** accumulated_stats = create_stats(TEST_RERUNS);
+    
     // pthread_barrier_init returns zero when successful, however, zero is a falsy value in c.
     ASSERT_TRUE(!pthread_barrier_init(&barrier, NULL, num_of_threads), "Failed to create barrier");
     
@@ -164,6 +167,8 @@ int main(int argc, char** argv)
             args[j].queue = queue;
             args[j].p = p;
             args[j].random_probabilities = random_probabilities[j];
+            reset_stats(per_thread_stats[j]);
+            args[j].stats = per_thread_stats[j];
             pthread_create(&args[j].tid, NULL, thread_fn, (void*)&args[j]);
         }
 
@@ -171,6 +176,13 @@ int main(int argc, char** argv)
         {
             pthread_join(args[j].tid, NULL);
         }
+
+        for (size_t j = 1; j < num_of_threads; ++j)
+        {
+            add_stats(per_thread_stats[0], per_thread_stats[j], per_thread_stats[0]);
+        }
+
+        copy_stats(accumulated_stats[i], per_thread_stats[0]);
         destroy_queue(&queue);
     }
 
@@ -183,6 +195,7 @@ int main(int argc, char** argv)
     printf("\n\"%s\",%ld,%zu,", get_queue_name(), num_of_threads, delay_ns);
     display_readings(aggregates);
     printf(",%f", total_run_time_minutes);
+    display_stats(accumulated_stats, TEST_RERUNS);
     pthread_barrier_destroy(&barrier);
 
     return EXIT_SUCCESS;

@@ -6,8 +6,8 @@
 #include "../../test_utils.h"
 #include "../../assertion_utils.h"
 #include "../../tagged_ptr.h"
+#include "../queue_utils.h"
 #include "./auxiliary_ms_queue.h"
-
 
 /**
  *  Sources [1, 2, 3] implement the Michael Scott Lock-Free queue in C++, whilst
@@ -38,10 +38,6 @@
 // and goes back to the same count; whilst this may be a rare occurrence, there
 // is still a possibility of this occurring.
 
-struct node_t;
-struct node_t* create_node(void* value);
-
-
 char* get_queue_name()
 {
 #ifdef DWCAS
@@ -49,52 +45,6 @@ char* get_queue_name()
 #else
     return "MS Queue using Tagged Pointers";
 #endif
-}
-
-typedef struct node_t
-{
-    tagged_ptr_t _Atomic next;
-    void* value;
-} node_t;
-
-typedef struct queue_t
-{
-    // Needs to be atomic, these pointers will be accessed from multiple threads.
-    DOUBLE_CACHE_ALIGNED tagged_ptr_t _Atomic head;
-    DOUBLE_CACHE_ALIGNED tagged_ptr_t _Atomic tail;
-} queue_t;
-
-thread_local node_t* sentinel;
-thread_local char pad1[PAD_TO_CACHELINE(node_t*)];
-thread_local int64_t node_count;
-thread_local char pad2[PAD_TO_CACHELINE(int64_t)];
-thread_local node_t* node_pool;
-thread_local char pad3[PAD_TO_CACHELINE(node_t*)];
-
-void register_thread(size_t num_of_iterations)
-{
-    node_pool = (node_t*)calloc(num_of_iterations, sizeof(node_t));
-    node_count = -1;
-    ASSERT_NOT_NULL(node_pool);
-}
-
-void cleanup_thread()
-{
-    free(node_pool);
-}
-
-/**
- * @brief Create a node object, initialized with null values
- * @note Assumes that the method is being called inside of a thread that has
- * called the register_thread(1) method.
- * @param out_node
- */
-inline node_t* create_node(void* value)
-{
-    node_pool[++node_count].value = value;
-    atomic_store(&node_pool[node_count].next, pack_ptr(NULL, 0));
-
-    return &node_pool[node_count];
 }
 
 void create_sentinel_node()
@@ -120,16 +70,10 @@ bool create_queue(void** out_queue)
     return true;
 }
 
-void destroy_queue(void** out_queue)
-{
-    free(*out_queue);
-    free(sentinel);
-}
-
 bool enqueue(void* in_queue, void* in_item)
 {
     queue_t* queue = (queue_t*)in_queue;
-    node_t* node = create_node(in_item); // E1 - E3
+    node_t* node = create_node_with_value(in_item); // E1 - E3
     tagged_ptr_t tail, next;
     internal_stats.counters.enqueue_count++;
     while (true) // loop E4

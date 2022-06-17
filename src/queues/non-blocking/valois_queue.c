@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "../queue.h"
 #include "../../test_utils.h"
+#include "../../assertion_utils.h"
 #include "auxiliary_valois_queue.h"
 
 typedef struct node_t

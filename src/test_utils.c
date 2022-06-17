@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <papi.h>
 #include "test_utils.h"
+#include "assertion_utils.h"
 
 // TODO: Find a way to find the current CPU clock frequency on runtime
 int handle_args(int argc, char* argv[])

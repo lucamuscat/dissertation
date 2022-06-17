@@ -5,6 +5,7 @@
 #include <threads.h>
 #include "../queue.h"
 #include "../../test_utils.h"
+#include "../../assertion_utils.h"
 #include "../../tagged_ptr.h"
 #include "auxiliary_baskets_queue.h"
 

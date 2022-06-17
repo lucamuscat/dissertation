@@ -38,6 +38,7 @@
 #include <stdatomic.h>
 #include <string.h>
 #include "../../test_utils.h"
+#include "../../assertion_utils.h"
 #include "../queue.h"
 
 static pthread_barrier_t barrier;
@@ -108,7 +109,7 @@ int main(int argc, char** argv)
 
     assert(sizeof(thread_args) == CACHE_LINE_SIZE);
 
-    ASSERT_TRUE(!pthread_barrier_init(&barrier, NULL, num_of_threads), "Failed to create pthread_barrier");
+    ASSERT_SUCCESS(pthread_barrier_init(&barrier, NULL, num_of_threads));
 
     thread_args* args = (thread_args*)malloc(sizeof(thread_args) * num_of_threads);
     ASSERT_NOT_NULL(args);

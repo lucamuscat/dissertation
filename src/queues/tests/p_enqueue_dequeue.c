@@ -19,6 +19,7 @@
 #include <stdatomic.h>
 
 #include "../../test_utils.h"
+#include "../../assertion_utils.h"
 #include "../queue.h"
 
 delay_t delay;

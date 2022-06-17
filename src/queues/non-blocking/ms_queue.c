@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "../queue.h"
 #include "../../test_utils.h"
+#include "../../assertion_utils.h"
 #include "../../tagged_ptr.h"
 #include "./auxiliary_ms_queue.h"
 

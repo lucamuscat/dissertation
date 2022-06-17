@@ -8,6 +8,7 @@
 #include "../queue.h"
 #include "../../locks/lock.h"
 #include "../../test_utils.h"
+#include "../../assertion_utils.h"
 #include "auxiliary_ms_two_lock.h"
 
 #include <stdlib.h>

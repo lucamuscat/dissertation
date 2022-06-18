@@ -75,6 +75,7 @@ void* thread_fn(void* in_args)
         assert(*((int*)dequeued_item[0]) == enqueued_item);
     // Make sure that each thread executes the test at the same time.
     pthread_barrier_wait(&barrier);
+    PAPI_hl_region_begin(BENCHMARK_NAME);
     start_readings(args->readings);
     for (size_t i = 0; i < args->num_of_iterations; ++i)
     {
@@ -91,6 +92,7 @@ void* thread_fn(void* in_args)
     // finishes before another thread that frees memory that is used by another
     // thread
     pthread_barrier_wait(&barrier);
+    PAPI_hl_region_end(BENCHMARK_NAME);
     get_stats(args->stats);
     cleanup_thread();
     // Make sure to synchronize all changes to args

@@ -25,6 +25,9 @@ nonblocking_dwcas_valois_queue
 blocking_linked_queue_ttas_lock
 )
 
+export PAPI_EVENTS="PAPI_BR_MSP,PAPI_BR_INS,PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,LOCK_CYCLES,HW_INTERRUPTS,MISALIGN_MEM_REF,L2_LINES_IN"
+export PAPI_MULTIPLEX=1
+
 for queue in ${queues[@]}
 do
     for num_of_threads in $(seq 12)
@@ -33,7 +36,9 @@ do
         do
             for reruns in $(seq 3)
             do
+            export PAPI_OUTPUT_DIRECTORY="output/$queue_d$delay_t$num_of_threads"
             ./build/$queue $num_of_threads $delay | tee -a $enqueue_dequeue_results
+            export PAPI_OUTPUT_DIRECTORY="output/p_$queue_d$delay_t$num_of_threads"
             ./build/p_$queue $num_of_threads $delay 0.5 | tee -a $p_enqueue_dequeue_results
             done
         done

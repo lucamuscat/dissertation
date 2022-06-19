@@ -58,27 +58,28 @@ void* thread_fn(void* in_args)
 
     register_thread(total_enqueues);
 
-    int enqueued_item = 10;
-    void* dequeued_item[PAD_TO_CACHELINE(void*)];
+    int enqueued_item[CACHE_LINE_SIZE];
+    enqueued_item[0] = 10;
+    void* dequeued_item[CACHE_LINE_SIZE];
 
     pthread_barrier_wait(&barrier);
     for (size_t i = 0; i < args->num_of_warm_up_iterations; ++i)
     {
         if (args->random_probabilities[i] < args->p)
-            enqueue(args->queue, &enqueued_item);
+            enqueue(args->queue, &enqueued_item[0]);
         else if (dequeue(args->queue, &dequeued_item[0]))
-            assert(*((int*)dequeued_item[0]) == enqueued_item);
+            assert(*((int*)dequeued_item[0]) == enqueued_item[0]);
 
         DELAY_OPS(delay.num_of_nops);
     }
 
     // Empty the queue
     while (dequeue(args->queue, &dequeued_item[0]))
-        assert(*((int*)dequeued_item[0]) == enqueued_item);
+        assert(*((int*)dequeued_item[0]) == enqueued_item[0]);
 
     while (atomic_fetch_add(&prefill_counter, 1) < PREFILL_SIZE)
     {
-        enqueue(args->queue, &enqueued_item);
+        enqueue(args->queue, &enqueued_item[0]);
     }
 
     pthread_barrier_wait(&barrier);
@@ -87,9 +88,9 @@ void* thread_fn(void* in_args)
     for (size_t i = 0; i < args->num_of_iterations; ++i)
     {
         if (args->random_probabilities[i] < args->p)
-            enqueue(args->queue, (void**)&enqueued_item);
+            enqueue(args->queue, (void**)&enqueued_item[0]);
         else if (dequeue(args->queue, (void*)&dequeued_item[0]))
-            assert(*((int*)dequeued_item[0]) == enqueued_item);
+            assert(*((int*)dequeued_item[0]) == enqueued_item[0]);
 
         DELAY_OPS(delay.num_of_nops);
     }

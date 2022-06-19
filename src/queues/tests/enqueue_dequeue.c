@@ -41,6 +41,8 @@
 #include "../../assertion_utils.h"
 #include "../queue.h"
 
+#define BENCHMARK_NAME "pairwise"
+
 static pthread_barrier_t barrier;
 static delay_t delay;
 
@@ -58,31 +60,32 @@ void* thread_fn(void* in_args)
 {
     thread_args* args = in_args;
     void* dequeued_item[PAD_TO_CACHELINE(void*)];
-    int enqueued_item = 10;
+    int enqueued_item[PAD_TO_CACHELINE(void*)];
+    enqueued_item[0] = 10;
     register_thread(args->num_of_iterations + args->num_of_warm_up_iterations);
     pthread_barrier_wait(&barrier);
     for (size_t i = 0; i < args->num_of_warm_up_iterations; ++i)
     {
-        enqueue(args->queue, &enqueued_item);
+        enqueue(args->queue, &enqueued_item[0]);
         DELAY_OPS(delay.num_of_nops);
         if (dequeue(args->queue, &dequeued_item[0]))
-            assert(*((int*)dequeued_item[0]) == enqueued_item);
+            assert(*((int*)dequeued_item[0]) == enqueued_item[0]);
         DELAY_OPS(delay.num_of_nops);
     }
 
     // Empty the queue
     while (dequeue(args->queue, &dequeued_item[0]))
-        assert(*((int*)dequeued_item[0]) == enqueued_item);
+        assert(*((int*)dequeued_item[0]) == enqueued_item[0]);
     // Make sure that each thread executes the test at the same time.
-    pthread_barrier_wait(&barrier);
     PAPI_hl_region_begin(BENCHMARK_NAME);
+    pthread_barrier_wait(&barrier);
     start_readings(args->readings);
     for (size_t i = 0; i < args->num_of_iterations; ++i)
     {
-        enqueue(args->queue, &enqueued_item);
+        enqueue(args->queue, &enqueued_item[0]);
         DELAY_OPS(delay.num_of_nops);
         if (dequeue(args->queue, &dequeued_item[0]))
-            assert(*((int*)dequeued_item[0]) == enqueued_item);
+            assert(*((int*)dequeued_item[0]) == enqueued_item[0]);
         DELAY_OPS(delay.num_of_nops);
     }
     delta_readings(args->readings, args->num_of_iterations);
@@ -101,7 +104,7 @@ void* thread_fn(void* in_args)
 }
 
 int main(int argc, char** argv)
-{    
+{
     size_t num_of_threads, delay_ns;
     handle_queue_args(argc, argv, &num_of_threads, &delay_ns);
 

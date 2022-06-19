@@ -4,9 +4,7 @@ SHELL=bash
 # lock over here
 LOCK_NAMES = pthread_lock spin_lock ttas_lock
 BLOCKING_QUEUE_NAMES = ms_two_lock
-NONBLOCKING_QUEUE_NAMES = valois_queue
-NONBLOCKING_HYBRID_QUEUE_NAMES = ms_queue baskets_queue
-
+NONBLOCKING_QUEUE_NAMES = ms_queue baskets_queue valois_queue 
 
 ifdef DEBUG
 DEBUG_FLAGS = -g
@@ -45,9 +43,7 @@ all: \
 	sequential_latency_tests \
 	lock_contention_tests \
 	enqueue_dequeue \
-	enqueue_dequeue_nonblocking_hybrid_tests \
 	p_enqueue_dequeue  \
-	p_enqueue_dequeue_nonblocking_hybrid_tests \
 	delay_test \
 	tagged_ptr_test
 
@@ -77,7 +73,6 @@ clean:
 sequential_latency_tests: $(foreach LOCK_NAME, $(LOCK_NAMES), sequential_latency_$(LOCK_NAME)_test)
 lock_contention_tests: $(foreach LOCK_NAME, $(LOCK_NAMES), lock_contention_$(LOCK_NAME)_test)
 
-
 init_build_folder:
 	mkdir -p $(OUTPUT_DIR)
 
@@ -103,11 +98,9 @@ p_enqueue_dequeue: p_enqueue_dequeue_blocking_tests p_enqueue_dequeue_nonblockin
 
 enqueue_dequeue_blocking_tests: $(foreach NAME, $(BLOCKING_QUEUE_NAMES), enqueue_dequeue_blocking_$(NAME)_test)
 enqueue_dequeue_nonblocking_tests: $(foreach NAME, $(NONBLOCKING_QUEUE_NAMES), enqueue_dequeue_nonblocking_$(NAME)_test)
-enqueue_dequeue_nonblocking_hybrid_tests: $(foreach NAME, $(NONBLOCKING_HYBRID_QUEUE_NAMES), enqueue_dequeue_nonblocking_$(NAME)_hybrid_test)
 
 p_enqueue_dequeue_blocking_tests: $(foreach NAME, $(BLOCKING_QUEUE_NAMES), p_enqueue_dequeue_blocking_$(NAME)_test)
 p_enqueue_dequeue_nonblocking_tests: $(foreach NAME, $(NONBLOCKING_QUEUE_NAMES), p_enqueue_dequeue_nonblocking_$(NAME)_test)
-p_enqueue_dequeue_nonblocking_hybrid_tests: $(foreach NAME, $(NONBLOCKING_HYBRID_QUEUE_NAMES), p_enqueue_dequeue_nonblocking_$(NAME)_hybrid_test)
 
 enqueue_dequeue_blocking_%_test: init_build_folder
 	for i in $(LOCK_FILES); \
@@ -116,9 +109,6 @@ enqueue_dequeue_blocking_%_test: init_build_folder
 	done
 
 enqueue_dequeue_nonblocking_%_test: init_build_folder
-	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/nonblocking_$*
-
-enqueue_dequeue_nonblocking_%_hybrid_test: init_build_folder
 	$(CXX) $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/nonblocking_$*
 	$(CXX) -DDWCAS $(NONBLOCKING_DIR)/$*.c $(ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/nonblocking_dwcas_$*
 
@@ -129,7 +119,5 @@ p_enqueue_dequeue_blocking_%_test: init_build_folder
 	done
 
 p_enqueue_dequeue_nonblocking_%_test: init_build_folder
-	$(CXX) $(NONBLOCKING_DIR)/$*.c $(P_ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) -o $(OUTPUT_DIR)/p_nonblocking_$* $(DEBUG_FLAGS) $(ERROR_FLAGS)
-p_enqueue_dequeue_nonblocking_%_hybrid_test: init_build_folder
 	$(CXX) $(NONBLOCKING_DIR)/$*.c $(P_ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/p_nonblocking_$*
 	$(CXX) -DDWCAS $(NONBLOCKING_DIR)/$*.c $(P_ENQUEUE_DEQUEUE_TEST_FILES) $(PAPI_LIB) $(NONBLOCKING_LIBRARIES) $(DEBUG_FLAGS) $(ERROR_FLAGS) -o $(OUTPUT_DIR)/p_nonblocking_dwcas_$*

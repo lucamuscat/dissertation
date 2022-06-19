@@ -12,6 +12,7 @@ typedef union stats_t
         int enqueue_next_ptr_null_count; // E07-E08
         int enqueue_cas_tail_count; // E09-E10
         int enqueue_build_basket_count; // E18-E19
+        int enqueue_update_tail_count;
         int enqueue_next_ptr_not_null_count; // E21-E22
         int dequeue_count; // D04-D05
         int dequeue_consistent_head_count; // D06-D07
@@ -19,6 +20,9 @@ typedef union stats_t
         int dequeue_empty_count; // D07-D08
         int dequeue_inconsistent_head_count; // D19-D20
         int dequeue_consistent_iter_tail_count; // D21-D22
+        int dequeue_update_tail_count;
+        int dequeue_freechain_update_head_count;
+        int dequeue_freechain_count;
         int dequeue_cas_failed_count; // D28 - D29
     } counters;
     int data[sizeof(struct counters_t) / sizeof(int)];

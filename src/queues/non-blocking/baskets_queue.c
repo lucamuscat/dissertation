@@ -54,7 +54,8 @@ bool enqueue(void* in_queue, void* in_item)
                 if (atomic_compare_exchange_strong(&get_next_ptr(tail), &next, new_ptr)) // E9
                 {
                     internal_stats.counters.enqueue_cas_tail_count++;
-                    atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr); // E10
+                    internal_stats.counters.enqueue_update_tail_count +=
+                        atomic_compare_exchange_strong(&queue->tail, &tail, new_ptr); // E10
                     return true; // E11
                 }
                 // next = tail.ptr->next is done implicitly by CAS on failure; E12
@@ -86,7 +87,8 @@ bool enqueue(void* in_queue, void* in_item)
                     break;
                 }
                 tagged_ptr_t new_tail = pack_ptr_with_flag(extract_ptr(next), extract_flagged_tag(tail) + 1, false);
-                atomic_compare_exchange_strong(&queue->tail, &tail, new_tail); // E22
+                internal_stats.counters.enqueue_update_tail_count +=
+                    atomic_compare_exchange_strong(&queue->tail, &tail, new_tail); // E22
             }
         }
     }
@@ -129,7 +131,8 @@ bool dequeue(void* in_queue, void** out_item)
                     break;
                 }
                 tagged_ptr_t new_tail = pack_ptr_with_flag(extract_ptr(next), extract_flagged_tag(tail) + 1, false);
-                atomic_compare_exchange_strong(&queue->tail, &tail, new_tail);
+                internal_stats.counters.dequeue_update_tail_count +=
+                    atomic_compare_exchange_strong(&queue->tail, &tail, new_tail);
             }
             else
             {
@@ -151,7 +154,8 @@ bool dequeue(void* in_queue, void** out_item)
                     // free chain without memory reclamation
                     internal_stats.counters.dequeue_consistent_iter_tail_count++;
                     tagged_ptr_t new_ptr = pack_ptr_with_flag(extract_ptr(iter), extract_flagged_tag(head) + 1, false);
-                    atomic_compare_exchange_strong(&queue->head, &head, new_ptr);
+                    internal_stats.counters.dequeue_freechain_update_head_count +=
+                        atomic_compare_exchange_strong(&queue->head, &head, new_ptr);
                 }
                 else
                 {
@@ -161,8 +165,10 @@ bool dequeue(void* in_queue, void** out_item)
                     {
                         if (hops >= MAX_HOPS)
                         {
+                            internal_stats.counters.dequeue_freechain_count++;
                             tagged_ptr_t new_ptr = pack_ptr_with_flag(extract_ptr(next), extract_flagged_tag(head) + 1, false);
-                            atomic_compare_exchange_strong(&queue->head, &head, new_ptr);
+                            internal_stats.counters.dequeue_freechain_update_head_count +=
+                                atomic_compare_exchange_strong(&queue->head, &head, new_ptr);
                         }
                         *out_item = value;
                         return true;

@@ -1,29 +1,27 @@
 #!/bin/bash
 
-# $1 - Name of enqueue_dequeue benchmark binary to run
-# $2 - Comment to leave in the index
-
-current_epoch=$EPOCHSECONDS
 dir_path=src/utils/readings/$1
 
 mkdir -p $dir_path
 
+./build/delay_test
+./build/tagged_ptr_test
+./build/tagged_ptr_test_dwcas
+
 enqueue_dequeue_results=enqueue_dequeue_results.csv
 p_enqueue_dequeue_results=p_enqueue_dequeue_results.csv
 
-
-echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min" > $enqueue_dequeue_results
-echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min" > $p_enqueue_dequeue_results
-
-# echo "$current_epoch: $2" | tee -a $dir_path/index.txt
+echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min,counters" > $enqueue_dequeue_results
+echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min,counters" > $p_enqueue_dequeue_results
 
 delays=(0 250 500 750 1000)
 queues=(
-nonblocking_ms_queue_with_tagged_ptr
-nonblocking_baskets_queue_with_tagged_ptr
-nonblocking_valois_queue
 nonblocking_ms_queue
 nonblocking_baskets_queue
+nonblocking_valois_queue
+nonblocking_dwcas_ms_queue
+nonblocking_dwcas_baskets_queue
+nonblocking_dwcas_valois_queue
 blocking_linked_queue_ttas_lock
 )
 

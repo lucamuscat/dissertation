@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <stdatomic.h>
 #include <threads.h>
@@ -5,65 +6,27 @@
 #include "../queue.h"
 #include "../../test_utils.h"
 #include "../../assertion_utils.h"
+#include "../queue_utils.h"
 #include "auxiliary_valois_queue.h"
-
-typedef struct node_t
-{
-    void* value;
-    struct node_t* _Atomic next;
-} node_t;
-
-typedef struct valois_queue_t
-{
-    DOUBLE_CACHE_ALIGNED node_t* _Atomic head;
-    DOUBLE_CACHE_ALIGNED node_t* _Atomic tail;
-} valois_queue_t;
-
-thread_local node_t* sentinel;
-thread_local char pad1[PAD_TO_CACHELINE(node_t*)];
-thread_local int64_t node_count;
-thread_local char pad3[PAD_TO_CACHELINE(int64_t)];
-thread_local node_t* node_pool;
-thread_local char pad2[PAD_TO_CACHELINE(node_t*)];
-
-void register_thread(size_t num_of_iterations)
-{
-    node_pool = (node_t*)calloc(num_of_iterations, sizeof(node_t));
-    ASSERT_NOT_NULL(node_pool);
-    node_count = -1;
-}
-
-void cleanup_thread()
-{
-    free(node_pool);
-}
-
-void create_node(node_t** out_node)
-{
-    *out_node = &node_pool[++node_count];
-}
 
 void create_sentinel_node()
 {
     sentinel = (node_t*)calloc(1, sizeof(node_t));
-    ASSERT_NOT_NULL(sentinel);
-}
-
-void destroy_sentinel_node()
-{
-    free(sentinel);
+    assert(atomic_is_lock_free(&sentinel->next));
+    atomic_store(&sentinel->next, pack_ptr(NULL, 0));
 }
 
 bool create_queue(void** out_queue)
 {
-    valois_queue_t** queue = (valois_queue_t**)out_queue;
-    *queue = (valois_queue_t*)malloc(sizeof(valois_queue_t));
+    queue_t** queue = (queue_t**)out_queue;
+    *queue = (queue_t*)malloc(sizeof(queue_t));
     ASSERT_NOT_NULL(*queue);
 
     create_sentinel_node();
-
-    atomic_store(&(*queue)->head, sentinel);
-    atomic_store(&(*queue)->tail, sentinel);
+    
+    tagged_ptr_t sentinel_ptr = pack_ptr(sentinel, 0);
+    atomic_store(&(*queue)->head, sentinel_ptr);
+    atomic_store(&(*queue)->tail, sentinel_ptr);
     return true;
 }
 /* Sources: 
@@ -76,63 +39,57 @@ bool create_queue(void** out_queue)
  */
 bool enqueue(void* in_queue, void* in_item)
 {
-    valois_queue_t* queue = in_queue;
-    node_t* q;
-    create_node(&q);
-    q->value = in_item;
-    atomic_store(&q->next, NULL);
+    queue_t* queue = in_queue;
+    node_t* new_node = create_node_with_value(in_item);
 
-    node_t* p = atomic_load(&queue->tail);
-    node_t* oldp = p;
-    node_t* null_ptr = NULL;
+    tagged_ptr_t p = atomic_load(&queue->tail);
+    tagged_ptr_t oldp = p;
 
     internal_stats.counters.enqueue_count++;
     while (true)
     {
-        /*
-         * This is the doorway section of the function, where one successful
-         * CAS causes every other enqueuing thread's CAS to fail.
-        */
-        if (atomic_compare_exchange_strong(&p->next, &null_ptr, q))
+        // Since Valois' definition of Compare-and-Swap omits x86s side-effect
+        // on a falsey comparison, null_ptr will be set to p->next in the Compare-
+        // and-Swap in the until block. Defining null_ptr inside of the loop
+        // ensures that null_ptr remains semantically immutable.
+        tagged_ptr_t null_ptr = pack_ptr(NULL, 0);
+        tagged_ptr_t next_ptr = atomic_load(&get_next_ptr(p));
+        while (true)
         {
-            // The tail is only a hint to the location of the last item in the queue. 
-            // This CAS returns true iff there are no contending enqueuers, or the enqueuing
-            // thread is the first thread to pass the doorway.
-            atomic_compare_exchange_strong(&queue->tail, &oldp, q);
+            if (equals(next_ptr, null_ptr))
+                break;
+            p = next_ptr;
+            next_ptr = atomic_load(&get_next_ptr(p));
+        };
+        tagged_ptr_t new_node_tagged = pack_ptr(new_node, extract_tag(oldp) + 1);
+        if (atomic_compare_exchange_strong(&get_next_ptr(p), &null_ptr, new_node_tagged))
+        {
+            atomic_compare_exchange_strong(&queue->tail, &oldp, new_node_tagged);
             return true;
         }
-        // Recall that in stdatomic.h (and in the intel64 instruction set),
-        // when atomic_compare_exchange_strong returns false, the second parameter
-        // is set to the value of the first. 
-
-        // It is important that the function does not spuriously fail
-        // (may occur when using atomic_compare_exchange_weak) as a spurious 
-        // failure will lead to a null pointer dereference.
-        p = null_ptr; // null_ptr = p->next
-        null_ptr = NULL;
         internal_stats.counters.enqueue_retry_count++;
     }
 }
 
 bool dequeue(void* in_queue, void** out_item)
 {
-    valois_queue_t* queue = (valois_queue_t*)in_queue;
-    node_t* old_node = atomic_load(&queue->head);
+    queue_t* queue = (queue_t*)in_queue;
+    tagged_ptr_t old_node = atomic_load(&queue->head);
     internal_stats.counters.dequeue_count++;
     while (true)
     {
-        if (old_node->next == NULL)
+        if (equals(get_next_ptr(old_node), pack_ptr(NULL, 0)))
         {
             internal_stats.counters.dequeue_empty_count++;
             return false;
         }
-        if (atomic_compare_exchange_weak(&queue->head, &old_node, old_node->next))
+        if (atomic_compare_exchange_weak(&queue->head, &old_node, get_next_ptr(old_node)))
         {
             // Recall that old_node = queue->head on CAS failure.
             // Spurious failures (ie. CAS returning false even when &queue->head == &old_node)
             // will not cause any serious errors.
-            old_node = atomic_load(&old_node->next);
-            *out_item = old_node->value;
+            old_node = atomic_load(&get_next_ptr(old_node));
+            *out_item = ((node_t*)extract_ptr(old_node))->value;
             internal_stats.counters.dequeue_non_empty_count++;
             return true;
         }
@@ -141,13 +98,11 @@ bool dequeue(void* in_queue, void** out_item)
     }
 }
 
-void destroy_queue(void** out_queue)
-{
-    free(*out_queue);
-    destroy_sentinel_node();
-}
-
 char* get_queue_name()
 {
-    return "Valois Queue";
+    #ifdef DWCAS
+    return "Valois Queue using DWCAS";
+    #else
+    return "Valois Queue using Tagged Pointers";
+    #endif
 }

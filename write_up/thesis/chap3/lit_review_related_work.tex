@@ -1,2 +1,29 @@
-\chapter{Literature Review \& Related Work}
+\chapter{Literature Review}
 \label{chap:lit_review}
+
+\section{Queues}
+\subsection{\citeauthor{valois1994queues}' Queue}
+In~\citep{valois1994queues,valois1995datastructures}, \citeauthor{valois1994queues}
+surveys a number of lock-free data structures and techniques \textemdash together with a novel, lock-free,
+list-based queue. 
+An enqueue on \citeauthor{valois1994queues}' queue requires two linearizability points 
+to update both the tail's next pointer and the tail's pointer.
+Unlike the former linearizability point, a thread may skip the latter irrespectively
+of it taking effect, allowing for the tail to slack $2p-1$ (where $p$ is the number of concurrent threads)
+nodes between where the tail is hinted to be and where it is.
+
+\section{Memory Reclamation Schemes}
+Although memory reclamation schemes are omitted in this study, a brief discussion
+on the field is essential to understanding the potential biases and discrepancies caused
+by the omissions.
+\subsection{Safe Read}
+\emph{Safe Read}~\citep{valois1994queues,valois1995datastructures} 
+is a reference counting memory management scheme that protects multiply referenced
+pointers from ill-timed reclamation. 
+Unlike the pointer packing technique, safe read reliably avoids ABA problems through
+single-word Compare-and-Swap operations. \citeauthor{michael1995correction} discover
+and correct race conditions in the \emph{safe read} protocol, that are liable to
+corrupting and making unbounded use of bounded memory~\citep{michael1995correction}.
+\subsection{Hazard Pointers}
+\citeauthor{michael2004hazard}~\citep{michael2004hazard} presents a wait-free
+memory reclamation methodology known as \emph{hazard pointers}

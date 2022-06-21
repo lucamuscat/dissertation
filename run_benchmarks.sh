@@ -1,9 +1,6 @@
 #!/bin/bash
 
-dir_path=src/utils/readings/$1
-
-mkdir -p $dir_path
-
+# Validation
 ./build/delay_test
 ./build/tagged_ptr_test
 ./build/tagged_ptr_test_dwcas
@@ -11,10 +8,17 @@ mkdir -p $dir_path
 enqueue_dequeue_results=enqueue_dequeue_results.csv
 p_enqueue_dequeue_results=p_enqueue_dequeue_results.csv
 
-echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min,counters" > $enqueue_dequeue_results
-echo "name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min,counters" > $p_enqueue_dequeue_results
+csv_header="name,threads,delay,time_ns,net_runtime_s,stdev_ns,p_ns,total_runtime_min,counters"
 
-delays=(0 250 500 750 1000)
+if [ ! -f "$enqueue_dequeue_results" ]; then
+    echo $csv_header > $enqueue_dequeue_results
+fi
+
+if [ ! -f "$p_enqueue_dequeue_results" ]; then
+    echo $csv_header > $p_enqueue_dequeue_results
+fi
+
+delays=(0 50 100 150 200 250 500 750 1000)
 queues=(
 nonblocking_ms_queue
 nonblocking_baskets_queue
@@ -25,6 +29,7 @@ nonblocking_dwcas_valois_queue
 blocking_linked_queue_ttas_lock
 )
 
+# Instrument hardware counters to be recorded
 export PAPI_EVENTS="PAPI_BR_MSP,PAPI_BR_INS,PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,LOCK_CYCLES,HW_INTERRUPTS,MISALIGN_MEM_REF,L2_LINES_IN"
 export PAPI_MULTIPLEX=1
 

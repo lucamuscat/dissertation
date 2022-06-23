@@ -4,7 +4,7 @@
 \section{Queues}
 \subsection{\citeauthor{valois1994queues}' Queue}
 In~\citep{valois1994queues,valois1995datastructures}, \citeauthor{valois1994queues}
-surveys a number of lock-free data structures and techniques \textemdash together with a novel, lock-free,
+surveys a number of lock-free data structures and techniques \textemdash~together with a novel, lock-free,
 list-based queue. 
 An enqueue on \citeauthor{valois1994queues}' queue requires two linearizability points 
 to update both the tail's next pointer and the tail's pointer.
@@ -12,10 +12,53 @@ Unlike the former linearizability point, a thread may skip the latter irrespecti
 of it taking effect, allowing for the tail to slack $2p-1$ (where $p$ is the number of concurrent threads)
 nodes between where the tail is hinted to be and where it is.
 
+\subsection{Michael's and Scott's Queues}
+\citeauthor{michael1996simple} introduce the two-lock queue and the
+\emph{MS-Queue}~\citep{michael1996simple} \textemdash~a linked and concurrent
+queueing algorithm that is widely regarded as one of the most
+ubiquitous\footnote{Both \emph{Java\texttrademark's Concurrency
+Package}~\citep{java2022queue}, and \emph{Boost's Lock-Free
+Library}~\citep{boost2022queue} adopt the MS-queue algorithm.} lock-free
+algorithms in the field.
+
+\subsubsection{MS-Queue}
+The degree of wasted parallelism caused by failed Compare-and-Swaps is reduced
+through thread helping, where a thread that fails to commit a node to the
+linked list may help other threads by swinging the queue's tail to the last
+node in the list. 
+\citeauthor{michael1996simple} omit a discussion on the memory reclamation
+scheme used in the MS-queue, which is a vital detail that as pointed out in
+\citeauthor{michael2004hazard}'s implementation of the MS-queue using hazard
+pointers~\citep{michael2004hazard}, which may lead to a \emph{use-after-free} error
+during dequeues (\emph{line D7} dereferencing a freed pointer).
+
+\subsubsection{Two-Lock Queue}
+%%%
+
+\subsection{\citeauthor{hoffman2007baskets}'s Baskets Queue}
+\citeauthor{hoffman2007baskets} present a variation of the MS-queue~\citep{hoffman2007baskets}, which is formed
+using baskets (groups) of overlapping linearizable operations, which are non-deterministically
+ordered among one another.
+Time spent backing off in Compare-and-Swap failing threads is
+spent inserting nodes into a basket, increasing parallelism across enqueuers;
+the baskets mechanism also doubles down as a secondary back-off, further reducing contention.
+
+Tagged pointers are used for ABA avoidance; dequeued nodes are logically
+deleted by setting a flag bit packed inside the node's ABA counter. 
+As the number of logically deleted nodes greater greater than the number of
+\emph{max hops} (an arbitrarily chosen constant), or a logically deleted node
+points to the tail of the queue, the \emph{free-chain} method is used to swing
+the queue's head to the next non-deleted node, and reclaims any logically
+deleted node between the head and the tail.
+
+Under high levels of concurrency, the authors boast of a 25\% performance
+improvement when compared to the MS-queue.
+
 \section{Memory Reclamation Schemes}
 Although memory reclamation schemes are omitted in this study, a brief discussion
 on the field is essential to understanding the potential biases and discrepancies caused
 by the omissions.
+
 \subsection{Safe Read}
 \emph{Safe Read}~\citep{valois1994queues,valois1995datastructures} 
 is a reference counting memory management scheme that protects multiply referenced
@@ -24,6 +67,9 @@ Unlike the pointer packing technique, safe read reliably avoids ABA problems thr
 single-word Compare-and-Swap operations. \citeauthor{michael1995correction} discover
 and correct race conditions in the \emph{safe read} protocol, that are liable to
 corrupting and making unbounded use of bounded memory~\citep{michael1995correction}.
+
 \subsection{Hazard Pointers}
 \citeauthor{michael2004hazard}~\citep{michael2004hazard} presents a wait-free
 memory reclamation methodology known as \emph{hazard pointers}
+
+\section{Related Work}

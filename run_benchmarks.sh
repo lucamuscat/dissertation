@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Validation
-./build/delay_test
+# ./build/delay_test
 ./build/tagged_ptr_test
 ./build/tagged_ptr_test_dwcas
 
@@ -26,12 +26,8 @@ nonblocking_valois_queue
 nonblocking_dwcas_ms_queue
 nonblocking_dwcas_baskets_queue
 nonblocking_dwcas_valois_queue
-blocking_linked_queue_ttas_lock
+blocking_ms_two_lock_ttas_lock
 )
-
-# Instrument hardware counters to be recorded
-export PAPI_EVENTS="PAPI_BR_MSP,PAPI_BR_INS,PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM,LOCK_CYCLES,HW_INTERRUPTS,MISALIGN_MEM_REF,L2_LINES_IN"
-export PAPI_MULTIPLEX=1
 
 for queue in ${queues[@]}
 do

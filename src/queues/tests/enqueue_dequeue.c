@@ -41,8 +41,6 @@
 #include "../../assertion_utils.h"
 #include "../queue.h"
 
-#define BENCHMARK_NAME "pairwise"
-
 static pthread_barrier_t barrier;
 static delay_t delay;
 
@@ -77,7 +75,6 @@ void* thread_fn(void* in_args)
     while (dequeue(args->queue, &dequeued_item[0]))
         assert(*((int*)dequeued_item[0]) == enqueued_item[0]);
     // Make sure that each thread executes the test at the same time.
-    PAPI_hl_region_begin(BENCHMARK_NAME);
     pthread_barrier_wait(&barrier);
     start_readings(args->readings);
     for (size_t i = 0; i < args->num_of_iterations; ++i)
@@ -95,7 +92,6 @@ void* thread_fn(void* in_args)
     // finishes before another thread that frees memory that is used by another
     // thread
     pthread_barrier_wait(&barrier);
-    PAPI_hl_region_end(BENCHMARK_NAME);
     get_stats(args->stats);
     cleanup_thread();
     // Make sure to synchronize all changes to args

@@ -22,8 +22,6 @@
 #include "../../assertion_utils.h"
 #include "../queue.h"
 
-#define BENCHMARK_NAME "50_percent"
-
 delay_t delay;
 pthread_barrier_t barrier;
 size_t _Atomic prefill_counter;
@@ -84,7 +82,6 @@ void* thread_fn(void* in_args)
         enqueue(args->queue, &enqueued_item[0]);
     }
 
-    PAPI_hl_region_begin(BENCHMARK_NAME);
     pthread_barrier_wait(&barrier);
     start_readings(args->readings);
 
@@ -102,7 +99,6 @@ void* thread_fn(void* in_args)
     adjust_readings_for_delay(args->readings, &delay);
     pthread_barrier_wait(&barrier);
     get_stats(args->stats);
-    PAPI_hl_region_end(BENCHMARK_NAME);
     cleanup_thread();
 
     atomic_thread_fence(memory_order_seq_cst);

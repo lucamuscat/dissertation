@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Taken from: https://regenerativetoday.com/some-tricks-to-make-matplotlib-visualization-even-better/
 # from mpl_toolkits.axes_grid1.inset_locator import mark_inset, inset_axes
@@ -20,7 +21,7 @@ PLOT_CONTEXT = "paper"
 # PLOT_CONTEXT = "poster"
 
 err_style = {
-    "err_style" : "band" if PLOT_CONTEXT == "poster" else "bars",
+    "err_style": "band" if PLOT_CONTEXT == "poster" else "bars",
 }
 
 if PLOT_CONTEXT != "poster":
@@ -33,7 +34,7 @@ sns_kwargs = {
     "markeredgecolor": "none",
     "linewidth": LINE_WIDTH,
     "markersize": MARKER_SIZE,
-    **err_style
+    **err_style,
 }
 
 labels_kwargs = {"xlabel": "Threads", "ylabel": "Net Runtime (s)"}
@@ -46,9 +47,11 @@ sns.set_style(grid_style)
 sns.set_context("paper")
 sns.set_palette(sns.color_palette(uom_color_palette))
 
+
 def set_legend_location(ax: plt.Axes):
     if PLOT_CONTEXT == "poster":
         sns.move_legend(ax, "best", fontsize="small")
+
 
 def save_plot(ax: plt.Axes, output_file_name: str, plot_title: str, dpi: int):
     ax.set(title=plot_title, **labels_kwargs)
@@ -57,7 +60,6 @@ def save_plot(ax: plt.Axes, output_file_name: str, plot_title: str, dpi: int):
 
 
 def plot_grouped_results(
-    delay: int,
     input_file_name: str,
     output_file_name: str,
     plot_title: str,
@@ -67,7 +69,6 @@ def plot_grouped_results(
     Plot the readings of each queue for a specific delay, all in one graph.
 
     Args:
-        delay:int - Chooses what readings to display based on the provided delay.
         input_file_name:str - The name of the csv file (excluding ".csv") where
         the data to be processed resides.
         output_file_name:str - The name of the outputted JPEG file.
@@ -77,27 +78,29 @@ def plot_grouped_results(
     """
 
     df = pd.read_csv(f"{input_file_name}.csv")
-    individual_delay_df = df.query(f"delay == {str(delay)}").sort_values(by="name")
-    palette = sns.color_palette(n_colors=len(df["name"].unique()))
+    delays = df["delay"].unique()
+    for delay in delays:
+        individual_delay_df = df.query(f"delay == {str(delay)}").sort_values(by="name")
+        palette = sns.color_palette(n_colors=len(df["name"].unique()))
 
-    ax = sns.lineplot(
-        data=individual_delay_df,
-        x="threads",
-        y="net_runtime_s",
-        style="name",
-        hue="name",
-        palette=palette,
-        **sns_kwargs,
-    )
+        ax = sns.lineplot(
+            data=individual_delay_df,
+            x="threads",
+            y="net_runtime_s",
+            style="name",
+            hue="name",
+            palette=palette,
+            **sns_kwargs,
+        )
 
-    plot_title = plot_title.replace("(", "").replace(")", "")
-    plot_title = f"{plot_title} ({delay}ns delay)"
+        temp_plot_title = plot_title.replace("(", "").replace(")", "")
+        temp_plot_title = f"{temp_plot_title} ({delay}ns delay)"
 
-    ax.get_legend().set_title("Queue")
+        ax.get_legend().set_title("Queue")
 
-    set_legend_location(ax)
+        set_legend_location(ax)
 
-    save_plot(ax, f"{IMAGES_PATH}/{output_file_name}.jpg", plot_title, dpi)
+        save_plot(ax, f"{IMAGES_PATH}/{output_file_name}_{delay}.jpg", temp_plot_title, dpi)
 
 
 def plot_individual_results(
@@ -139,24 +142,58 @@ def plot_individual_results(
         save_plot(ax, file_path, title, dpi)
 
 
+def plot_coefficient_of_variance(
+    input_file: str, output_file: str, plot_title: str, dpi: int = 300
+):
+    df = pd.read_csv(f"{input_file}.csv")
+    df_group = df.groupby(by=["name", "threads", "delay"], as_index=False)
+    df_agg = df_group.agg(
+        mean=("net_runtime_s", np.mean), stdev=("net_runtime_s", np.std)
+    )
+    df_agg["coeff_of_var"] = df_agg.apply(
+        lambda x: (x["stdev"] * 100) / x["mean"], axis=1
+    )
+
+    ax = sns.catplot(
+        x="delay",
+        y="coeff_of_var",
+        col="threads",
+        hue="name",
+        data=df_agg,
+        kind="bar",
+        col_wrap=4,
+    )
+
+    ax.set_xlabels("Delay")
+    ax.set_ylabels("Coefficient of Variance (%)")
+    ax.figure.suptitle(
+        "Coefficient of Variance of Tests $\\frac{\\sigma}{\\mu}$ " + plot_title
+    )
+    ax.savefig(f"{IMAGES_PATH}/{output_file}_cov.jpg")
+
+
 ENQUEUE_DEQUEUE_TITLE = "(Pairwise Benchmark)"
 ENQEUUE_DEQUEUE_FILE_NAME = "enqueue_dequeue_results"
 P_ENQUEUE_DEQUEUE_TITLE = "(50% Enqueue Benchmark)"
 P_ENQUEUE_DEQUEUE_FILE_NAME = "p_enqueue_dequeue_results"
 
 plot_grouped_results(
-    250, "enqueue_dequeue_results", "grouped_enqueue_dequeue", ENQUEUE_DEQUEUE_TITLE
+    "enqueue_dequeue_results", "grouped_enqueue_dequeue", ENQUEUE_DEQUEUE_TITLE
 )
 plot_grouped_results(
-    250,
     "p_enqueue_dequeue_results",
     "p_grouped_enqueue_dequeue",
     P_ENQUEUE_DEQUEUE_TITLE,
 )
-
 plot_individual_results(
     "enqueue_dequeue_results", "enqueue_dequeue", ENQUEUE_DEQUEUE_TITLE
 )
 plot_individual_results(
+    "p_enqueue_dequeue_results", "p_enqueue_dequeue", P_ENQUEUE_DEQUEUE_TITLE
+)
+plot_coefficient_of_variance(
+    "enqueue_dequeue_results", "enqueue_dequeue", ENQUEUE_DEQUEUE_TITLE
+)
+plot_coefficient_of_variance(
     "p_enqueue_dequeue_results", "p_enqueue_dequeue", P_ENQUEUE_DEQUEUE_TITLE
 )

@@ -34,6 +34,7 @@ typedef uintptr_t tagged_ptr_t;
  * 
  */
 #define pack_ptr_with_flag(ptr, tag, flag) (((uintptr_t)ptr) | \
+    /* Prevents overflows from changing the flag bit pointer */ \
     (((uint64_t)(((tag) % (UINT15_T_MASK)) | \
     (((uint16_t)flag) << TAG_INDEX))) << LINEAR_ADDRESS_SIZE))
 
@@ -47,7 +48,7 @@ typedef uintptr_t tagged_ptr_t;
  * @brief Extract a tag from a tagged_ptr that was created using pack_ptr_with_flag
  * 
  */
-#define extract_flagged_tag(i) ((uint16_t)((((uintptr_t)i) >> LINEAR_ADDRESS_SIZE)\
+#define extract_flagged_tag(ptr) ((uint16_t)((((uintptr_t)ptr) >> LINEAR_ADDRESS_SIZE)\
  & UINT15_T_MASK))
 
 #define equals(a, b) ((a) == (b))

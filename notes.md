@@ -65,6 +65,19 @@ it is possible to mingle them together.
 * Find a formality to prove that the timings are correct (can use a mock queue)
 * Stop being a perfectionist and just start expanding on the chapters, don't allow it to halt progress.
 
+## [CppCon 2015: Benchmarking C++ Code](https://youtu.be/zWxSZcpeS8Q)
+* "What is performance?" is a good question to ask.
+### Sources of Error
+* Observational Error - The difference between what you measure and the true result
+* Random Error - Errors caused by natural variance
+* Systemic Error - Errors caused by an inaccuracy - usually constant or proportional to the true result.
+* Any performance analysis must account for error.
+### Variance
+* Computers can reproduce answers, not performance.
+* OS activities can cause non-determinism, such as the migration of non-pinned processes.
+* All forms of instrumentation change the results, introducing biases to results.
+* Amortizing - Reading several small events and taking their average as a sample, as reading each individual event will incur too much overhead.
+
 ## More notes
 * Power Managment - sys/devices/cpu/intel/pstate
 * A Comparitive Study of Concurrent Queuing Algorithms & Their Performance

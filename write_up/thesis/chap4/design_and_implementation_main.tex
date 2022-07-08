@@ -32,9 +32,9 @@ sampling hardware counters, which can be used for debugging purposes.
 Researchers introducing novel concurrent
 algorithms~\citep{michael1996simple,valois1994queues,kogan2011wait,hoffman2007baskets,yang2016wait}
 frequently compare their contributions with existing algorithms. The
-\emph{Pairwise Enqueue Dequeue} and the \emph{50\% Enqueue}
+\emph{Pairwise Enqueue Dequeue} and \emph{50\% Enqueue}
 benchmarks are considered to be standard benchmarking procedures for concurrent
-queueing algorithms. As to amortize measurement overheads, ten million operations are
+queueing algorithms. Ten million operations are
 executed amongst $N$ threads ($t_0,~t_1,~\cdots,~t_{N-1}$) as follows: 
 
 \[
@@ -45,32 +45,30 @@ executed amongst $N$ threads ($t_0,~t_1,~\cdots,~t_{N-1}$) as follows:
     \end{cases} \\
 \]
 
-The average of each thread's average elapsed time for ten repetitions
-(excluding time spent in artificial delays) is
-used as the recorded sample.
+The average of each thread's average elapsed time for ten repetitions,
+excluding time spent in artificial delays is used as the recorded sample.
 
 \subsection{Pairwise Enqueue Dequeue Benchmark}
 
 On an initially empty queue, each thread enqueues an item, executes an
-artificial delay (which \citeauthor{michael1996simple} refers to as "other
-work"~\citep{michael1996simple}), dequeues an item, and executes another
+artificial delay (which \citeauthor{michael1996simple} refers to as ``other
+work''~\citep{michael1996simple}), dequeues an item, and executes another
 artificial delay; The queue is destroyed and recreated with every repetition
 (i.e. every ten millions iterations). \citeauthor{michael1996simple} use an
 artificial delay to reduce the bias introduced by long runs of queue operations
 by a single thread~\citep{michael1996simple}. Quantity of threads, and length
 of artificial delay are the experiment's independent variables; the
 degree of contention is dependent on both the number of threads and the length
-of the delay, furthermore, the measured time taken is also dependent on
+of delay, furthermore, the time measured is also dependent on
 contention and operating system activities. This benchmark serves the purpose
 of simulating a producer-consumer workload, where each thread acts both as a
 producer, and a consumer.
 
 \subsection{50\% Enqueue Benchmark}
-Drawing from a uniform distribution, each thread randomly executes an enqueue
-or a dequeue, with a 50\% chance,
-followed by an artificial delay. The is prefilled queue with 1000
-items to prevent long runs of empty dequeues (potentially introducing biases). Randomness aids with exercising a
-larger portion of code paths.
+Drawing from a uniform distribution, each thread is equally probable to execute
+an enqueue or a dequeue, followed by an artificial delay. The queue prefilled
+with 1000 items to prevent long runs of empty dequeues (potentially introducing
+biases). Randomness aids with exercising a larger portion of code paths.
 
 Random numbers are stored as double-precision floating point variables, ranging
 from zero to one, furthermore, they are generated in the benchmark's setup
@@ -79,18 +77,18 @@ amount of memory that needs to be allocated), and to reuse the same random
 numbers with every repetition, maintaining consistency across measurements. 
 
 The 50\% enqueue benchmark will execute at most
-half the number of enqueues and dequeues executed as the pairwise
-enqueue-dequeue benchmark, as an operation is no longer executing a pair of
-enqueues and dequeues, but either one of them.
+half the number of enqueues and dequeues as the pairwise
+enqueue-dequeue benchmark, as an iteration no longer consists of a pair of
+enqueues and dequeues, but just one of them.
 
 \subsection{Sources of Error}
 Experimental studies must be aware of any threats to the validity of
 their results. An \emph{observational error} is the difference between what is
 measured, and the true result, which can be caused by \emph{systemic} or
-\emph{random errors}. Systemic errors are caused by the inherent inaccuracies
+\emph{random errors}~\citep{lelbach2015cppbenchmarking}. Systemic errors are caused by the inherent inaccuracies
 of measurement apparatus; with respect to the framework's
 measurements, an example of systemic error may be attributed to the resolution
-(granularity) of the clock used to measure elapsed time. The CPU's clock speed is
+(granularity) of the clock used to measure elapsed time~\citep{lelbach2015cppbenchmarking}. The CPU's clock speed is
 fixed to its maximum frequency by setting the CPU frequency governor to
 \emph{performance} mode (using \emph{cpufreq-set -g performance}) in order to
 restrict fluctuations in the CPU's clock speed, which may lead to inaccurate

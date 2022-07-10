@@ -3,6 +3,7 @@ Automatically generates plots for the results obtained in the root directory.
 """
 
 import os
+from typing import Union
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -14,6 +15,8 @@ import numpy as np
 IMAGES_PATH = "src/utils/images/"
 MARKER_SIZE = 7
 LINE_WIDTH = 0.7
+COL_WRAP = 4
+SUPTITLE_Y = 1.02
 
 os.makedirs(IMAGES_PATH, exist_ok=True)
 
@@ -27,13 +30,17 @@ err_style = {
 if PLOT_CONTEXT != "poster":
     err_style["err_kws"] = {"linewidth": LINE_WIDTH, "capsize": 2, "ecolor": "k"}
 
-sns_kwargs = {
+sns_base_kwargs = {
     "markers": True,
     "dashes": True,
-    "ci": "sd",
     "markeredgecolor": "none",
-    "linewidth": LINE_WIDTH,
+}
+
+sns_kwargs = {
+    **sns_base_kwargs,
     "markersize": MARKER_SIZE,
+    "linewidth": LINE_WIDTH,
+    "ci": "sd",
     **err_style,
 }
 
@@ -44,19 +51,27 @@ uom_color_palette = ["#9C0C35", "#E94C5E", "#F08590", "#F5B4C7", "#FAC18A"]
 grid_style = "white" if PLOT_CONTEXT == "poster" else "whitegrid"
 
 sns.set_style(grid_style)
-sns.set_context("paper")
-sns.set_palette(sns.color_palette(uom_color_palette))
+sns.set_context(PLOT_CONTEXT)
+# sns.set_palette(sns.color_palette(uom_color_palette))
+sns.set_palette("colorblind")
 
 
 def set_legend_location(ax: plt.Axes):
     if PLOT_CONTEXT == "poster":
         sns.move_legend(ax, "best", fontsize="small")
+        return
 
-
-def save_plot(ax: plt.Axes, output_file_name: str, plot_title: str, dpi: int):
-    ax.set(title=plot_title, **labels_kwargs)
-    ax.get_figure().savefig(output_file_name, dpi=dpi, bbox_inches="tight")
-    ax.get_figure().clf()
+def save_plot(
+    ax: Union[plt.Axes, sns.FacetGrid],
+    output_file_name: str,
+    dpi: int,
+):
+    fig = ax.get_figure() if ax is plt.Axes else ax.figure
+    fig.savefig(output_file_name, dpi=dpi, bbox_inches="tight")
+    fig.clf()
+    # Set figure to matplotlib default size to prevent figure size adjustments
+    # from carrying on to independent figures.
+    fig.set(size_inches=(6.4, 4.8))
 
 
 def plot_grouped_results(
@@ -78,29 +93,28 @@ def plot_grouped_results(
     """
 
     df = pd.read_csv(f"{input_file_name}.csv")
-    delays = df["delay"].unique()
-    for delay in delays:
-        individual_delay_df = df.query(f"delay == {str(delay)}").sort_values(by="name")
-        palette = sns.color_palette(n_colors=len(df["name"].unique()))
+    palette = sns.color_palette(n_colors=len(df["name"].unique()))
+    ax = sns.relplot(
+        data=df,
+        x="threads",
+        y="net_runtime_s",
+        col="delay",
+        style="name",
+        hue="name",
+        kind="line",
+        palette=palette,
+        col_wrap=3,
+        **sns_kwargs,
+    )
 
-        ax = sns.lineplot(
-            data=individual_delay_df,
-            x="threads",
-            y="net_runtime_s",
-            style="name",
-            hue="name",
-            palette=palette,
-            **sns_kwargs,
-        )
+    temp_plot_title = plot_title.replace("(", "").replace(")", "")
 
-        temp_plot_title = plot_title.replace("(", "").replace(")", "")
-        temp_plot_title = f"{temp_plot_title} ({delay}ns delay)"
+    ax.legend.set_title("Queue")
+    ax.figure.suptitle(temp_plot_title, y=SUPTITLE_Y)
 
-        ax.get_legend().set_title("Queue")
+    set_legend_location(ax)
 
-        set_legend_location(ax)
-
-        save_plot(ax, f"{IMAGES_PATH}/{output_file_name}_{delay}.jpg", temp_plot_title, dpi)
+    save_plot(ax, f"{IMAGES_PATH}/{output_file_name}.jpg", dpi)
 
 
 def plot_individual_results(
@@ -133,13 +147,17 @@ def plot_individual_results(
             **sns_kwargs,
         )
 
+        title = f"{queue_name} {plot_title}"
+        ax.get_legend().set_title("Delay")
+        ax.set_title(title)
+        ax.set(**labels_kwargs)
         set_legend_location(ax)
 
         cleaned_queue_name = str.lower(queue_name).replace(" ", "_")
 
         file_path = f"{IMAGES_PATH}/{output_file_name}_{cleaned_queue_name}.jpg"
-        title = f"{queue_name} {plot_title}"
-        save_plot(ax, file_path, title, dpi)
+
+        save_plot(ax, file_path, dpi)
 
 
 def plot_coefficient_of_variance(
@@ -154,26 +172,68 @@ def plot_coefficient_of_variance(
         lambda x: (x["stdev"] * 100) / x["mean"], axis=1
     )
 
-    ax = sns.catplot(
+    ax: sns.FacetGrid = sns.catplot(
         x="delay",
         y="coeff_of_var",
         col="threads",
         hue="name",
         data=df_agg,
         kind="bar",
-        col_wrap=4,
+        palette=sns.color_palette(n_colors=len(df["name"].unique())),
+        col_wrap=COL_WRAP,
     )
+
+    title = "Coefficient of Variance of Tests $\\frac{\\sigma}{\\mu}$ " + plot_title
 
     ax.set_xlabels("Delay")
     ax.set_ylabels("Coefficient of Variance (%)")
-    ax.figure.suptitle(
-        "Coefficient of Variance of Tests $\\frac{\\sigma}{\\mu}$ " + plot_title
+    ax.figure.suptitle(title, y=SUPTITLE_Y)
+
+    save_plot(ax, f"{IMAGES_PATH}/{output_file}_cov.jpg", dpi)
+
+
+def plot_dwcas_relative_performance(
+    input_file: str, output_file: str, plot_title: str, dpi: int = 300
+):
+    df = pd.read_csv(f"{input_file}.csv")
+    df_group = (
+        df.groupby(by=["name", "threads", "delay"], as_index=False)["net_runtime_s"]
+        .mean()
+        .sort_values(by="name", ascending=False)
     )
-    ax.savefig(f"{IMAGES_PATH}/{output_file}_cov.jpg")
+    nonblocking_queue_names = ["MS Queue", "Valois Queue", "Baskets Queue"]
+    accumulated_df = pd.DataFrame()
+    for name in nonblocking_queue_names:
+        temp_df = df_group.loc[df_group["name"].str.contains(name)]
+        temp_df = temp_df.groupby(by=["threads", "delay"], as_index=False).agg(
+            {"net_runtime_s": lambda x: (x.iloc[0] / x.iloc[1])}
+        )
+        temp_df["name"] = name
+        accumulated_df = pd.concat([accumulated_df, temp_df])
+    ax = sns.relplot(
+        x="threads",
+        y="net_runtime_s",
+        hue="delay",
+        style="delay",
+        col="name",
+        kind="line",
+        data=accumulated_df,
+        palette=sns.color_palette(n_colors=len(df["delay"].unique())),
+        **sns_base_kwargs,
+    )
+    ax.figure.suptitle(
+        f"Relative Performance {plot_title}", y=SUPTITLE_Y
+    )
+    ax.set(xlabel="Threads", ylabel="Ratio of Tagged Pointer runtime to DWCAS runtime")
+    save_plot(
+        ax,
+        f"{IMAGES_PATH}/{output_file}_rel_perf.jpg",
+        dpi,
+    )
 
 
 ENQUEUE_DEQUEUE_TITLE = "(Pairwise Benchmark)"
-ENQEUUE_DEQUEUE_FILE_NAME = "enqueue_dequeue_results"
+ENQUEUE_DEQUEUE_FILE_NAME = "enqueue_dequeue_results"
 P_ENQUEUE_DEQUEUE_TITLE = "(50% Enqueue Benchmark)"
 P_ENQUEUE_DEQUEUE_FILE_NAME = "p_enqueue_dequeue_results"
 
@@ -185,15 +245,21 @@ plot_grouped_results(
     "p_grouped_enqueue_dequeue",
     P_ENQUEUE_DEQUEUE_TITLE,
 )
+plot_coefficient_of_variance(
+    "enqueue_dequeue_results", "enqueue_dequeue", ENQUEUE_DEQUEUE_TITLE
+)
+plot_coefficient_of_variance(
+    "p_enqueue_dequeue_results", "p_enqueue_dequeue", P_ENQUEUE_DEQUEUE_TITLE
+)
 plot_individual_results(
     "enqueue_dequeue_results", "enqueue_dequeue", ENQUEUE_DEQUEUE_TITLE
 )
 plot_individual_results(
     "p_enqueue_dequeue_results", "p_enqueue_dequeue", P_ENQUEUE_DEQUEUE_TITLE
 )
-plot_coefficient_of_variance(
-    "enqueue_dequeue_results", "enqueue_dequeue", ENQUEUE_DEQUEUE_TITLE
+plot_dwcas_relative_performance(
+    ENQUEUE_DEQUEUE_FILE_NAME, "enqueue_dequeue", ENQUEUE_DEQUEUE_TITLE
 )
-plot_coefficient_of_variance(
-    "p_enqueue_dequeue_results", "p_enqueue_dequeue", P_ENQUEUE_DEQUEUE_TITLE
+plot_dwcas_relative_performance(
+    P_ENQUEUE_DEQUEUE_FILE_NAME, "p_enqueue_dequeue", P_ENQUEUE_DEQUEUE_TITLE
 )

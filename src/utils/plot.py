@@ -12,7 +12,7 @@ import numpy as np
 # Taken from: https://regenerativetoday.com/some-tricks-to-make-matplotlib-visualization-even-better/
 # from mpl_toolkits.axes_grid1.inset_locator import mark_inset, inset_axes
 
-IMAGES_PATH = "src/utils/images/"
+IMAGES_PATH = "write_up/thesis/images/plots/"
 MARKER_SIZE = 7
 LINE_WIDTH = 0.7
 COL_WRAP = 4

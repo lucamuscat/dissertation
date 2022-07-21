@@ -3,4 +3,23 @@ In this chapter, insights emanating from each queue's evaluation is compared
 with findings from their seminal works; each queue's performance is compared, 
 together with explanations as to why and what makes a queue superior to another.
 
+
+\section{Biases and Threats to Validity}
+\paragraph{Veracity of Micro-Benchmarking Workloads}
+In \citep{gregg2014systems}, \citeauthor{gregg2014systems} claims that
+\emph{micro-benchmarks} (type of benchmark adopted in this study) produces
+artificial workloads, rendering results which are  solely obtained under
+various assumptions. Results obtained in this study represent the concurrent
+queues, whose operations are separated by fixed delays, inside a ``clean-room''
+environment. Realistic workloads seldom follow such rigid patterns, making the
+results' validity under real-world scenarios undetermined.
+
+\paragraph{Impact of Consumer Grade CPUs on Performance}
+For the scope of this study, cutting-edge hardware, similar to that used in
+prior art, is inaccessible. Unfortunately, over-subscription of processors
+is required to gather enough an acceptable amount of data, making it
+impossible to reproduce trends solely attainable from low-degrees of over-subscription. At
+best, the resources accessible to the study may only produce
+highly-multiprocessed workloads.
+
 \section{Summary}

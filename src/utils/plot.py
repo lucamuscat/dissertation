@@ -16,7 +16,13 @@ IMAGES_PATH = "write_up/thesis/images/plots/"
 MARKER_SIZE = 7
 LINE_WIDTH = 0.7
 COL_WRAP = 4
-SUPTITLE_Y = 1.02
+SUPTITLE_Y = 1.11
+SUPTITLE_FONT_SIZE = 30
+X_LABEL_FONT_SIZE = 15
+Y_LABLE_FONT_SIZE = 20
+LEGEND_TITLE_FONT_SIZE = 20
+LEGEND_TEXT_FONT_SIZE = 15
+
 
 os.makedirs(IMAGES_PATH, exist_ok=True)
 
@@ -93,7 +99,8 @@ def plot_grouped_results(
     """
 
     df = pd.read_csv(f"{input_file_name}.csv")
-    palette = sns.color_palette(n_colors=len(df["name"].unique()))
+    num_of_unique_names = len(df["name"].unique())
+    palette = sns.color_palette(n_colors=num_of_unique_names)
     ax = sns.relplot(
         data=df,
         x="threads",
@@ -107,12 +114,19 @@ def plot_grouped_results(
         **sns_kwargs,
     )
 
-    temp_plot_title = plot_title.replace("(", "").replace(")", "")
+    temp_plot_title = plot_title.replace("(", "").replace(")", "") 
+    ax.legend.set_title(None)
+    sns.move_legend(ax, "upper center", ncol=num_of_unique_names//2, bbox_to_anchor=(0.45, 1.08))
+    plt.setp(ax._legend.get_texts(), fontsize=LEGEND_TEXT_FONT_SIZE)
 
-    ax.legend.set_title("Queue")
-    ax.figure.suptitle(temp_plot_title, y=SUPTITLE_Y)
+    ax.figure.suptitle(temp_plot_title, y=SUPTITLE_Y, fontsize=SUPTITLE_FONT_SIZE)
 
-    set_legend_location(ax)
+    ax.set_axis_labels(*labels_kwargs.values(), fontsize=X_LABEL_FONT_SIZE)
+    #ax.set_yticklabels(size=X_LABEL_FONT_SIZE-2)
+    ax.set_xticklabels(size=X_LABEL_FONT_SIZE-2)
+    ax.set_titles(size=12)
+    ax.set(xlim=(0.8,12.2), ylim=(0,None))
+    plt.subplots_adjust(hspace=0.1)
 
     save_plot(ax, f"{IMAGES_PATH}/{output_file_name}.jpg", dpi)
 

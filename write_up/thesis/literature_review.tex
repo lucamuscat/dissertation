@@ -13,7 +13,7 @@ Performance analysis was conducted on a parallel architecture simulator called P
 Fortunately, these are mostly issues of the past, as hardware is more accessible and instrumentation facilities have matured over the last few decades.
 
 \paragraph{The Baskets Queue}
-Hoffman et. al propose a novel linearizable lock-free queue that takes advantage of the fact that the order of overlapping linearizable operations is non-deterministic \cite{hoffman2007baskets}. Each overlapping operation will be grouped together in a ``basket'' (list of nodes). Objects in a basket can be dequeued without order. A thread places an object into a basket when a compare and swap fails due to another thread being in progress.
+\citeauthor{hoffman2007baskets} propose a novel linearizable lock-free queue that takes advantage of the fact that the order of overlapping linearizable operations is non-deterministic \cite{hoffman2007baskets}. Each overlapping operation will be grouped together in a ``basket'' (list of nodes). Objects in a basket can be dequeued without order. A thread places an object into a basket when a compare and swap fails due to another thread being in progress.
 
 \paragraph{Lock-free queue using elimination}
 Shavit et. al introduce a novel lock-free queue using a technique known as elimination \cite{moir2005using}. Simply put, elimination works by allowing opposing operations such as enqueues and dequeues to exchange values without synchronizing on a shared data structure \cite{shavit1997elimination, moir2005using}. The results obtained suggests that as levels of concurrency increase, so does the throughput of the proposed data structure.

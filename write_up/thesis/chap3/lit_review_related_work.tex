@@ -1,11 +1,10 @@
 \chapter{Literature Review}
-\label{chap:lit_review}
 
 \section{Queues}
-\subsection{\citeauthor{valois1994queues}' Queue}
+\subsection{Valois' Queue}
 
 \citeauthor{valois1994queues} surveys several lock-free data structures and
-techniques \textemdash~ together with the introduction of the \emph{safe read}
+techniques\textemdash together with the introduction of the \emph{safe read}
 memory reclamation scheme and an MPMC lock-free
 queue~\citep{valois1994queues,valois1995datastructures}.
 Combining the memory-reclamation scheme with the queue leads to increased cache line
@@ -56,7 +55,7 @@ pointers to previous elements are maintained using simple stores, and are fixed
 upon entering an inconsistent state (hence the \emph{optimistic} replacement of
 Compare-and-Swaps).
 
-\subsection{\citeauthor{hoffman2007baskets}'s Baskets Queue}
+\subsection{Hoffman et.al's Baskets Queue}
 \citeauthor{hoffman2007baskets} present a variation of the MS-queue~\citep{hoffman2007baskets}, which is formed
 using baskets (groups) of overlapping linearizable operations, which are non-deterministically
 ordered among one another.
@@ -100,5 +99,5 @@ Based on the MS-queue, \citeauthor{kogan2011wait} introduce one of the first pra
 wait-free queues~\citep{kogan2011wait} (henceforth known as the KP-queue). The
 same authors present a methodology to create fast wait-free queues~\citep{kogan2012methodology} by
 making use of the \emph{fast-path-slow-path} methodology; a lock-free queue is
-used as the \emph{fast-path}, using a wait-free queue as a \emph{slow-path} after a number of failures.
-used as the \emph{fast-path}, using a wait-free queue as a \emph{slow-path} after a number of failures.
+used as the \emph{fast-path}, using a wait-free queue as a \emph{slow-path}
+after a number of failures.

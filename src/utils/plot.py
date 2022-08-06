@@ -8,6 +8,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+from helpers import get_difference_in_time_between_threads, aggregate_readings
 
 # Taken from: https://regenerativetoday.com/some-tricks-to-make-matplotlib-visualization-even-better/
 # from mpl_toolkits.axes_grid1.inset_locator import mark_inset, inset_axes

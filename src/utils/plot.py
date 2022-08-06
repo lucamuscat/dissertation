@@ -174,6 +174,37 @@ def plot_individual_results(
 
         save_plot(ax, file_path, dpi)
 
+def plot_speedup_by_adjacent_thread(
+    thread_count:int, input_file: str, output_file: str, plot_title: str, dpi: int = 300):
+    df = pd.read_csv(f"{input_file}.csv")
+    df = get_difference_in_time_between_threads(df, "", start=thread_count)
+    ax = sns.lineplot(
+        data=df,
+        x="delay",
+        y="perf_deg",
+        style="name",
+        hue="name",
+        **sns_kwargs
+    )
+
+    sns.move_legend(
+        ax, 
+        "upper center", 
+        bbox_to_anchor=(0.5,1.2), 
+        frameon=False, 
+        ncol=3, 
+        title=""
+    )
+
+    ax.set_title(
+        f"Magnitude of Performance Degradation at {thread_count + 1} Threads {plot_title}",
+        y=1.2
+    )
+    ax.set_xlabel("Delay")
+    ax.set_ylabel("Magnitude of Performance Degradation")
+
+    file_path = f"{IMAGES_PATH}/speedup_{output_file}_{thread_count}.jpg"
+    save_plot(ax, file_path, dpi)
 
 def plot_coefficient_of_variance(
     input_file: str, output_file: str, plot_title: str, dpi: int = 300

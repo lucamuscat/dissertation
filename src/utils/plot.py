@@ -24,6 +24,11 @@ Y_LABLE_FONT_SIZE = 20
 LEGEND_TITLE_FONT_SIZE = 20
 LEGEND_TEXT_FONT_SIZE = 15
 
+# centimeters in inches
+cm = 1/2.54
+
+PAGE_WIDTH_EXCLUDING_MARGINS = 14.3*cm
+FIG_SIZE = (PAGE_WIDTH_EXCLUDING_MARGINS, 10*cm)
 
 os.makedirs(IMAGES_PATH, exist_ok=True)
 
@@ -64,17 +69,16 @@ sns.set_palette("colorblind")
 
 
 def set_legend_location(ax: plt.Axes):
-    if PLOT_CONTEXT == "poster":
-        sns.move_legend(ax, "best", fontsize="small")
-        return
+    sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
 
 def save_plot(
-    ax: Union[plt.Axes, sns.FacetGrid],
+    ax: Union[plt.Axes, sns.FacetGrid, plt.figure],
     output_file_name: str,
     dpi: int,
 ):
     fig = ax.get_figure() if ax is plt.Axes else ax.figure
-    fig.savefig(output_file_name, dpi=dpi, bbox_inches="tight")
+    fig.set_size_inches(*FIG_SIZE)
+    fig.savefig(output_file_name, dpi=dpi, bbox_inches="tight", )
     fig.clf()
     # Set figure to matplotlib default size to prevent figure size adjustments
     # from carrying on to independent figures.
@@ -173,6 +177,54 @@ def plot_individual_results(
         file_path = f"{IMAGES_PATH}/{output_file_name}_{cleaned_queue_name}.jpg"
 
         save_plot(ax, file_path, dpi)
+
+def plot_delay_and_threads(thread_count:int, input_files):
+    fig, ax = plt.subplots(
+        1, 
+        2, 
+        sharey=True, 
+        figsize=FIG_SIZE
+    )
+
+    for axis, input_file in zip(ax, input_files):
+        df = pd.read_csv(f"{input_file}.csv")
+        df = df.loc[df["threads"] == thread_count]
+        palette = sns.color_palette(n_colors=len(df["name"].unique()))
+
+        sns.lineplot(
+            data=df,
+            ax=axis,
+            x = "delay",
+            y = "net_runtime_s",
+            style = "name",
+            hue = "name",
+            palette = palette,
+            **sns_kwargs
+        )
+
+        # title = f"Performance at {thread_count} threads {plot_title}"
+        # ax.set_title(title)
+        axis.set_xlabel("Delay")
+        axis.set_ylabel("Net Runtime (s)")
+
+        #file_path = f"{IMAGES_PATH}/delay_{output_file}_{thread_count}.jpg"
+        #save_plot(ax, file_path, dpi)
+    ax[0].set_title("Pairwise")
+    ax[1].set_title("50% Enqueue")
+    thread_text = "Thread" if thread_count == 1 else "Threads"
+    fig.suptitle(f"Performance at {thread_count} {thread_text}", y = 1.12)
+    ax[1].legend().set_visible(False)
+    sns.move_legend(
+        ax[0],
+        "upper center",
+        bbox_to_anchor=(1,1.25),
+        frameon=False,
+        ncol=3,
+        title=""
+    )
+    plt.subplots_adjust(wspace=0.05)
+    output_path = f"{IMAGES_PATH}/delay_thread_{thread_count}.jpg"
+    save_plot(fig, output_path, 300)
 
 def plot_speedup_by_adjacent_thread(
     thread_count:int, input_file: str, output_file: str, plot_title: str, dpi: int = 300):

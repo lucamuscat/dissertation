@@ -31,10 +31,26 @@ def save_dataframe_to_latex_table(filtered_df: pd.DataFrame, file_name: str, cap
 
 def get_difference_in_time_between_threads(
     df: pd.DataFrame, 
-    table_title: str, 
     start: int=1):
 
     df_1 = df.loc[df["threads"]==start]
     df_2 = df.loc[df["threads"]==start+1]
     df_1.insert(3, "perf_deg", np.array(df_2["net_runtime_s"])/np.array(df_1["net_runtime_s"]))
-    return df_1[["name", "delay", "perf_deg"]].sort_values(by="name")
+    return df_1[["name", "delay", "perf_deg"]]
+
+def compare_two_queues(df:pd.DataFrame, queue_name_1:str, queue_name_2:str, thread_count:int):
+    temp = df.loc[(df["threads"]==thread_count)]
+    temp = temp.groupby(by=["name", "delay"], as_index=False)["net_runtime_s"].mean()
+    queue_1 = temp.loc[temp["name"]==queue_name_1].copy()
+    queue_2 = temp.loc[temp["name"]==queue_name_2].copy()
+
+    queue_1_runtime = np.array(queue_1["net_runtime_s"])
+    queue_2_runtime = np.array(queue_2["net_runtime_s"])
+
+    result_key = f"{queue_name_1} is x% slower than {queue_name_2}"
+    queue_1[result_key] = ((queue_1_runtime-queue_2_runtime)/queue_1_runtime)*100
+    queue_1 = queue_1[["delay", result_key]]
+    queue_1 = queue_1.rename({"delay":"Delay"}, axis="columns")
+    queue_1["Is Slower?"] = queue_1[result_key] > 0
+
+    return queue_1

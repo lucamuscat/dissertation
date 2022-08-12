@@ -290,44 +290,6 @@ def plot_coefficient_of_variance(
     save_plot(ax, f"{IMAGES_PATH}/{output_file}_cov.jpg", dpi)
 
 
-def plot_dwcas_relative_performance(
-    input_file: str, output_file: str, plot_title: str, dpi: int = 300
-):
-    df = pd.read_csv(f"{input_file}.csv")
-    df_group = (
-        df.groupby(by=["name", "threads", "delay"], as_index=False)["net_runtime_s"]
-        .mean()
-        .sort_values(by="name", ascending=False)
-    )
-    nonblocking_queue_names = ["MS Queue", "Valois Queue", "Baskets Queue"]
-    accumulated_df = pd.DataFrame()
-    for name in nonblocking_queue_names:
-        temp_df = df_group.loc[df_group["name"].str.contains(name)]
-        temp_df = temp_df.groupby(by=["threads", "delay"], as_index=False).agg(
-            {"net_runtime_s": lambda x: (x.iloc[0] / x.iloc[1])}
-        )
-        temp_df["name"] = name
-        accumulated_df = pd.concat([accumulated_df, temp_df])
-    ax = sns.relplot(
-        x="threads",
-        y="net_runtime_s",
-        hue="delay",
-        style="delay",
-        col="name",
-        kind="line",
-        data=accumulated_df,
-        palette=sns.color_palette(n_colors=len(df["delay"].unique())),
-        **sns_base_kwargs,
-    )
-    ax.figure.suptitle(
-        f"Relative Performance {plot_title}", y=SUPTITLE_Y
-    )
-    ax.set(xlabel="Threads", ylabel="Ratio of Tagged Pointer runtime to DWCAS runtime")
-    save_plot(
-        ax,
-        f"{IMAGES_PATH}/{output_file}_rel_perf.jpg",
-        dpi,
-    )
 
 
 ENQUEUE_DEQUEUE_TITLE = "(Pairwise Benchmark)"
@@ -354,10 +316,4 @@ plot_individual_results(
 )
 plot_individual_results(
     "p_enqueue_dequeue_results", "p_enqueue_dequeue", P_ENQUEUE_DEQUEUE_TITLE
-)
-plot_dwcas_relative_performance(
-    ENQUEUE_DEQUEUE_FILE_NAME, "enqueue_dequeue", ENQUEUE_DEQUEUE_TITLE
-)
-plot_dwcas_relative_performance(
-    P_ENQUEUE_DEQUEUE_FILE_NAME, "p_enqueue_dequeue", P_ENQUEUE_DEQUEUE_TITLE
 )

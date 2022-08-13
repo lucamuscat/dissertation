@@ -32,9 +32,9 @@ def save_dataframe_to_latex_table(filtered_df: pd.DataFrame, file_name: str, cap
 def get_difference_in_time_between_threads(
     df: pd.DataFrame, 
     start: int=1):
-
-    df_1 = df.loc[df["threads"]==start]
-    df_2 = df.loc[df["threads"]==start+1]
+    temp = df.copy()
+    df_1 = temp.loc[df["threads"]==start]
+    df_2 = temp.loc[df["threads"]==start+1]
     df_1.insert(3, "perf_deg", np.array(df_2["net_runtime_s"])/np.array(df_1["net_runtime_s"]))
     return df_1[["name", "delay", "perf_deg"]]
 

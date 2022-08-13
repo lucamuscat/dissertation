@@ -8,8 +8,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import plot_config
+from interpret_counters import interpret_counters, BASKETS_QUEUE_COUNTER_LABELS, MS_QUEUE_COUNTER_LABELS
 from helpers import get_difference_in_time_between_threads
-from multiprocessing import Process, Pool
 from typing import Union, List
 
 os.makedirs(plot_config.IMAGES_PATH, exist_ok=True)
@@ -20,10 +20,6 @@ sns.set_style(plot_config.grid_style)
 sns.set_context(plot_config.PLOT_CONTEXT)
 sns.set_palette("colorblind")
 
-# Dataframe containing pairwise data
-df_pairwise = pd.read_csv("enqueue_dequeue_results.csv")
-# Dataframe containing 50% enqueue data
-df_coin_toss = pd.read_csv("p_enqueue_dequeue_results.csv")
 
 def set_legend_location(ax: plt.Axes):
     sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
@@ -127,14 +123,14 @@ def plot_delay_and_threads(thread_count:int, dataframes: List[pd.DataFrame]):
     save_plot(fig, output_path, 300)
 
 
-def adjust_double_plot(axis):
+def adjust_double_plot(axis, ncol=3, y=1.25):
     axis[1].legend().set_visible(False)
     sns.move_legend(
         axis[0],
         "upper center",
-        bbox_to_anchor=(1,1.25),
+        bbox_to_anchor=(1,y),
         frameon=False,
-        ncol=3,
+        ncol=ncol,
         title=""
     )
     plt.subplots_adjust(wspace=0.05, left=0)
@@ -220,19 +216,68 @@ def plot_pairwise_and_cointoss_speedup(start):
 
     save_plot(fig, f"speedup_{start}", 300)
 
+# Total Iterations + Warmup iterations
+def plot_dequeue_retries(pairwise_df: pd.DataFrame, coin_toss_df: pd.DataFrame, thread_count: int):
+    def clean_dataframe(df, counter_labels, key, name):
+        counters = interpret_counters(df, counter_labels, name)
+        dequeue_retries_key = counter_labels[key]
+        counters = counters.loc[counters["threads"] == thread_count][["name", "threads", "delay", dequeue_retries_key]]
+        counters = counters.rename(columns={dequeue_retries_key:"Attempts"})
+        counters["Attempts"] = counters["Attempts"] / 1e6
+        return counters
+
+    def concat_queue_dataframes(df):
+        ms_queue_counters = clean_dataframe(df, MS_QUEUE_COUNTER_LABELS, "d4", "MS Queue using Tagged Pointers")
+        baskets_queue_counters = clean_dataframe(df, BASKETS_QUEUE_COUNTER_LABELS, "D04-D05", "Baskets Queue using Tagged Pointers")
+        return pd.concat([ms_queue_counters, baskets_queue_counters], ignore_index=True)
+
+
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True)
+
+    pairwise = concat_queue_dataframes(pairwise_df)
+    coin_toss = concat_queue_dataframes(coin_toss_df)
+
+    sns.lineplot(ax=ax1, data = pairwise, x="delay", y="Attempts", hue="name", style="name", **plot_config.sns_kwargs)
+    sns.lineplot(ax=ax2, data = coin_toss, x="delay", y="Attempts", hue="name", style="name", **plot_config.sns_kwargs)
+
+    adjust_double_plot([ax1, ax2], 2, 1.14)
+
+    ax1.set_ylabel("Attempts (Millions)")
+    ax1.set_title("Pairwise")
+    ax2.set_title("50% Enqueue")
+    ax1.set_xlabel("Delay (nanoseconds)")
+    ax2.set_xlabel("Delay (nanoseconds)")
+    suptitle = f"Dequeue Attempts at {plot_config.num_to_word_dict[thread_count]} Threads"
+    fig.suptitle(suptitle, y=1.02)
+    plt.ticklabel_format(style='plain', axis='y')
+    save_plot(fig, f"dequeue_retries_{thread_count}", 300)
+
 ENQUEUE_DEQUEUE_TITLE = "(Pairwise Benchmark)"
 ENQUEUE_DEQUEUE_FILE_NAME = "enqueue_dequeue_results"
 P_ENQUEUE_DEQUEUE_TITLE = "(50% Enqueue Benchmark)"
 P_ENQUEUE_DEQUEUE_FILE_NAME = "p_enqueue_dequeue_results"
 
-dataframes = [df_pairwise, df_coin_toss]
 
-plot_pairwise_and_cointoss_speedup(2)
-plot_pairwise_and_cointoss_speedup(3)
-plot_pairwise_and_cointoss_speedup(4)
-plot_pairwise_and_cointoss_speedup(5)
+if __name__ == "__main__":
 
-plot_delay_and_threads(1, dataframes)
-plot_delay_and_threads(2, dataframes)
-plot_delay_and_threads(3, dataframes)
-plot_delay_and_threads(4, dataframes)
+    # Dataframe containing pairwise data
+    df_pairwise = pd.read_csv("enqueue_dequeue_results.csv")
+    # Dataframe containing 50% enqueue data
+    df_coin_toss = pd.read_csv("p_enqueue_dequeue_results.csv")
+    dataframes = [df_pairwise, df_coin_toss]
+
+    plot_dequeue_retries(df_pairwise, df_coin_toss, 3)
+    plot_dequeue_retries(df_pairwise, df_coin_toss, 4)
+    plot_dequeue_retries(df_pairwise, df_coin_toss, 5)
+
+    plot_pairwise_and_cointoss_speedup(2)
+    plot_pairwise_and_cointoss_speedup(3)
+    plot_pairwise_and_cointoss_speedup(4)
+    plot_pairwise_and_cointoss_speedup(5)
+
+    plot_delay_and_threads(1, dataframes)
+    plot_delay_and_threads(2, dataframes)
+    plot_delay_and_threads(3, dataframes)
+    plot_delay_and_threads(4, dataframes)
+    plot_delay_and_threads(5, dataframes)
+

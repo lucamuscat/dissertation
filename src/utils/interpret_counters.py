@@ -8,7 +8,7 @@ import numpy as np
 from typing import Dict
 
 def interpret_counters(
-    file_name: str, counter_labels: Dict[str, str], queue_name: str
+    dataframe: pd.DataFrame, counter_labels: Dict[str, str], queue_name: str
 ) -> pd.DataFrame:
     def apply_func(x: pd.Series):
         counters = [[j for j in i.split(" ") if j != ""] for i in x]
@@ -21,9 +21,8 @@ def interpret_counters(
         # std = np.apply_along_axis(np.std, 2, counters)
         return mean
 
-    df = pd.read_csv(file_name)
     df = (
-        df.loc[df["name"].str.contains(queue_name)]
+        dataframe.loc[dataframe["name"].str.contains(queue_name)]
         .groupby(by=["name", "threads", "delay"])["counters"]
         .apply(apply_func)
         .reset_index()
@@ -119,7 +118,8 @@ counters = [
 
 
 def save_counters_to_html(input_file_name: str, labels, queue_name, output_file_name) -> pd.DataFrame:
-    df = interpret_counters(input_file_name, labels, queue_name)
+    temp = pd.read_csv(input_file_name)
+    df = interpret_counters(temp, labels, queue_name)
     df.to_html(
         f"{COUNTERS_DIR}/{output_file_name}.html",
     )

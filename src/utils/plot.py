@@ -252,6 +252,24 @@ def plot_dequeue_retries(pairwise_df: pd.DataFrame, coin_toss_df: pd.DataFrame, 
     plt.ticklabel_format(style='plain', axis='y')
     save_plot(fig, f"dequeue_retries_{thread_count}", 300)
 
+    
+def plot_number_of_baskets(df_pairwise, df_coin_toss, thread_count, save=True):
+    def filter_counters_by_thread_count(df):
+        counters = interpret_counters(df, BASKETS_QUEUE_COUNTER_LABELS, "Baskets Queue using Tagged Pointers")
+        return counters.loc[df["threads"] == thread_count]
+    pairwise_counters = filter_counters_by_thread_count(df_pairwise)[["name", "delay", "enqueue_build_basket_count (E18-E19)"]]
+    pairwise_counters["name"] = "Pairwise"
+    coin_toss_counters = filter_counters_by_thread_count(df_coin_toss)[["name", "delay", "enqueue_build_basket_count (E18-E19)"]]
+    coin_toss_counters["name"] = "50% Enqueue"
+    concatted_counters: pd.DataFrame = pd.concat([pairwise_counters, coin_toss_counters], ignore_index=True)
+    ax = sns.lineplot(data = concatted_counters, x="delay", y="enqueue_build_basket_count (E18-E19)", style="name", hue="name", **plot_config.sns_kwargs)
+    ax.set_xlabel("Delay")
+    ax.set_ylabel("Interactions with Baskets")
+    ax.set_title("Utilization of the Baskets Mechanism")
+    sns.move_legend(ax, "upper right", title="")
+    if save:
+        save_plot(ax, f"baskets_count_{thread_count}", 300)
+
 ENQUEUE_DEQUEUE_TITLE = "(Pairwise Benchmark)"
 ENQUEUE_DEQUEUE_FILE_NAME = "enqueue_dequeue_results"
 P_ENQUEUE_DEQUEUE_TITLE = "(50% Enqueue Benchmark)"
@@ -265,6 +283,8 @@ if __name__ == "__main__":
     # Dataframe containing 50% enqueue data
     df_coin_toss = pd.read_csv("p_enqueue_dequeue_results.csv")
     dataframes = [df_pairwise, df_coin_toss]
+
+    plot_number_of_baskets(df_pairwise, df_coin_toss, 4, True)
 
     plot_dequeue_retries(df_pairwise, df_coin_toss, 3)
     plot_dequeue_retries(df_pairwise, df_coin_toss, 4)

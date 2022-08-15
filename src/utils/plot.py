@@ -42,6 +42,7 @@ def plot_grouped_results(
     output_file_name: str,
     plot_title: str,
     dpi: int = 300,
+    save:bool = True
 ):
     """
     Plot the readings of each queue for a specific delay, all in one graph.
@@ -82,15 +83,17 @@ def plot_grouped_results(
     ax.set(xlim=(0.8,12.2), ylim=(0,None))
     plt.subplots_adjust(hspace=0.1)
 
-    save_plot(ax, output_file_name, dpi)
+    if save:
+        save_plot(ax, output_file_name, dpi)
+    return ax
 
 
-def plot_delay_and_threads(thread_count:int, dataframes: List[pd.DataFrame]):
+def plot_delay_and_threads(thread_count:int, dataframes: List[pd.DataFrame], save=True):
     fig, ax = plt.subplots(
         1, 
         2, 
         sharey=True, 
-        figsize=plot_config.FIG_SIZE
+        figsize=plot_config.FIG_SIZE,
     )
 
     for axis, df in zip(ax, dataframes):
@@ -120,7 +123,9 @@ def plot_delay_and_threads(thread_count:int, dataframes: List[pd.DataFrame]):
     adjust_double_plot(ax)
 
     output_path = f"delay_thread_{thread_count}"
-    save_plot(fig, output_path, 300)
+    if save:
+        save_plot(fig, output_path, 300)
+    return fig
 
 
 def adjust_double_plot(axis, ncol=3, y=1.25):
@@ -168,14 +173,16 @@ def get_speedup_by_adjacent_thread_axis(thread_count:int, df: pd.DataFrame, plot
 
 
 def plot_speedup_by_adjacent_thread(
-    thread_count:int, df: pd.DataFrame, output_file: str, plot_title: str, dpi: int = 300):
+    thread_count:int, df: pd.DataFrame, output_file: str, plot_title: str, dpi: int = 300, save=True):
     ax = get_speedup_by_adjacent_thread_axis(thread_count, df, plot_title)
     file_path = f"speedup_{output_file}_{thread_count}"
-    save_plot(ax, file_path, dpi)
+    if save:
+        save_plot(ax, file_path, dpi)
+    return ax
 
 
 def plot_coefficient_of_variance(
-    df: pd.DataFrame, output_file: str, plot_title: str, dpi: int = 300
+    df: pd.DataFrame, output_file: str, plot_title: str, dpi: int = 300, save=True
 ):
     df_group = df.groupby(by=["name", "threads", "delay"], as_index=False)
     df_agg = df_group.agg(
@@ -202,10 +209,12 @@ def plot_coefficient_of_variance(
     ax.set_ylabels("Coefficient of Variance (%)")
     ax.figure.suptitle(title, y=plot_config.SUPTITLE_Y)
 
-    save_plot(ax, f"{output_file}_cov", dpi)
+    if save:
+        save_plot(ax, f"{output_file}_cov", dpi)
+    return ax
 
 
-def plot_pairwise_and_cointoss_speedup(start):
+def plot_pairwise_and_cointoss_speedup(start, save=True):
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=plot_config.FIG_SIZE)
     fig.suptitle(f"Magnitude of Performance Degradation at {plot_config.num_to_word_dict[start+1]} Threads", y=1.12)
     get_speedup_by_adjacent_thread_axis(start, df_pairwise, ENQUEUE_DEQUEUE_TITLE, ax1)
@@ -214,10 +223,12 @@ def plot_pairwise_and_cointoss_speedup(start):
     ax2.set_title("50% Enqueue Benchmark")
     adjust_double_plot([ax1, ax2])
 
-    save_plot(fig, f"speedup_{start}", 300)
+    if save:
+        save_plot(fig, f"speedup_{start}", 300)
+    return fig
 
 # Total Iterations + Warmup iterations
-def plot_dequeue_retries(pairwise_df: pd.DataFrame, coin_toss_df: pd.DataFrame, thread_count: int):
+def plot_dequeue_retries(pairwise_df: pd.DataFrame, coin_toss_df: pd.DataFrame, thread_count: int, save=True):
     def clean_dataframe(df, counter_labels, key, name):
         counters = interpret_counters(df, counter_labels, name)
         dequeue_retries_key = counter_labels[key]
@@ -250,7 +261,9 @@ def plot_dequeue_retries(pairwise_df: pd.DataFrame, coin_toss_df: pd.DataFrame, 
     suptitle = f"Dequeue Attempts at {plot_config.num_to_word_dict[thread_count]} Threads"
     fig.suptitle(suptitle, y=1.02)
     plt.ticklabel_format(style='plain', axis='y')
-    save_plot(fig, f"dequeue_retries_{thread_count}", 300)
+    if save:
+        save_plot(fig, f"dequeue_retries_{thread_count}", 300)
+    return fig
 
     
 def plot_number_of_baskets(df_pairwise, df_coin_toss, thread_count, save=True):

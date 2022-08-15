@@ -214,7 +214,7 @@ def plot_coefficient_of_variance(
     return ax
 
 
-def plot_pairwise_and_cointoss_speedup(start, save=True):
+def plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, start, save=True):
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=plot_config.FIG_SIZE)
     fig.suptitle(f"Magnitude of Performance Degradation at {plot_config.num_to_word_dict[start+1]} Threads", y=1.12)
     get_speedup_by_adjacent_thread_axis(start, df_pairwise, ENQUEUE_DEQUEUE_TITLE, ax1)
@@ -303,10 +303,10 @@ if __name__ == "__main__":
     plot_dequeue_retries(df_pairwise, df_coin_toss, 4)
     plot_dequeue_retries(df_pairwise, df_coin_toss, 5)
 
-    plot_pairwise_and_cointoss_speedup(2)
-    plot_pairwise_and_cointoss_speedup(3)
-    plot_pairwise_and_cointoss_speedup(4)
-    plot_pairwise_and_cointoss_speedup(5)
+    plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, 2)
+    plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, 3)
+    plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, 4)
+    plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, 5)
 
     plot_delay_and_threads(1, dataframes)
     plot_delay_and_threads(2, dataframes)

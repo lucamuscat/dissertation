@@ -6,7 +6,7 @@ together with explanations as to why and what makes a queue superior to another.
 \section{Workload under one thread}
 
 \begin{figure}[!ht]
-    \includegraphics[width=1\textwidth,height=0.55\textwidth]{plots/delay_thread_1.jpg}
+    \includegraphics[width=1\textwidth]{plots/delay_thread_1.jpg}
     \caption{The pairwise and the 50\% benchmarks on the left and right respectively.}
     \label{fig:perf_1_thread}
 \end{figure}
@@ -79,6 +79,75 @@ a minor improvement in performance under three threads is observed;
 \citeauthor{michael1996simple} link the boost in performance to the fewer
 iterations per thread, combined with a cache miss rate similar to that under
 two threads.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/plots/speedup_2.jpg}
+    \caption{The pairwise and the 50\% benchmarks on the left and right respectively.}
+    \label{fig:perf_deg_2_thread}
+\end{figure}
+
+Figure~\ref{fig:perf_deg_2_thread} shows that at specific delays\textemdash
+speedups of up to \textbf{6.591\%} can be obtained.
+\citeauthor{michael1996simple} observe speedups of a factor less than
+$\frac{1}{3}$~\citep{michael1996simple}, which is far more drastic than that
+observed in \citep{ladan2008optimistic, hoffman2007baskets} and this study. The
+50\% enqueue benchmark does not exhibit any speedups, further highlighting the
+effects of a benchmark's artificiality on the validity of its results.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/plots/delay_thread_3.jpg}
+    \caption{The pairwise and the 50\% benchmarks on the left and right respectively.}
+    \label{fig:perf_3_thread}
+\end{figure}
+
+Up to delays of 150 nanoseconds, every non-blocking queue using tagged
+pointers significantly outperforms the two-lock queue (MS queue is
+\textbf{33.412\%} times faster than the two-lock queue at 150 nanoseconds of
+delay), however, as contention drops, the two-lock queue tends to become more
+favourable. The MS-queue consistently outperforms the Baskets queue by at least
+\textbf{10.778\%}. As the degree of contention under three threads is
+higher than that at two threads, the performance penalty in using higher delays
+is reduced.
+
+\section{Workload Under Four Threads}
+At four threads,
+\citep{michael1996simple,hoffman2007baskets,ladan2008optimistic} all observe a
+slight dip in performance for both the \emph{MS-queue} and the \emph{two-lock
+queue}, however, \citeauthor{hoffman2007baskets} notes an increase in
+performance for the \emph{Baskets Queue}. 
+Figure \ref{fig:perf_deg_4_thread} shows the observed magnitude of performance
+degradation under four threads. As each queue at every
+delay exhibits a magnitude greater than one, it can be concluded that
+performance has worsened.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/plots/speedup_3.jpg}
+    \caption{}
+    \label{fig:perf_deg_4_thread}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/plots/delay_thread_4.jpg}
+    %\caption{The pairwise and the 50\% benchmarks on the left and right respectively.}
+    \label{fig:perf_4_thread}
+\end{figure}
+
+Figure \ref{fig:perf_4_thread} shows that under the pairwise benchmark and no
+delay, the \emph{Baskets Queue} is \textbf{0.259\%} slower than the \textbf{MS-Queue};
+At delays of 50 and 100 nanoseconds, the \emph{Baskets Queue} is
+respectively \textbf{0.765\%} and \textbf{3.668\%} faster than the
+\emph{MS-Queue}; Above delays of 100 nanoseconds, the \emph{Baskets Queue} is
+up to \textbf{26.074\%} slower than the \emph{MS Queue}. 
+On the other hand, the \emph{50\% Enqueue Benchmark} shows that the
+\emph{Baskets Queue} is up to \textbf{42.047\%} faster than the
+\emph{MS-Queue}. The distinct characteristics of the \emph{50\% Enqueue
+Benchmark} allowed for the \emph{Baskets Queue} to make use of the baskets
+thread-helping mechanism up to \textbf{110.964} times more than in the
+\emph{Pairwise Benchmark}.
 
 % \section{Biases and Threats to Validity}
 % \paragraph{Artificiality of Workloads}

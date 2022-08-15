@@ -269,7 +269,7 @@ def plot_dequeue_retries(pairwise_df: pd.DataFrame, coin_toss_df: pd.DataFrame, 
 def plot_number_of_baskets(df_pairwise, df_coin_toss, thread_count, save=True):
     def filter_counters_by_thread_count(df):
         counters = interpret_counters(df, BASKETS_QUEUE_COUNTER_LABELS, "Baskets Queue using Tagged Pointers")
-        return counters.loc[df["threads"] == thread_count]
+        return counters.loc[counters["threads"] == thread_count]
     pairwise_counters = filter_counters_by_thread_count(df_pairwise)[["name", "delay", "enqueue_build_basket_count (E18-E19)"]]
     pairwise_counters["name"] = "Pairwise"
     coin_toss_counters = filter_counters_by_thread_count(df_coin_toss)[["name", "delay", "enqueue_build_basket_count (E18-E19)"]]
@@ -298,6 +298,8 @@ if __name__ == "__main__":
     dataframes = [df_pairwise, df_coin_toss]
 
     plot_number_of_baskets(df_pairwise, df_coin_toss, 4, True)
+    plot_number_of_baskets(df_pairwise, df_coin_toss, 5, True)
+
 
     plot_dequeue_retries(df_pairwise, df_coin_toss, 3)
     plot_dequeue_retries(df_pairwise, df_coin_toss, 4)

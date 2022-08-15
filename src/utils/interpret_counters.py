@@ -34,6 +34,16 @@ def interpret_counters(
     df.round(3)
     return df
 
+def get_baskets_utilization(df_pairwise:pd.DataFrame, df_coin_toss:pd.DataFrame, thread_count:int):
+    def filter_counters_by_thread_count(df):
+        counters = interpret_counters(df, BASKETS_QUEUE_COUNTER_LABELS, "Baskets Queue using Tagged Pointers")
+        return counters.loc[df["threads"] == thread_count]
+    pairwise_counters = filter_counters_by_thread_count(df_pairwise)[["name", "delay", "enqueue_build_basket_count (E18-E19)"]]
+    pairwise_counters["name"] = "Pairwise"
+    coin_toss_counters = filter_counters_by_thread_count(df_coin_toss)[["name", "delay", "enqueue_build_basket_count (E18-E19)"]]
+    coin_toss_counters["name"] = "50% Enqueue"
+    return pd.concat([pairwise_counters, coin_toss_counters], ignore_index=True)
+
 
 MS_QUEUE_NAME_TAGGED_PTR = "MS Queue using Tagged Pointers"
 MS_QUEUE_NAME_DWCAS = "MS Queue using DWCAS"
@@ -109,6 +119,12 @@ counters = [
         "baskets_tagged_ptr"
     ),
     (
+        P_ENQUEUE_DEQUEUE_FILE_NAME,
+        BASKETS_QUEUE_COUNTER_LABELS,
+        "Baskets Queue using Tagged Pointers",
+        "p_baskets_tagged_ptr"
+    ),
+    (
         ENQUEUE_DEQUEUE_FILE_NAME,
         BASKETS_QUEUE_COUNTER_LABELS,
         "Baskets Queue using DWCAS",
@@ -117,12 +133,12 @@ counters = [
 ]
 
 
-def save_counters_to_html(input_file_name: str, labels, queue_name, output_file_name) -> pd.DataFrame:
+def save_counters(input_file_name: str, labels, queue_name, output_file_name) -> pd.DataFrame:
     temp = pd.read_csv(input_file_name)
     df = interpret_counters(temp, labels, queue_name)
-    df.to_html(
-        f"{COUNTERS_DIR}/{output_file_name}.html",
-    )
+    output_path = f"{COUNTERS_DIR}/{output_file_name}"
+    df.to_html(f"{output_path}.html")
+    df.to_excel(f"{output_path}.xlsx")
     return df
 
 if __name__ == "__main__":
@@ -136,4 +152,4 @@ if __name__ == "__main__":
     counters_df = list()
 
     for counter in counters:
-        counters_df.append(save_counters_to_html(*counter))
+        counters_df.append(save_counters(*counter))

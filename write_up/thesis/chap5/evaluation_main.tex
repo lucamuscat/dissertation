@@ -111,7 +111,8 @@ favourable. The MS-queue consistently outperforms the Baskets queue by at least
 higher than that at two threads, the performance penalty in using higher delays
 is reduced.
 
-\section{Workload Under Four Threads}
+\section{Workload Under Four Threads\label{sec:workload_four_threads}}
+
 At four threads,
 \citep{michael1996simple,hoffman2007baskets,ladan2008optimistic} all observe a
 slight dip in performance for both the \emph{MS-queue} and the \emph{two-lock
@@ -121,20 +122,6 @@ Figure \ref{fig:perf_deg_4_thread} shows the observed magnitude of performance
 degradation under four threads. As each queue at every
 delay exhibits a magnitude greater than one, it can be concluded that
 performance has worsened.
-
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=1\textwidth]{images/plots/speedup_3.jpg}
-    \caption{}
-    \label{fig:perf_deg_4_thread}
-\end{figure}
-
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=1\textwidth]{images/plots/delay_thread_4.jpg}
-    %\caption{The pairwise and the 50\% benchmarks on the left and right respectively.}
-    \label{fig:perf_4_thread}
-\end{figure}
 
 Figure \ref{fig:perf_4_thread} shows that under the pairwise benchmark and no
 delay, the \emph{Baskets Queue} is \textbf{0.259\%} slower than the \textbf{MS-Queue};
@@ -149,6 +136,66 @@ Benchmark} allowed for the \emph{Baskets Queue} to make use of the baskets
 thread-helping mechanism up to \textbf{110.964} times more than in the
 \emph{Pairwise Benchmark}.
 
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/plots/delay_thread_4.jpg}
+    \caption{Pairwise and 50\% Enqueue Benchmarks at four threads.}
+    \label{fig:perf_4_thread}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/plots/speedup_3.jpg}
+    \caption{Degree of performance degradation at four threads.}
+    \label{fig:perf_deg_4_thread}
+\end{figure}
+
+\pagebreak
+
+\section{Performance Under Oversubscription}
+\subsection{Workload Under Five Threads}
+In this study, processors are oversubscribed by pinning more than one process
+to each processor, forcing the thread scheduler to increase the frequency of
+context-switches.
+
+Figure \ref{fig:perf_deg_5_thread} shows that between 0 and 150 nanoseconds of delay, the
+magnitude of performance degradation is a linear function of delay; As delays
+greater than 150 nanoseconds are used, performance degradation explodes.
+One may hypothesize that the sudden explosion in performance degradation is a result of
+the significantly decreased time between context switches; as delay increases, 
+the total CPU time available is further reduced.
+
+In the pairwise benchmark, between 0 and 250 nanoseconds of delay, the \emph{Baskets
+Queue} and the \emph{MS-Queue} are at most
+\textbf{47.045\%} and \textbf{60.604\%} faster than the \emph{two-lock queue};
+Between 500 and 1000 nanoseconds, the \emph{two-lock queue} is at most \textbf{3.351\%}
+faster than the baskets queue.
+
+Similar to the trends observed in section \ref{sec:workload_four_threads}, the \emph{Baskets
+Queue} significantly outperforms the \emph{MS-Queue} (by at most \textbf{53.645\%}) only
+in the \emph{50\% Enqueue Benchmark}. This repeating pattern shows that the performance of the
+\emph{Baskets Queue} is heavily dependent on the utilization of the baskets mechanism.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/plots/delay_thread_5.jpg}
+    \caption{Pairwise and 50\% Enqueue Benchmarks at five threads.}
+    \label{fig:perf_5_thread}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=1\textwidth]{images/plots/speedup_4.jpg}
+    \caption{Degree of performance degradation at five threads.}
+    \label{fig:perf_deg_5_thread}
+\end{figure}
+
+\section{Six Threads and Above}
+At six threads, the non-blocking queues significantly outperform the \emph{two-lock}
+queue at every delay. This trend repeats itself up to 12 threads, with the
+degree at which the non-blocking queues outperform the \emph{two-lock queue}
+increasing at every thread; the degree at which the \emph{baskets queue} outperforms
+the \emph{MS-Queue} also grows with every thread.
 % \section{Biases and Threats to Validity}
 % \paragraph{Artificiality of Workloads}
 % In \citep{gregg2014systems}, \citeauthor{gregg2014systems} claims that

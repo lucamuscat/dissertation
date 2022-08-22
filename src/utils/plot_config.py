@@ -16,7 +16,7 @@ LEGEND_TEXT_FONT_SIZE = 15
 cm = 1/2.54
 
 PAGE_WIDTH_EXCLUDING_MARGINS = 14.3*cm
-FIG_SIZE = (PAGE_WIDTH_EXCLUDING_MARGINS, 10*cm)
+FIG_SIZE = (PAGE_WIDTH_EXCLUDING_MARGINS, 9*cm)
 
 # Determines if the plots are being generated for a paper or a poster,
 # using different plot settings in either case.

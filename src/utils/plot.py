@@ -36,6 +36,7 @@ def save_plot(
     # Set figure to matplotlib default size to prevent figure size adjustments
     # from carrying on to independent figures.
     fig.set(size_inches=(6.4, 4.8))
+    plt.close()
 
 def plot_grouped_results(
     df: pd.DataFrame,
@@ -181,39 +182,6 @@ def plot_speedup_by_adjacent_thread(
     return ax
 
 
-def plot_coefficient_of_variance(
-    df: pd.DataFrame, output_file: str, plot_title: str, dpi: int = 300, save=True
-):
-    df_group = df.groupby(by=["name", "threads", "delay"], as_index=False)
-    df_agg = df_group.agg(
-        mean=("net_runtime_s", np.mean), stdev=("net_runtime_s", np.std)
-    )
-    df_agg["coeff_of_var"] = df_agg.apply(
-        lambda x: (x["stdev"] * 100) / x["mean"], axis=1
-    )
-
-    ax: sns.FacetGrid = sns.catplot(
-        x="delay",
-        y="coeff_of_var",
-        col="threads",
-        hue="name",
-        data=df_agg,
-        kind="bar",
-        palette=sns.color_palette(n_colors=len(df["name"].unique())),
-        col_wrap=4,
-    )
-
-    title = "Coefficient of Variance of Tests $\\frac{\\sigma}{\\mu}$ " + plot_title
-
-    ax.set_xlabels("Delay")
-    ax.set_ylabels("Coefficient of Variance (%)")
-    ax.figure.suptitle(title, y=plot_config.SUPTITLE_Y)
-
-    if save:
-        save_plot(ax, f"{output_file}_cov", dpi)
-    return ax
-
-
 def plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, start, save=True):
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=plot_config.FIG_SIZE)
     fig.suptitle(f"Magnitude of Performance Degradation at {plot_config.num_to_word_dict[start+1]} Threads", y=1.12)
@@ -300,19 +268,11 @@ if __name__ == "__main__":
     plot_number_of_baskets(df_pairwise, df_coin_toss, 4, True)
     plot_number_of_baskets(df_pairwise, df_coin_toss, 5, True)
 
-
     plot_dequeue_retries(df_pairwise, df_coin_toss, 3)
     plot_dequeue_retries(df_pairwise, df_coin_toss, 4)
     plot_dequeue_retries(df_pairwise, df_coin_toss, 5)
 
-    plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, 2)
-    plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, 3)
-    plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, 4)
-    plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, 5)
-
-    plot_delay_and_threads(1, dataframes)
-    plot_delay_and_threads(2, dataframes)
-    plot_delay_and_threads(3, dataframes)
-    plot_delay_and_threads(4, dataframes)
-    plot_delay_and_threads(5, dataframes)
+    for i in range(1, 12):
+        plot_pairwise_and_cointoss_speedup(df_pairwise, df_coin_toss, i)
+        plot_delay_and_threads(i, dataframes)
 

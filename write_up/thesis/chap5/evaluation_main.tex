@@ -1,7 +1,15 @@
 \chapter{Evaluation}
 In this chapter, insights emanating from each queue's evaluation is compared
-with findings from their seminal works; each queue's performance is compared, 
-together with explanations as to why and what makes a queue superior to another.
+with findings from their seminal works. Data gathered from the benchmarking
+framework is used to characterize the performance of each queue, and will be the
+basis of any inference or comparison made in this study. Each section in this
+chapter will be dedicated to the performance of each queue\textemdash under a workload of
+a fixed number of threads, and varying delay between queue operations. A
+queue's performance is quantified using the net runtime of each benchmark (as
+described in chapter \ref{}), together with the magnitude of performance
+degradation, which will be calculated as the ratio of net runtime between the
+current and previous thread (where a value greater than one indicates a
+degradation in performance).
 
 \section{Workload under one thread}
 
@@ -16,11 +24,16 @@ complexity~\citep{valois1995datastructures}. Contention-reducing mechanisms,
 such as thread helping, are not triggered under single threaded workloads, as
 they rely on failed Compare-and-Swaps, adding extra overhead through the
 computation of predicates. Figure \ref{fig:perf_1_thread} shows the performance
-of each queue in a single threaded workload; Nonblocking queues using
-tagged pointers perform twice as fast as their DWCAS counterparts.  
-Most queues achieve optimal performance at a delay of 500 nanoseconds, with
-the exception being the baskets queue using tagged pointers, due to its more
-elaborate contention-reducing mechanisms.
+of each queue in a single threaded workload. 
+Under the \emph{pairwise benchmark}, the \emph{MS-Queue} and the \emph{Baskets
+Queue} using tagged pointers are at most \textbf{3.168} and \textbf{2.593}
+times faster than their DWCAS counterparts; The \emph{Baskets Queue} is
+consistently outperformed by the \emph{MS-Queue} and the \emph{Two-Lock Queue}
+(respectively, at most \textbf{0.450} and \textbf{0.516} times slower).
+Although the \emph{pairwise benchmark} does not show which queue is
+consistently faster, the \emph{50\% enqueue benchmark} shows that the
+\emph{Two-Lock Queue} consistently outperforms the \emph{MS-Queue} (by at most
+\textbf{0.27} times).
 
 \section{Workload under two threads}
 Similar to \citep{michael1996simple,hoffman2007baskets,ladan2008optimistic},
@@ -29,16 +42,18 @@ be observed. \citeauthor{michael1996simple} notes that as each queue's head and
 tail are shared across two processors, cache misses are more frequent. Figure
 \ref{fig:perf_deg_1_thread} shows the ratio of time taken between two-threaded
 and single threaded workloads, which represent the magnitude of performance
-degradation between both workloads. Queues using tagged pointers tend to
-experience higher contention, consequently leading to a harsher degradation in
-performance; in support of this claim, the Baskets Queue using Tagged pointers
-with zero delay was \textbf{61\%} more likely to re-attempt an enqueue\footnote{This metric was gathered by
-incrementing an integer (found in thread local storage) every time it repeated
-anything past line \emph{E03} of the Baskets Queue.} than its DWCAS counterpart.
+degradation between both workloads. 
+Queues using tagged pointers tend to experience higher contention, consequently
+leading to a harsher degradation in performance; 
+in support of this claim, the \emph{Baskets Queue using Tagged Pointers} with
+50 nanoseconds of delay was \textbf{2.435} times more likely to re-attempt an
+enqueue\footnote{This metric was gathered by incrementing an integer (found in
+thread local storage) every time it repeated anything past line \emph{E03} of
+the Baskets Queue.} than its DWCAS counterpart.
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[width=1\textwidth]{plots/speedup_enqueue_dequeue_1.jpg}
+    \includegraphics[width=1\textwidth]{plots/speedup_1.jpg}
     \caption{The magnitude of performance degradation between single and two-threaded workloads.}
     \label{fig:perf_deg_1_thread}
 \end{figure}
@@ -50,8 +65,13 @@ anything past line \emph{E03} of the Baskets Queue.} than its DWCAS counterpart.
     \label{fig:perf_2_thread}
 \end{figure}
 
-At delays greater than 200 nanoseconds, the two-lock queue exhibits the best
-performance; nonblocking queues using tagged pointers remain competitive in
+In the \emph{pairwise benchmark}, the \emph{Baskets Queue} is consistently
+outperformed by the \emph{MS-Queue} and the \emph{Two-Lock Queue} by at most
+\textbf{20.978\%} and \textbf{34.672\%}, with the \emph{Two-Lock Queue}
+consistently outperforming the \emph{MS-Queue} by at most \textbf{11.100\%}.
+
+At delays greater than 200 nanoseconds, the \emph{two-lock queue} exhibits the best
+performance; non-blocking queues using tagged pointers remain competitive in
 low-contention scenarios. 
 
 The performance of \citeauthor{valois1994queues}' queue in this study highly
@@ -62,16 +82,17 @@ performance unconnected; as this study does not include memory reclamation
 schemes in its implementations, valid comparisons cannot be made with
 ~\citep{michael1996simple}'s results of \citeauthor{valois1994queues}' queue,
 however, insights may still be inferred.
-\citeauthor{michael1996simple}\textemdash conveniently\textemdash fail to
-disclose that memory reclamation overheads were excluded from the reported
-performance of the MS-queue, leading to biased comparisons against other
-queues.
+\citeauthor{michael1996simple} fail to disclose the memory
+reclamation scheme overheads used by each queue\textemdash which if discussed, would
+have made the fact that the \emph{MS-Queue} made use of a significantly simpler
+and less effective memory reclamation scheme than any other queue, leading to
+heavily biased comparisons in favour of the \emph{MS-Queue}.
 
 One may hypothesize \citeauthor{valois1994queues}' queue fitted with the \emph{safe read}
 protocol leads to a horribly inefficient algorithm, as each enqueueing thread
-is required to traverse part of the linked list, incurring a high number of
-cache misses, since a reference counter has to be modified twice with each
-traversal (once to reclaim a node, and another to release it).
+is required to traverse a number of nodes in the linked list, incurring a high
+number of cache misses due to the reference counting system incurring
+additional loads and stores on visiting and moving on from a node.
 
 \section{Workload Under Three Threads}
 In \citep{ladan2008optimistic,michael1996simple,hoffman2007baskets},
@@ -105,7 +126,7 @@ effects of a benchmark's artificiality on the validity of its results.
 Up to delays of 150 nanoseconds, every non-blocking queue using tagged
 pointers significantly outperforms the two-lock queue (MS queue is
 \textbf{33.412\%} times faster than the two-lock queue at 150 nanoseconds of
-delay), however, as contention drops, the two-lock queue tends to become more
+delay), however, as contention drops, the two-lock queue tends to become
 favourable. The MS-queue consistently outperforms the Baskets queue by at least
 \textbf{10.778\%}. As the degree of contention under three threads is
 higher than that at two threads, the performance penalty in using higher delays
@@ -190,26 +211,62 @@ in the \emph{50\% Enqueue Benchmark}. This repeating pattern shows that the perf
     \label{fig:perf_deg_5_thread}
 \end{figure}
 
-\section{Six Threads and Above}
+\subsection{Six Threads and Above}
 At six threads, the non-blocking queues significantly outperform the \emph{two-lock}
 queue at every delay. This trend repeats itself up to 12 threads, with the
 degree at which the non-blocking queues outperform the \emph{two-lock queue}
 increasing at every thread; the degree at which the \emph{baskets queue} outperforms
 the \emph{MS-Queue} also grows with every thread.
-% \section{Biases and Threats to Validity}
-% \paragraph{Artificiality of Workloads}
-% In \citep{gregg2014systems}, \citeauthor{gregg2014systems} claims that
-% \emph{micro-benchmarks} (type of benchmark adopted in this study) produces
-% artificial workloads, rendering results which are  solely obtained under
-% various assumptions. Results obtained in this study represent the concurrent
-% queues, whose operations are separated by fixed delays, inside a ``clean-room''
-% environment. Realistic workloads seldom follow such rigid patterns, making the
-% results' validity under real-world scenarios undetermined.
 
-% \paragraph{Impact of Consumer Grade CPUs on Performance}
-% For the scope of this study, cutting-edge hardware, similar to that used in
-% prior art, is inaccessible. Unfortunately, over-subscription of processors
-% is required to gather enough an acceptable amount of data, making it
-% impossible to reproduce trends solely attainable from low-degrees of over-subscription. At
-% best, the resources accessible to the study may only produce
-% highly-multiprocessed workloads.
+\section{Effects of Delay on Performance}
+\citeauthor{valois1995datastructures} and \citeauthor{hoffman2007baskets}
+\citep{valois1995datastructures,hoffman2007baskets} note that backoff
+algorithms are required to improve the efficiency of concurrent algorithms.
+More often than not, a queue's optimal delay tends to be similar in consecutive
+threads, with the pattern changing once over-subscription is present. Between
+one and four threads, \textbf{$91.667\%$} (under the \emph{pairwise benchmark})
+and \textbf{$83.333\%$} (under the \emph{50\% enqueue benchmark}) of all optimal net
+runtimes have a delay of \textbf{500 nanoseconds}. Between five and twelve threads,
+each queue's optimal delay slightly varies between zero and 250 nanoseconds. 
+
+% \section{Effects of DWCAS on Concurrent Queues}
+% From the data presented, one may note that employing the DWCAS instruction
+% comes at a significant cost in performance. The performance penalty can be attributed to the
+% latency of the DWCAS operation, leading to a lower number of operations being
+% executed per second. It is possible that 
+
+\section{Biases and Threats to Validity}
+\paragraph{Artificiality of Workloads}
+In \citep{gregg2014systems}, \citeauthor{gregg2014systems} claims that
+\emph{micro-benchmarks} (type of benchmark adopted in this study) produces
+artificial workloads, rendering results which are  solely obtained under
+various assumptions. Results obtained in this study represent the concurrent
+queues, whose operations are separated by fixed delays, inside a ``clean-room''
+environment. Realistic workloads seldom follow such rigid patterns, making the
+results' validity under real-world scenarios undetermined.
+
+\paragraph{Impact of Consumer Grade CPUs on Performance}
+For the scope of this study, cutting-edge hardware, similar to that used in
+prior art, is inaccessible. Unfortunately, over-subscription of processors
+is required to gather enough an acceptable amount of data, making it
+impossible to reproduce trends solely attainable from low-degrees of over-subscription. At
+best, the resources accessible to the study may only produce
+highly-multiprocessed workloads.
+
+\paragraph{High Variance} Due to the quantitative nature of this study,
+variance plays a major role in determining the reproducibility of the study. An
+arbitrary coefficient of variance of $5\%$ was chosen as the threshold for
+acceptable reproducibility. From the whole dataset, only the \emph{Baskets Queue} using Tagged Pointers at
+one thread and 500 nanoseconds of delay (under the \emph{pairwise benchmark}), and
+the \emph{MS Queue} using Tagged Pointers at the same number of threads and
+delay (under the \emph{50\% enqueue benchmark}) had a coefficient of variance
+higher than $5\%$ ($5.700\%$ and $7.424\%$ respectively). The dataset's $99\%$
+quantile for coefficient of variance is \textbf{2.874\%}.
+
+\paragraph{Lack of Benchmarking Standard} Unlike the field of
+databases, concurrent queueing algorithms do not have a standardized
+benchmarking methodology, allowing researchers to possibly game their results
+by choosing a benchmark that favour their algorithm. 
+
+\section{Summary}
+

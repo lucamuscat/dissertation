@@ -5,24 +5,23 @@ validation (research objective~\textbf{O2}), and measures
 to mitigate sources of error.
 
 \section{Relevant Software Versions}
-Large runtime environments, such as Java's JVM, are regularly used in concurrent
-programming, as the responsibility of memory management falls on the garbage
-collector~\citep{kogan2011wait}. \citeauthor{fog2020optimizing} notes that
-large runtimes are typically more resource-consuming
-than the algorithms being executed~\citep{fog2020optimizing}. Arguably,
-implementations of non-blocking algorithms in lock-based, garbage collected
-environments are not truly non-blocking. The C programming
-language is used in the implementation of this study's source code, since it
-uses a relatively light runtime without garbage collection. The
-clang [version] compiler, with \emph{-O3 -march=native} optimisation flags
-are used for compilation.
+Large runtime environments, such as Java's JVM, are regularly used in
+concurrent programming, as the responsibility of memory management falls on the
+garbage collector~\citep{kogan2011wait}. \citeauthor{fog2020optimizing} notes
+that large runtimes are typically more resource-consuming than the executed
+algorithms~\citep{fog2020optimizing}. Arguably, implementations of non-blocking
+algorithms in lock-based, garbage-collected environments are not truly
+non-blocking. The study is implemented using the C programming language, since
+it uses a relatively light runtime without garbage collection. The clang
+\emph{version 10.0.0-4ubuntu1} compiler, with \emph{-O3 -march=native}
+optimisation flags are used for compilation. An \emph{Intel Core i7 6700HQ
+(Skylake)}, with four cores and a base frequency of $2.60\text{GHz}$, together
+with \textbf{16GB} of RAM is used throughout the rest of this study.
 
 \emph{PAPI (Performance Application Programming Interface)} is used to measure
 elapsed time in nanoseconds~\citep{terpstra2010papi}. Although an entire library for measuring time 
 may seem excessive, PAPI also provides an interface for
 sampling hardware counters, which can be used for debugging purposes.
-
-% TODO: Add machine info and clock resolution.
 
 
 \section{Methodology}
@@ -48,61 +47,66 @@ executed amongst $N$ threads ($t_0,~t_1,~\cdots,~t_{N-1}$) as follows:
 The average of each thread's average elapsed time for ten repetitions,
 excluding time spent in artificial delays is used as the recorded sample.
 
-\subsection{Pairwise Enqueue Dequeue Benchmark}
+\subsection{Pairwise Benchmark}
 
 On an initially empty queue, each thread enqueues an item, executes an
-artificial delay (which \citeauthor{michael1996simple} refers to as ``other
+artificial delay (which \citeauthor{michael1996simple} refer to as ``other
 work''~\citep{michael1996simple}), dequeues an item, and executes another
-artificial delay; The queue is destroyed and recreated with every repetition
+artificial delay. The queue is destroyed and recreated with every repetition
 (i.e. every ten millions iterations). \citeauthor{michael1996simple} use an
 artificial delay to reduce the bias introduced by long runs of queue operations
-by a single thread~\citep{michael1996simple}. Quantity of threads, and length
-of artificial delay are the experiment's independent variables; the
-degree of contention is dependent on both the number of threads and the length
-of delay, furthermore, the time measured is also dependent on
+by a single thread~\citep{michael1996simple}. Quantity of threads, and the length
+of the artificial delay are the experiment's independent variables.
+The degree of contention is dependent on both the number of threads and the length
+of delay; furthermore, the time measured is also dependent on
 contention and operating system activities. This benchmark serves the purpose
 of simulating a producer-consumer workload, where each thread acts both as a
-producer, and a consumer.
+producer and a consumer.
 
 \subsection{50\% Enqueue Benchmark}
 Drawing from a uniform distribution, each thread is equally probable to execute
 an enqueue or a dequeue, followed by an artificial delay. The queue prefilled
 with 1000 items to prevent long runs of empty dequeues (potentially introducing
-biases). Randomness aids with exercising a larger portion of code paths.
+biases). Randomness aids with exercising a larger breadth of code paths.
 
 Random numbers are stored as double-precision floating point variables, ranging
-from zero to one, furthermore, they are generated in the benchmark's setup
-phase, as to calculate the number of enqueues (consequently the
+from zero to one; furthermore, they are generated in the benchmark's setup
+phase as to calculate the number of enqueues (consequently the
 amount of memory that needs to be allocated), and to reuse the same random
 numbers with every repetition, maintaining consistency across measurements. 
 
-The 50\% enqueue benchmark will execute at most
-half the number of enqueues and dequeues as the pairwise
-enqueue-dequeue benchmark, as an iteration no longer consists of a pair of
-enqueues and dequeues, but just one of them.
+The \emph{50\% enqueue benchmark} executes at most
+half the number of enqueues and dequeues as the \emph{pairwise
+benchmark}, as an iteration no longer consists of a pair of
+enqueues and dequeues, but either one of them.
 
 \subsection{Sources of Error}
-Experimental studies must be aware of any threats to the validity of
-their results. An \emph{observational error} is the difference between what is
-measured, and the true result, which can be caused by \emph{systemic} or
-\emph{random errors}~\citep{lelbach2015cppbenchmarking}. Systemic errors are caused by the inherent inaccuracies
-of measurement apparatus; with respect to the framework's
-measurements, an example of systemic error may be attributed to the resolution
-(granularity) of the clock used to measure elapsed time~\citep{lelbach2015cppbenchmarking}. The CPU's clock speed is
-fixed to its maximum frequency by setting the CPU frequency governor to
-\emph{performance} mode (using \emph{cpufreq-set -g performance}) in order to
-restrict fluctuations in the CPU's clock speed, which may lead to inaccurate
-measurements and delays at the cost of higher energy consumption. Random errors cause inconsistencies in repeated
-measurements; variance is
-commonly attributed to operating system activities, such as process migration
-across cores, and context switching.
+Researchers must be aware of any threats to the validity of
+their results. 
+An \emph{observational error} is the difference between what is
+measured\textemdash and the true result\textemdash which can be caused by
+\emph{systemic} or \emph{random errors}~\citep{lelbach2015cppbenchmarking}.
+\emph{Systemic errors} are caused by the inherent inaccuracies of measurement
+apparatus. 
+With respect to the framework's measurements, a source of system errors is the
+resolution (granularity) of the clock used to measure elapsed
+time~\citep{lelbach2015cppbenchmarking}. 
+The CPU's clock speed is fixed at its maximum frequency by setting the CPU
+frequency governor to \emph{performance} mode (using the `\emph{cpufreq-set -g
+performance}' command) in order to restrict fluctuations in the CPU's clock
+speed, which may lead to inaccurate measurements and delays at the cost of
+higher energy consumption. Random errors cause inconsistencies in repeated
+measurements.
+Variance is commonly attributed to operating system activities, such as process
+migration across cores, and context-switching.
 
-Hyperthreading was disabled, as it led to higher rates of cache misses due to each core's cache
-having to be split with another thread~\citep{fog2020optimizing}; Turbo boost was
-disabled, since it dynamically controls
-processor performance according to the CPU's
-thermal status~\citep[Section~14.3.3]{intel2021system}; Threads were pinned to
-specific cores using thread affinity to mitigate process migration.
+Hyperthreading is disabled as it leads to higher rates of cache misses due to
+the each core's cache being split with an extra
+thread~\citep{fog2020optimizing}.
+Turbo boost is disabled, since it dynamically controls processor performance
+according to the CPU's thermal status~\citep[Section~14.3.3]{intel2021system}.
+Threads are pinned to specific cores using thread affinity to reduce \emph{process
+migration}.
 
 The \emph{observer effect} describes the phenomena where the behaviour of an
 observed experiment deviates
@@ -113,7 +117,7 @@ that tend to disappear when debugging overheads are
 introduced~\cite{perfbook2021}.}, as measurement overheads may influence the
 interleaving of threads. By measuring a significantly large
 number of operations, the mean time is derived and used as a sample, amortizing
-measurement costs along the way. \citeauthor{aceto2021benchmarking} note that
+measurement costs. \citeauthor{aceto2021benchmarking} note that
 the repeatability of experiments is affected by data
 variability~\citep{aceto2021benchmarking}; the ratio of standard deviation to
 mean (\emph{coefficient of variation}), $\text{CV} = \frac{\sigma}{\bar{x}}
@@ -126,8 +130,8 @@ This study focuses on four concurrent queueing algorithms:
 ~\citeauthor{michael1996simple}'s Two-Lock Concurrent
 Queue~\citep{michael1996simple} (protected by a \emph{test-and-test-and-set-lock}~\citep{mellor1991algorithms}); \citeauthor{hoffman2007baskets}'s Baskets
 Queue~\citep{hoffman2007baskets}; and \citeauthor{valois1994queues}' Lock-Free
-Queue~\citep{valois1994queues}. Keen-eyed readers may realize that the chosen
-queues are unbounded and MPMC.
+Queue~\citep{valois1994queues}. Keen-eyed readers may observe that the chosen
+queues are \emph{unbounded} and \emph{MPMC}.
 
 \subsection{ABA Avoidance}
 
@@ -137,15 +141,17 @@ A \emph{counter} (also known as a \emph{tag}) is attached to a pointer, which in
 each successful CAS. Comparisons between pointers that have the same address,
 but do not match in tag value are expected to fail, as differing tag values hint
 at the possibility of a change in logical data. Counters may overflow, leading to tags wrapping back
-to their initial value, allowing for ABA violations to still occur (however,
-the chances are practically close to zero).
+to their initial value, allowing for ABA violations to still occur (the chances
+of which are virtually nil).
 
 % When should version counting with DWCAS be used
-For systems with a significant number of processors (for instance multi-CPU NUMA
-architectures), larger counters are required  to safely avoid the ABA problem.
-The \emph{Double-Width Compare-and-Swap} instruction (\emph{DWCAS}, \emph{CMPXCHG16b} on
-\emph{Intel x86\_64}) may be used to attach a 64 bit counter to a pointer; Intel
-systems require that the pointer and counter are aligned to a 16 byte boundary.
+For systems with a significant number of processors (for instance multi-CPU
+NUMA architectures), larger counters are required  to safely avoid the ABA
+problem. The \emph{Double-Width Compare-and-Swap} instruction (\emph{DWCAS},
+\emph{CMPXCHG16b} on \emph{Intel x86\_64}) may be used to attach a 64 bit
+counter to a pointer. 
+Intel systems require that the pointer and counter are aligned to a 16 byte
+boundary.
 
 \begin{lstlisting}[language=C,caption={Struct aligned to 16 bytes, as required by the DWCAS instruction.}]
 struct tagged_ptr{
@@ -165,13 +171,15 @@ architecture only makes use of the least significant 48 bits (known as the
 the most significant 16 bits to be used as a counter.
 
 % Explain pointer packing flaws
-Pointer packing is flawed: The range of values a 16 bit counter can hold ranges
-from zero to $2^{17}-1$ (which may easily overflow); pointer packing is not
-portable, as there is no guarantee that the endianess, or the linear address
-size will remain the same; pointers may only be dereferenced in their canonical
-form, meaning that the most significant 16 bits either need to be set to zero
-(user-space pointer) or one (kernel-space pointer), as canonical faults will be
-thrown when dereferencing a pointer.
+Pointer packing is flawed: 
+The range of values a 16 bit counter can hold ranges from zero to $2^{17}-1$
+(which may easily overflow).
+Pointer packing is not portable, as there is no guarantee that the endianess,
+or the linear address size will remain the same. 
+Pointers may only be dereferenced in their canonical form, meaning that the
+most significant 16 bits either need to be set to zero (user-space pointer) or
+one (kernel-space pointer), as canonical faults are thrown when
+dereferencing a non-canonical pointer.
 
 \subsection{Nanosecond Accurate Delay}
 % High-resolution timers typically tick at a granularity of microseconds
@@ -181,27 +189,27 @@ thrown when dereferencing a pointer.
 % nanosecond-accurate ($10^{-9} seconds$) delays as a means of controlling
 % contention. 
 Delays of arbitrary lengths can be placed between operations, in order to
-control contention~\citep{valois1994queues}. High-resolution timers may be accurate up
-to a number of microseconds ($10^{-6}$ seconds), requiring a custom delay
-function for nanosecond accuracy ($10^{-9}$ seconds). With respect to CPUs,
-time may be described in different dimensions,
-where the number of CPU cycles can be extrapolated from wall-clock time and the
-CPU's clock speed, allowing for an instruction, with a known latency, to be
-executed as many times as required to consume an arbitrary number of
-time. Unfortunately, extrapolating CPU cycles from wall-clock time
-requires a fixed CPU clock speed, hurting the validity of results in cases
-where CPU clock speeds are highly unstable.
+control contention~\citep{valois1994queues}. High-resolution timers are
+accurate up to a number of microseconds ($10^{-6}$ seconds), making it
+unsuitable for nanosecond accurate measurements ($10^{-9}$ seconds). 
+With respect to CPUs, time may be described in different dimensions, where the
+number of CPU cycles can be extrapolated from wall-clock time and the CPU's
+clock speed, allowing for an instruction\textemdash with a known
+latency\textemdash to be executed as many times as required to consume an
+arbitrary number of time. Unfortunately, extrapolating CPU cycles from
+wall-clock time requires a fixed CPU clock speed, hurting the validity of
+results in cases where CPU clock speeds are highly unstable.
 
 % Drawing inspiration from \citeauthor{intel2013lockscaling}'s~lock
 % scaling analysis on
 % Xeon\textregistered~processors~\citep{intel2013lockscaling}, inter-arrival
 % times are on the scale of nanoseconds.
 
-Similar to \citeauthor{intel2018spinloop}'s
+Similar to Intel's
 \emph{Architecture Agnostic Spin-Wait Loops}~\citep{intel2018spinloop} and
 \emph{pollDelay} function~\citep[Example~2.3]{intelmanualoptimization}, a
-nanosecond delay can be created by constantly polling the CPU's timestamp
-counter, until the extrapolated number of cycles are
+nanosecond-accurate delay is implemented by constantly polling the CPU's timestamp
+counter until the extrapolated number of cycles are
 consumed~\cite{ramalhete2019delay}.
 
 \begin{algorithm}
@@ -222,21 +230,21 @@ executed are modified according to the error between the delay's average time
 elapsed, and the expected delay.
 
 \subsection{Test-and-Test-and-Set Lock with Exponential Delay}
-\citeauthor{rudolph1984dynamic} propose an alternative to the test and set
-(TAS) spinning method called test-and-test-and-set
-(TTAS)~\citep{rudolph1984dynamic}. The steps TTAS takes to reduce cache line
-invalidations caused by indiscriminate TAS instructions are two-fold: (1) Read
+\citeauthor{rudolph1984dynamic} propose an alternative to the \emph{test and set
+(TAS)} spinning method called \emph{test-and-test-and-set
+(TTAS)}~\citep{rudolph1984dynamic}. The steps \emph{TTAS} takes to reduce cache line
+invalidations caused by indiscriminate \emph{TAS} instructions are two-fold: (1) Read
 the polled flag until a falsey value has been read (lock has been released);
-(2) Acquire the lock using the test-and-set instruction, going back to the
-first step if the test-and-set operation returns a truthy value (another thread
+(2) Acquire the lock using the \emph{TAS} instruction, going back to the
+first step if the \emph{TAS} operation returns a truthy value (another thread
 has acquired the lock between steps one and two). 
 
-Exponential back-off is needed in order to control
+Exponential back-off is needed to control
 contention~\citep{valois1994queues}. \citeauthor{anderson1990performance}
 suggests a bound on the delay, as uncontended processors that back-off a number
-of times will take longer to acquire a lock; furthermore, unfairness is further
-exacerbated when using exponential delay~\citep[Section~7.4]{herlihy2020art}.
-\citeauthor{intelmanualoptimization}'s \emph{Contended Locks with Increasing
+of times will take longer to acquire a lock; furthermore, unfairness
+exacerbated under exponential delay~\citep[Section~7.4]{herlihy2020art}.
+Intel's \emph{Contended Locks with Increasing
 Back-off Example} was adapted in the lock's implementation~\citep{intelmanualoptimization}.
 
 \begin{lstlisting}[language=C,caption={Test-and-Test-and-Set Lock Struct.}]
@@ -280,9 +288,11 @@ typedef struct ttas_lock_t
 \end{algorithm}
 
 \subsection{Memory Management}
-Due to limited time, the dynamic memory management of non-blocking
-data-structures is omitted, as it is an actively researched field which can fit
-an entire dissertation in of itself~\citep{valois1995datastructures,michael2004hazard}.
+% Is the terminology of dissertation correctly used here? I.e. is is supposed
+% to be thesis?
+Due to limited time, dynamic memory management of non-blocking data-structures
+is omitted, as it is an actively researched field which can single-handedly fit
+an entire dissertation ~\citep{valois1995datastructures,michael2004hazard}.
 
 Memory is allocated before each benchmark, as to avoid degrading
 non-blocking progress conditions through the use of lock-based memory
@@ -296,10 +306,11 @@ schemes, as memory is released at the end of the benchmark.
 New queues and locks may be added to the framework with ease by implementing
 interfaces~\ref{sec:queue_interface} and~\ref{sec:lock_interface}. Locks in the
 \emph{src/locks} directory are statically linked with every blocking queue
-inside \emph{src/queues/blocking}; furthermore, together with each blocking
+inside \emph{src/queues/blocking}; each blocking
 queue variation and non-blocking queue (found in
-\emph{src/queues/non-blocking}), the benchmarks are statically linked together,
+\emph{src/queues/non-blocking}), are statically linked to every benchmark,
 generating a single executable binary for each queue's benchmark. 
+
 \subsection{Lifecycle}
 Each benchmark goes through a common lifecycle, which can be categorized into
 four phases: 
@@ -318,46 +329,50 @@ Finally, each thread executes its share of operations and waits until each
 thread has finished, in order to safely free up the allocated memory. The
 entire cycle is repeated using a newly initialized queue.
 
+\subsection{Auxiliary Data}
+Upon the initialization of a queue, up to 64 bytes of memory\textemdash aligned as four
+byte integers\textemdash are passed to the queue, and are outputted
+the benchmark data. Throughout the study, these 64
+bytes store several fine-grained statistics, such the number of failed Compare-And-Swaps,
+or the number of times a thread helping mechanism has been invoked.
+
 \subsection{Performance Considerations}
 Static linking is utilized as it provides performance benefits over dynamic
 linking; \citeauthor{fog2020optimizing} notes that functions inside dynamically
 linked libraries take longer to execute, and make less efficient use of code
 and data caching~\citep[Section~14.11]{fog2020optimizing}.
 
-False sharing was reduced through alignment and padding, preventing logically
-distinct data from being stored in the same cache line;
-thread-specific data was stored in thread local storage, as to further reduce
+The alignment and padding variables reduces false sharing, preventing logically
+distinct data from being stored in the same cache line.
+Thread-specific data was stored in thread local storage, as to further reduce
 false sharing. Struct fields were aligned to 128 bytes, due to
-\citeauthor{intelmanualoptimization}'s spatial prefetcher loading data into L2
+Intel's spatial prefetcher loading data into L2
 cache in chunks of 128 bytes~\citep[Section~E.2.5.4]{intelmanualoptimization}.
 
 Threads are synchronized to start at the same time using
 barriers, mitigating transient start up effects~\citep{hoffman2007baskets}.
 Furthermore, a number of operations are executed before the start of each
 benchmark, as to warm up the cache and branch predictor, moving cache misses
-due to unpopulated caches and speculative branch mispredictions outside the
+due to unpopulated caches and speculative branch mispredictions outside of the
 recorded benchmarks.
 
 \subsection{Validation}
 In response to research objective \textbf{O3}, parts of the framework's
 components are validated, as to increase confidence in the measurements
-obtained.
-
-A constant value is used as the enqueue operand, allowing for the comparison
-between the original and dequeued values to test for any corruption due to race conditions. 
+obtained. A constant value is enqueued, allowing for the comparison
+between the original and dequeued values to test for any corruption caused by race conditions. 
 
 The artificial delay's accuracy is validated through a separate
-benchmark,
-where the average delay over ten million operations is recorded several times.
-An arbitrary threshold for the coefficient of variance of one percent
-is used to validate suitability of the delay; such a test allows
-for immediate feedback loops, where changes to the delay's behaviour may
-be verified in a timely manner.
+benchmark where the average delay over ten million operations is recorded several times.
+An arbitrary threshold for the coefficient of variance of one percent is used
+to validate suitability of the delay; such a test allows for immediate feedback
+loops, where changes to the delay's behaviour may be verified in a timely
+manner.
 
 A \emph{Test Driven Development (TDD)} approach was used when implementing the
 pointer packing logic, which served the purpose of reducing the chances of
 regressions due to code changes or differences in CPU architecture. Atomic
 variables are asserted to be lock-free through the
-\emph{atomic\_is\_lock\_free} method, which may fail due to compiler settings,
+\emph{atomic\_is\_lock\_free} method, which may trigger due to compiler settings,
 or unavailability of specific atomic instructions on CPUs. Error checking is
 used to prevent the framework from reaching undefined states.

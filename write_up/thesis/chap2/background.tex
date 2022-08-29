@@ -39,9 +39,11 @@ system calls, or through the voluntary yielding of control to the CPU~\citep[Sec
 
 % \citep[Appendix~B.7.1]{perfbook2021}.
 For the sake of optimization, Compilers and CPUs do not guarantee specific
-results in cases where multiple threads concurrently modify the same memory location~\citep{drepper2007every}. The explicit use synchronization primitives (such as read-modify-write operations
-, or memory barriers) are needed to prevent incoherence
-across caches, which may eventually lead to corrupt data.
+results in cases where multiple threads concurrently modify the same memory
+location~\citep{drepper2007every}. The explicit use synchronization primitives
+(such as read-modify-write operations, or memory barriers) are needed to
+prevent incoherence across caches, which may eventually lead to the corruption
+of data.
 
 \pagebreak
 
@@ -51,7 +53,7 @@ As the disparity between CPU frequency and memory access times grew,
 CPU engineers added small, yet fast SRAM chips between the CPU
 and main memory in order to alleviate issues caused by the differences in speed
 ~\citep{cantrill2008real,drepper2007every,perfbook2021}. Using large
-quantities of SRAM is considered to be uneconomical, therefore, more cache layers
+quantities of SRAM is considered to be uneconomical, ergo, more cache layers
 were introduced, with each layer being cheaper, larger, and slower than the
 last~\citep{drepper2007every,perfbook2021}.
 
@@ -66,13 +68,15 @@ starting from the requested memory address, together with neighbouring bytes~\ci
 
 \emph{Cache-Coherence} is a problem where different caches contain stale
 (out-of-date) values~\citep[Appendix~B.5.1]{herlihy2020art}. A memory address
-may safely cached in different processors if no updates
-occur; cache lines will be
-invalidated if the contents of the shared memory address is updated (preventing
-stale data from being read)~\citep[Appendix~B.5.1]{herlihy2020art}. The
-\emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared,
-or Invalid) attaches states to memory addresses~\citep[Appendix~B.5.1]{herlihy2020art}. Transitions in
-state notify the processor when to invalidate a cache line~\citep[Appendix~B.5.1]{herlihy2020art}.
+may be safely cached in different processors if no updates occur; 
+cache lines will be invalidated if the contents of the shared memory address are
+updated (preventing stale data from being
+read)~\citep[Appendix~B.5.1]{herlihy2020art}.
+The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, or
+Invalid) attaches states to memory
+addresses~\citep[Appendix~B.5.1]{herlihy2020art}. Transitions in state notify
+the processor when to invalidate a cache
+line~\citep[Appendix~B.5.1]{herlihy2020art}.
 
 %\emph{Sharing} occurs when overlapping data is loaded into several cache lines.
 \emph{Sharing} occurs when one processor reads or writes to a memory address that
@@ -99,7 +103,7 @@ multi-CPU and distributed systems; (2) \emph{Uniform memory
 access (UMA)} architectures link processors and memory using a bus
 interconnect~\citep[Appendix~B.3]{herlihy2020art}.
 
-The cognizance of interconnection architecture is important,
+The cognisance of interconnection architecture is important, 
 as some algorithms are not suited for different architectures due to
 overheads associated with accessing memory. This study will be
 conducted on a \emph{UMA} architecture.
@@ -110,7 +114,7 @@ conducted on a \emph{UMA} architecture.
 % TODO: Find reference for the word size line.
 An operation is said to be \emph{atomic}\footnote{Modern CPUs only guarantee
 that atomic operations are semantically atomic, meaning that they do not
-have to execute atomically on hardware.} if it is impossible to observe an
+have to execute atomically on hardware.} if it is impossible to observe the operation in an
 intermediate state~\citep{perfbook2021}. On most architectures, atomic
 operations may only affect the CPU's word size worth of memory.
 
@@ -189,17 +193,17 @@ strength of the property (starting from the weakest) and the complexity of
 implementation (starting from the simplest):
 
 \begin{enumerate}
-\item \emph{Obstruction-Freedom}: A method is obstruction-free if, from any
-point after which it executes in isolation, it finishes in a finite number of
+\item \emph{Obstruction-Freedom}: A method is obstruction-free\textemdash if from any
+point after which it executes in isolation\textemdash it finishes in a finite number of
 steps~\citep[Section~3.8.3]{herlihy2020art};
-\item \emph{Lock-Freedom}: A method is lock-free if some method call finishes
+\item \emph{Lock-Freedom}: A method is lock-free\textemdash if \textemdash some method call finishes
 in a finite number of steps~\citep[Section~3.8.2]{herlihy2020art};
-\item \emph{Wait-Freedom}: A method is wait-free if every call finishes its
+\item \emph{Wait-Freedom}: A method is wait-free\textemdash if \textemdash every call finishes its
 execution in a finite number of steps~\citep[Section~3.8.1]{herlihy2020art}.
 \end{enumerate}
 
 Stronger guarantees do not necessarily equate to higher throughput, as the
-overheads and complexity of the implementation tends to be positively
+overhead and complexity of the implementation tends to be positively
 correlated to the strength of the guarantee.
 
 \subsection{Correctness Conditions}
@@ -255,74 +259,70 @@ programmability and portability~\citep{gharachorloo1996consistency}.
 \emph{Relaxed memory models} such as \emph{weakly ordered models}\footnote{A number of ARM processors tend to be weakly ordered when interacting with main memory~\citep[Section~A3.5.5]{arm2022architecture}} offer little to no
 constraints with respect to the ordering of reads and writes, requiring the
 explicit use of memory barriers for a finer grained control over the ordering~\citep{gharachorloo1996consistency}. \citeauthor{gharachorloo1996consistency} identifies relaxed
-memory models as \emph{system-centric models}, as they tend to favour
+memory models as \emph{system-centric models}, since they tend to favour
 performance, as opposed to a programmer's intuition about shared-memory
 (sequential consistency)~\citep{gharachorloo1996consistency}.
 
-Memory models such as sequentially consistent models are considered to be
+Memory models\textemdash such as sequentially consistent models\textemdash are considered to be
 \emph{strongly ordered}. Strongly ordered systems tend to
 heavily restrict the reordering of instructions, giving a simpler and
 higher-level interface between memory and the programmer. 
 
 \subsection{Mutual Exclusion}
-\emph{Mutual exclusion} (also known as a \emph{mutex}, or a \emph{lock}) is a synchronization protocol that \emph{serializes}
-the concurrent execution of code inside \emph{critical sections}.
-A \emph{spin-lock} is a variant of a mutex, that 
-\emph{busy-waiting}, and can be released by any thread.
+\emph{Mutual exclusion} (also known as a \emph{mutex}, or a \emph{lock}) is a
+synchronization protocol that \emph{serializes} the concurrent execution of
+code inside \emph{critical sections}. A \emph{spin-lock} is a variant of a
+mutex, that \emph{busy-waiting}, and can be released by any thread.
 
-Every mutex has to decide what actions to take when a
-critical section has already been acquired; the three categories said action
-can fall under are: 
-
+Every mutex has to decide what actions to take when a critical section has
+already been acquired; the three categories said action can fall under are: 
 \begin{itemize}
-\item \emph{Blocking}~-~Voluntarily yields to the CPU
-if the mutex is acquired. Blocking is not suitable for small critical
-sections\footnote{A critical section is considered to be small if it takes
-hundreds of nanoseconds or micro seconds to execute.}, as context switches typically take tens of milliseconds.
-\item \emph{Busy-Waiting (spinning)}~-~Polls an area in memory
-containing the state of a mutex. Busy-waiting is suited for small
-critical sections, as contention caused by polling may lead to degraded
-performance;
-\item \emph{Hybrid}~-~Utilizes a mix of blocking and busy-waiting, forgoing the
-inefficiencies associated with both methods.
+\item \emph{Blocking}:~Voluntarily yields to the CPU if the mutex is acquired.
+Blocking is not suitable for small critical sections\footnote{A critical
+section is small if it takes hundreds of nanoseconds or micro seconds to
+execute.}, as context-switches typically take tens of milliseconds.
+\item \emph{Busy-Waiting (spinning)}:~Polls an area in memory containing the
+state of a mutex. \emph{Busy-waiting} is suited for small critical sections, as
+contention caused by polling may lead to degraded performance;
+\item \emph{Hybrid}:~Utilizes a mix of \emph{blocking} and \emph{busy-waiting},
+forgoing the inefficiencies associated with both methods.
 \end{itemize}
 
 Algorithms reliant on mutual exclusion are inherently
-blocking (with respect to progress conditions)~\citep[Section~3.8]{herlihy2020art}, with
-unique correctness conditions such as \emph{starvation} and \emph{deadlock
-freedom}.
+blocking~\citep[Section~3.8]{herlihy2020art}; \emph{starvation freedom} and
+\emph{deadlock freedom} are some examples of correctness conditions unique to
+\emph{blocking} algorithms.
 
 % TODO: Add a subsection on fairness
 
 \section{Queues}
 \citeauthor{knuth1968art} defines a queue as a linear list for which all
-insertions are made at one end of the list and deletions are made at the
+insertions occur at one end of the list and deletions occur at the
 other~\citep{knuth1968art}. A queue comes with two operations, enqueue (places
 an item at the head of the queue) and dequeue (removes and returns an item at
 the tail of the queue), following First in First out ordering (FIFO).
 
-
 \subsection{Concurrent Queues}
-A concurrent queue is a type of queue that remains consistent and correct when
-accessed simultaneously through different threads. Non-concurrent or
-ill-synchronized queues typically end up in inconsistent states after being
+Concurrent queues are types queues that remain consistent and correct when
+accessed simultaneously through a number of threads. Non-concurrent\textemdash or
+ill-synchronized queues\textemdash typically become inconsistent after being
 accessed through multiple threads~\citep{yahav2003automatically}, leading
 to hard-to-find bugs. Concurrent queues are often the basis of scheduling
 algorithms~\citep{debattista2002high} and many other concurrent
-algorithms~\citep{yahav2003automatically}. The defacto correctness condition
-for a queue is linearizability, as it ensures that the semantics of the queue's
-operations are not altered \citep{mellor1987concurrent, valois1995datastructures}.
+algorithms~\citep{yahav2003automatically}. Linearizability is the de-facto correctness condition
+for non-blocking queues, as the semantics of the queue's
+operations remain unchanged \citep{mellor1987concurrent, valois1995datastructures}.
 % TODO: Add "Section 2.2.2" to valois1995datastructures reference
 
-The multiplicity of the number of producers and
+The multiplicity of producers and
 consumers that can simultaneously interact with a concurrent queue is used as a
-taxonomy to categorize queues, furthermore, the underlying
-data structure used to implement a queue (such as a circular buffer,
-linked list, or both) affects if the queue is of \emph{fixed capacity (bounded)} or not
-\emph{(unbounded)}. 
+taxonomy to categorize queues;
+furthermore, the underlying data structure used to implement a queue (such as a
+circular buffer, linked list, or both) affects if the queue is of \emph{fixed
+capacity (bounded)} or not \emph{(unbounded)}. 
 
-This study focuses on unbounded, MPMC, blocking and
-non-blocking queues, with chapter \ref{chap:lit_review} covering the evaluated
+This study focuses on \emph{unbounded, MPMC, blocking and
+non-blocking queues}, with chapter \ref{chap:lit_review} covering the evaluated
 queues in further detail.
 
 \begin{table*}[h]\centering

@@ -1,12 +1,12 @@
-\chapter{Literature Review}
+\chapter{Literature Review\label{chap:lit_review}}
 
 \section{Queues}
 \subsection{Valois' Queue}
 
 \citeauthor{valois1994queues} surveys several lock-free data structures and
-techniques\textemdash together with the introduction of the \emph{safe read}
-memory reclamation scheme and an MPMC lock-free
-queue~\citep{valois1994queues,valois1995datastructures}.
+techniques together with the introduction of the \emph{safe read}
+memory-reclamation scheme and an \emph{MPMC lock-free
+queue}~\citep{valois1994queues,valois1995datastructures}.
 Combining the memory-reclamation scheme with the queue leads to increased cache line
 churn, as enqueues traverse the queue's linked list for a bounded number of
 nodes, causing each node's reference counter to be modified several times. 
@@ -27,77 +27,80 @@ nodes, causing each node's reference counter to be modified several times.
 
 \paragraph{MS-Queue}
 Similar to \citeauthor{valois1994queues}' queue, the MS-queue's head and tail
-are separated, with the head always points to a dummy node. Compare-and-Swap
+are separated, with the head always pointing to a dummy node. CAS
 retry loops, which are a common pattern in lock-free algorithms, tend to
 cause starvation and reduced parallelism.
 \citeauthor{michael1996simple} adopt a thread-helping technique, where a thread
 that fails to commit a node to the linked list, may help other threads by doing
-part of their work, acting as a secondary back-off, reducing contention. 
+part of their work (acting as a secondary back-off, reducing contention). 
 The authors omit any discussion on the MS-queue's memory reclamation scheme,
-which is a vital detail as pointed out by \citeauthor{michael2004hazard}
-in \citep{michael2004hazard}, may lead to race conditions. 
+which as pointed out by \citeauthor{michael2004hazard}
+in \citep{michael2004hazard} may lead to race conditions. 
 
 \paragraph{Two-Lock Queue}
 Similar to the MS-queue, the head and tail are separated, allowing for
 concurrency between enqueues and dequeues~\citep{michael1996simple}. The ABA
-problem does not exist in this algorithm, as Compare-and-Swap is not used;
+problem does not exist in this algorithm, as the CAS operation is not used;
 furthermore, complex memory reclamation schemes are not needed, as access to
 nodes are mutually exclusive, ensuring that a node may never be freed when
 referenced by another thread.
 
 \subsection{Optimistic MS-Queue}
 \citeauthor{ladan2008optimistic} improve upon the MS-queue by enabling enqueues
-to take effect in a single Compare-and-Swap~\citep{ladan2008optimistic}.
-Enqueues add nodes to the beginning of the list;
-doubly-linked lists allow for deleting nodes in the linked-list through backwards
-traversals;
-pointers to previous elements are maintained using simple stores, and are fixed
+to take effect in a single CAS~\citep{ladan2008optimistic}.
+With enqueues adding nodes to the beginning of the list\textemdash
+doubly-linked lists enable the deletion of a node through backwards
+traversals of the linked list.
+Pointers to previous elements are maintained using simple stores, and are fixed
 upon entering an inconsistent state (hence the \emph{optimistic} replacement of
-Compare-and-Swaps).
+CAS operations).
 
 \subsection{Hoffman et.al's Baskets Queue}
-\citeauthor{hoffman2007baskets} present a variation of the MS-queue~\citep{hoffman2007baskets}, which is formed
-using baskets (groups) of overlapping linearizable operations, which are non-deterministically
+\citeauthor{hoffman2007baskets} present a variation of the
+\emph{MS-queue}~\citep{hoffman2007baskets}, which is formed using baskets
+(groups) of overlapping linearizable operations that are non-deterministically
 ordered among one another.
-Time spent backing off in Compare-and-Swap failing threads is
-spent inserting nodes into a basket, increasing parallelism across enqueuers;
-the baskets mechanism also doubles down as a secondary back-off, further reducing contention.
+Time spent backing off in CAS failing threads is
+spent inserting nodes in a basket, increasing parallelism across enqueuers.
+The baskets mechanism also doubles down as a secondary back-off, further reducing contention.
 
 Tagged pointers are used for ABA avoidance; dequeued nodes are logically
-deleted by setting a flag bit packed inside the node's ABA counter. 
-As the number of logically deleted nodes grows greater than the number of
-\emph{max hops} (an arbitrarily chosen constant), or a logically deleted node
-points to the tail of the queue, the \emph{free-chain} method is used to swing
-the queue's head to the next non-deleted node, and reclaims any logically
-deleted node between the head and the tail.
+deleted by setting a flag bit packed inside the node's ABA counter. As the
+number of logically deleted nodes grows greater than the number of \emph{max
+hops} (an arbitrarily chosen constant), or a logically deleted node points to
+the tail of the queue, the \emph{free-chain} method is used to swing the
+queue's head to the next non-deleted node, and reclaims any logically deleted
+node between the head and the tail. Under high levels of concurrency, the
+authors boast of a 25\% performance improvement when compared to the MS-queue.
 
-Under high levels of concurrency, the authors boast of a 25\% performance
-improvement when compared to the MS-queue.
+% \subsection{Memory Reclamation Schemes}
+% Although memory reclamation schemes are omitted in this study, a brief discussion
+% on the field is essential to understanding the potential biases and discrepancies caused
+% by the omissions.
 
-\subsection{Memory Reclamation Schemes}
-Although memory reclamation schemes are omitted in this study, a brief discussion
-on the field is essential to understanding the potential biases and discrepancies caused
-by the omissions.
+% \subsubsection{Safe Read}
+% \emph{Safe Read}~\citep{valois1994queues,valois1995datastructures} 
+% is a reference counting memory management scheme that protects multiply referenced
+% pointers from ill-timed reclamation. 
+% Unlike the pointer packing technique, safe read reliably avoids ABA problems through
+% single-word Compare-and-Swap operations. \citeauthor{michael1995correction} discover
+% and correct race conditions in the \emph{safe read} protocol, that are liable to
+% corrupting and making unbounded use of bounded memory~\citep{michael1995correction}.
 
-\subsubsection{Safe Read}
-\emph{Safe Read}~\citep{valois1994queues,valois1995datastructures} 
-is a reference counting memory management scheme that protects multiply referenced
-pointers from ill-timed reclamation. 
-Unlike the pointer packing technique, safe read reliably avoids ABA problems through
-single-word Compare-and-Swap operations. \citeauthor{michael1995correction} discover
-and correct race conditions in the \emph{safe read} protocol, that are liable to
-corrupting and making unbounded use of bounded memory~\citep{michael1995correction}.
-
-\subsubsection{Hazard Pointers}
-\citeauthor{michael2004hazard}~\citep{michael2004hazard} presents a wait-free
-memory reclamation methodology known as \emph{hazard pointers}
+% \subsubsection{Hazard Pointers}
+% \citeauthor{michael2004hazard}~\citep{michael2004hazard} presents a wait-free
+% memory reclamation methodology known as \emph{hazard pointers}
 
 \section{Related Work}
-Wait-free queues offer benefits such as starvation freedom and predictable
-operation latencies \textemdash~at the cost of performance, practicality, and complexity.
-Based on the MS-queue, \citeauthor{kogan2011wait} introduce one of the first practical unbounded, MPMC
+Wait-free queues offer benefits such as \emph{starvation freedom} and predictable
+operation latencies at the cost of performance, practicality, and complexity.
+Based on the \emph{MS-queue}, \citeauthor{kogan2011wait} introduce one of the first practical unbounded, MPMC
 wait-free queues~\citep{kogan2011wait} (henceforth known as the KP-queue). The
 same authors present a methodology to create fast wait-free queues~\citep{kogan2012methodology} by
 making use of the \emph{fast-path-slow-path} methodology; a lock-free queue is
 used as the \emph{fast-path}, using a wait-free queue as a \emph{slow-path}
-after a number of failures.
+after a number of retries.
+
+In~\citep{yang2016wait}, \citeauthor{yang2016wait} presents a wait free queue
+that is said to be as fast as fetch-and-add. Notably, the benchmarks and
+comparisons among queues are statistically rigorous.

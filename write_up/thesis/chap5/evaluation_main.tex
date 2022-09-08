@@ -83,7 +83,7 @@ however, insights may still be inferred.
 memory-reclamation schemes introduced a significant bias in favour of their
 novel algorithms. 
 This is only made clear when inspecting the study's published source
-code~\citep{michael1996simple_sourcecode}, where \citeauthor{valois1994}' queue
+code~\citep{michael1996simple_sourcecode}, where \citeauthor{valois1994queues}' queue
 makes use of the safe-read protocol, whilst the \emph{MS-Queue} only keeps
 track of each threads' most recently recycled node non-atomically in thread
 local storage.
@@ -284,7 +284,7 @@ framework aids with collecting performance data on more powerful \emph{x86\_64
 Intel} CPUs.
 
 In this study, the concurrent queueing algorithms presented in
-\citep{hoffman2007baskets,valois1994datastructures,michael1996simple} were
+\citep{hoffman2007baskets,valois1995datastructures,michael1996simple} were
 implemented and compared with the results obtained from their seminal papers.
 It was found that tagged pointers using atomic Double-Width-Compare-And-Swap (DWCAS)
 instructions (for ABA prevention purposes) were several times slower than

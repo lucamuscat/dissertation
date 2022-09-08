@@ -1,6 +1,5 @@
-\chapter{Literature Review\label{chap:lit_review}}
+\section{Literature Review\label{chap:lit_review}}
 
-\section{Queues}
 \subsection{Valois' Queue}
 
 \citeauthor{valois1994queues} surveys several lock-free data structures and
@@ -91,16 +90,20 @@ authors boast of a 25\% performance improvement when compared to the MS-queue.
 % \citeauthor{michael2004hazard}~\citep{michael2004hazard} presents a wait-free
 % memory reclamation methodology known as \emph{hazard pointers}
 
-\section{Related Work}
+\subsection{Kogan-Petrank Wait-Free Queue}
 Wait-free queues offer benefits such as \emph{starvation freedom} and predictable
 operation latencies at the cost of performance, practicality, and complexity.
 Based on the \emph{MS-queue}, \citeauthor{kogan2011wait} introduce one of the first practical unbounded, MPMC
-wait-free queues~\citep{kogan2011wait} (henceforth known as the KP-queue). The
-same authors present a methodology to create fast wait-free queues~\citep{kogan2012methodology} by
-making use of the \emph{fast-path-slow-path} methodology; a lock-free queue is
-used as the \emph{fast-path}, using a wait-free queue as a \emph{slow-path}
-after a number of retries.
+wait-free queues~\citep{kogan2011wait} (henceforth known as the KP-queue).
 
+\subsection{Mechanically Creating Wait-Free Queues}
+\citeauthor{kogan2012methodology} present a methodology to create fast wait-free
+queues~\citep{kogan2012methodology} by making use of the
+\emph{fast-path-slow-path} methodology; a lock-free queue is used as the
+\emph{fast-path}, using a wait-free queue as a \emph{slow-path} after a number
+of retries.
+
+\subsection{Wait-Free Queue as Fast as Fetch-And-Add}
 In~\citep{yang2016wait}, \citeauthor{yang2016wait} presents a wait free queue
 that is said to be as fast as fetch-and-add. Notably, the benchmarks and
 comparisons among queues are statistically rigorous.

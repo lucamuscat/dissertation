@@ -1,8 +1,9 @@
 \chapter{Design \& Implementation}
-This chapter describes the design and 
-implementation of the benchmarking framework  (research objective~\textbf{O1}),
-validation (research objective~\textbf{O2}), and measures
-to mitigate sources of error.
+This chapter marks out the design and implementation of the benchmarking
+framework (research objective~\textbf{O1}). A discussion on the steps taken to validate the
+present study's results (research objective~\textbf{O2}), together
+with efforts to sources of error are discussed. The queues implemented in this
+study (as per research objective~\textbf{O3}) are discussed.
 
 \section{Relevant Software Versions}
 Large runtime environments, such as Java's JVM, are regularly used in
@@ -22,7 +23,6 @@ with \textbf{16GB} of RAM is used throughout the rest of this study.
 elapsed time in nanoseconds~\citep{terpstra2010papi}. Although an entire library for measuring time 
 may seem excessive, PAPI also provides an interface for
 sampling hardware counters, which can be used for debugging purposes.
-
 
 \section{Methodology}
 
@@ -53,7 +53,7 @@ On an initially empty queue, each thread enqueues an item, executes an
 artificial delay (which \citeauthor{michael1996simple} refer to as ``other
 work''~\citep{michael1996simple}), dequeues an item, and executes another
 artificial delay. The queue is destroyed and recreated with every repetition
-(i.e. every ten millions iterations). \citeauthor{michael1996simple} use an
+(i.e.every ten millions iterations). \citeauthor{michael1996simple} use an
 artificial delay to reduce the bias introduced by long runs of queue operations
 by a single thread~\citep{michael1996simple}. Quantity of threads, and the length
 of the artificial delay are the experiment's independent variables.
@@ -118,8 +118,7 @@ introduced~\cite{perfbook2021}.}, as measurement overheads may influence the
 interleaving of threads. By measuring a significantly large
 number of operations, the mean time is derived and used as a sample, amortizing
 measurement costs. \citeauthor{aceto2021benchmarking} note that
-the repeatability of experiments is affected by data
-variability~\citep{aceto2021benchmarking}; the ratio of standard deviation to
+data variability affects the repeatability of experiments~\citep{aceto2021benchmarking}; the ratio of standard deviation to
 mean (\emph{coefficient of variation}), $\text{CV} = \frac{\sigma}{\bar{x}}
 \cdot 100$ is used to quantify the repeatability of each experiment.
 
@@ -215,7 +214,7 @@ consumed~\cite{ramalhete2019delay}.
 \begin{algorithm}
     \caption{Delay implemented through polling the CPU's timestamp counter.}\label{alg:delay}
     \KwIn{uint64\_t time\_ns}
-            \Comment{Pre-calulate to prevent inaccuracies.}
+            \Comment{Pre-calculate to prevent inaccuracies.}
             $cycles \gets time\_ns \cdot cpu\_frequency\_ghz$ \\
             $start \gets read\_timestamp()$ \\
             \Repeat{$stop - start < cycles$}
@@ -353,7 +352,7 @@ Threads are synchronized to start at the same time using
 barriers, mitigating transient start up effects~\citep{hoffman2007baskets}.
 Furthermore, a number of operations are executed before the start of each
 benchmark, as to warm up the cache and branch predictor, moving cache misses
-due to unpopulated caches and speculative branch mispredictions outside of the
+due to unpopulated caches and speculative branch mispredictions outside the
 recorded benchmarks.
 
 \subsection{Validation}

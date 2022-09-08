@@ -43,9 +43,9 @@ Figure \ref{fig:perf_deg_1_thread} shows that queues using tagged pointers tend
 to experience higher contention, consequently leading to worse performance. 
 In support of this claim, the \emph{Baskets Queue using Tagged Pointers} with
 50 nanoseconds of delay was \textbf{2.435} times more likely to re-attempt an
-enqueue\footnote{This metric was gathered by incrementing an integer (found in
-thread local storage) every time it repeated anything past line \emph{E03} of
-the Baskets Queue.} than its DWCAS counterpart.
+enqueue than its DWCAS counterpart. For the remainder of this chapter, any
+discussions relating to the performance of queues
+using DWCAS are omitted, due to their inferior performance.
 
 \begin{figure}[!ht]
     \centering
@@ -98,6 +98,7 @@ protocol leads to a horribly inefficient algorithm, as each enqueueing thread
 is required to traverse a number of nodes in the linked list, incurring a high
 number of cache misses due to the reference counting system incurring
 additional loads and stores on visiting and moving on from a node.
+Consequently, any discussions related to \emph{Valois' Queue} are omitted.
 
 Figure~\ref{fig:perf_deg_2_thread} shows that at specific delays, speedups of
 up to \textbf{6.591\%} can be obtained.

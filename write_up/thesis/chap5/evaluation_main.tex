@@ -1,11 +1,11 @@
 \chapter{Evaluation}
-In this chapter, insights emanating from each queue's evaluation is compared
-with findings from their seminal works. Data gathered from the benchmarking
-framework is used to characterize the performance of each queue.
-Each section in this chapter will be dedicated to the performance of each
-queue under a workload of a fixed number of threads, and varying
+This chapter tackles research objective \textbf{O4} by congealing the
+benchmarking framework's results into a number of insights, which are used to
+compare the performance of the presently implemented queues and their seminal oeuvres. 
+Each section is dedicated to the performance of each
+queue under a workload of a fixed number of threads, with varying
 delay between queue operations.
-A queue's performance is quantified using the net runtime of each benchmark,
+Each queue's performance is quantified using the net runtime of each benchmark,
 together with the magnitude of performance degradation, which is
 calculated as the ratio of net runtime between the current and previous thread
 (where a value greater than one indicates degraded performance).
@@ -23,7 +23,7 @@ complexity~\citep{valois1995datastructures}. Contention-reducing
 mechanisms\textemdash such as thread helping\textemdash are not triggered under
 single threaded workloads as they rely on failed CAS operations, adding
 extra overhead through the computation of predicates.
-Figure \ref{fig:perf_1_thread} shows the performance of each queue in a single
+Figure~\ref{fig:perf_1_thread} shows the performance of each queue in a single
 threaded workload. Under the \emph{pairwise benchmark}, the \emph{MS-Queue} and
 the \emph{Baskets Queue} using tagged pointers are at most \textbf{3.168} and
 \textbf{2.593} times faster than their DWCAS counterparts. 
@@ -286,39 +286,46 @@ Intel} CPUs.
 
 In this study, the concurrent queueing algorithms presented in
 \citep{hoffman2007baskets,valois1995datastructures,michael1996simple} were
-implemented and compared with the results obtained from their seminal papers.
-It was found that tagged pointers using atomic Double-Width-Compare-And-Swap (DWCAS)
+implemented and compared with the results obtained from their seminal papers
+(as per research objective \textbf{O4}).
+Tagged pointers using atomic Double-Width-Compare-And-Swap (DWCAS)
 instructions (for ABA prevention purposes) were several times slower than
 their Single-Word-Compare-And-Swap (CAS) counterparts.
 
-It was noted that in~\citep{michael1996simple}, \citeauthor{michael1996simple}
-fail to disclose the overheads of the memory reclamation schemes used for each
-queue\textemdash which if brought to light\textemdash would have shown that the
-\emph{MS-Queue's} memory reclamation was simpler, and inferior to that used in
-the implementation of \emph{\citeauthor{valois1994queues}' Queue} (i.e. a
-reference counting system known as the \emph{safe-read} protocol).
+It was noted that \citeauthor{michael1996simple}~\citep{michael1996simple}
+failed to disclose the memory-reclamation scheme overheads of each of their
+implementations\textemdash which if brought to light\textemdash would have
+shown that the choice of memory-reclamation scheme for the \emph{MS-Queue} (the
+authors' novel algorithm) potentially led to significant biases in their
+favour.
+
+The following hypothesis was presented to the reader: The algorithm spawned
+from the marriage of \emph{Valois' queue} and the \emph{safe-read protocol} is
+significantly more inefficient than most other permutations of \emph{Valois'
+queue}, due to the required linked-list traversals.
 
 Under single-threaded workloads, \emph{non-blocking} queues were consistently
 outperformed by \citeauthor{michael1996simple}'s \emph{Two-Lock Queue}
 \citep{michael1996simple}.
-Workloads of two-threads present that tagged pointers using
-CAS suffer from a harsher degradation in performance when compared to their
-DWCAS counterpart, as they are more likely to fail a CAS, requiring one or more
-retries to completely commit their changes. Yet again, the \emph{blocking
-Two-Lock Queue} outperformed the \emph{non-blocking} algorithms. Similar to
-prior art \citep{hoffman2007baskets,michael1996simple,ladan2008optimistic}, every
-queue's net runtime increased by several times under two threads.
-\citeauthor{michael1996simple} claim that speedup of less than a factor of
+Workloads of two-threads present that tagged pointers using CAS suffer from a
+harsher degradation in performance when compared to their DWCAS counterpart, as
+they are more likely to fail a CAS, requiring one or more retries to completely
+commit their changes. Yet again, the \emph{Blocking Two-Lock Queue}
+outperformed the \emph{non-blocking} algorithms. 
+Similar to prior art
+\citep{hoffman2007baskets,michael1996simple,ladan2008optimistic}, every queue's
+net runtime increased by several times under two threads.
+\citeauthor{michael1996simple} claim that a speed-up of less than a factor of
 $\frac{1}{3}$ can be observed in the \emph{MS-Queue}, under a workload of three threads~\citep{michael1996simple},
 however, similar to \citep{ladan2008optimistic,hoffman2007baskets}, the
 observed speedups were more modest (up to \textbf{6.591\%}).
 Under high contention at three threads, the \emph{non-blocking} queues were
 superior to the \emph{blocking two-lock queue}. 
-Under four threads, non-blocking queues outperform the \emph{two-lock queue} at
+Under four threads, non-blocking queues outperformed the \emph{two-lock queue} at
 high contention; the \emph{Baskets Queue} only outperformed the \emph{MS-Queue}
 in the \emph{50\% Enqueue Benchmark}, as it utilized the 'baskets' mechanism up
 to \textbf{110.964} times more than in the \emph{Pairwise Benchmark}. Under
-workloads of five threads, the CPU was oversubcribed, causing the operating
+workloads of five threads, the CPU was over-subcribed, causing the operating
 system to context-switch more frequently\textemdash reducing the CPU time slice
 allocated to each thread. \emph{Non-blocking queues} remained superior at high
 degrees of contention, with the \emph{blocking Two-Lock-Queue} only becoming
@@ -327,7 +334,8 @@ more showed monotonically attenuating trends similar to those observed at five
 threads.
 
 A few challenges encountered in this project included minimizing interferences
-created by the operating system, of a simple memory-management system which
-could be used in a lock-free manner. Performance measuring tools, such as the
-instrumentation of counters and the measurement of time had to be amortized
-over several million iterations, as to dampen their overheads.
+created by the operating system, and the creation of a simple memory-management
+system which could be used in a lock-free manner.
+Performance measuring tools, such as the instrumentation of counters and the
+measurement of time had to be amortized over several million iterations, as to
+dampen their overheads.

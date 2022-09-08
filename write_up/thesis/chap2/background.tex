@@ -58,34 +58,34 @@ last~\citep{drepper2007every,perfbook2021}.
 
 Data is transferred in units of \emph{cache lines}, which are power-of-two
 fixed-size aligned blocks of memory, commonly ranging from 32 to 256 bytes in
-size~\citep[Section~3.2.1]{perfbook2021}. Cache lines are filled with data
-starting from the requested memory address, together with neighbouring bytes~\citep[Section~3.2.1]{perfbook2021}.
+size~\citep{perfbook2021_cacheline}. Cache lines are filled with data
+starting from the requested memory address, together with neighbouring bytes~\citep{perfbook2021_cacheline}.
 
 % The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, Invalid)
 % attaches states to memory addresses; transitions notify the processor
 % when to invalidate a cache line in order to prevent stale data~\citep[Appendix~B.5.1]{herlihy2020art}.
 
-\emph{Cache-Coherence} is a problem where different caches contain stale
-(out-of-date) values~\citep[Appendix~B.5.1]{herlihy2020art}. A memory address
+\emph{Cache-Incoherence} is a problem where distinct caches contain stale
+data~\citep{herlihy2020art_cachecoherence}. A memory address
 may be safely cached in different processors if no updates occur; 
 cache lines will be invalidated if the contents of the shared memory address are
 updated (preventing stale data from being
-read)~\citep[Appendix~B.5.1]{herlihy2020art}.
+read)~\citep{herlihy2020art_cachecoherence}.
 The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, or
 Invalid) attaches states to memory
-addresses~\citep[Appendix~B.5.1]{herlihy2020art}. Transitions in state notify
+addresses~\citep{herlihy2020art_cachecoherence}. Transitions in state notify
 the processor when to invalidate a cache
-line~\citep[Appendix~B.5.1]{herlihy2020art}.
+line~\citep{herlihy2020art_cachecoherence}.
 
 %\emph{Sharing} occurs when overlapping data is loaded into several cache lines.
 \emph{Sharing} occurs when one processor reads or writes to a memory address that
-is cached by another~\citep[Appendix~B.5.1]{herlihy2020art}. In some cases,
+is cached by another~\citep{herlihy2020art_cachecoherence}. In some cases,
 sharing is unavoidable; closely located, yet
 logically distinct data may share a single cache
-line~\citep[Appendix~B.5.1]{herlihy2020art}. 
+line~\citep{herlihy2020art_cachecoherence}. 
 
 \emph{False Sharing} takes place when cache lines are invalidated due to updates
-on logically distinct data~\citep[Appendix~B.5.1]{herlihy2020art}. As the
+on logically distinct data~\citep{herlihy2020art_cachecoherence}. As the
 rate of invalidations increases with each write to shared-memory, performance
 tends to degrade heavily, harming scalability. At the cost of a higher memory footprint, false
 sharing may be solved by segregating logically distinct data with unused memory
@@ -137,7 +137,8 @@ update value. If the source and destination are equal, the source is set to the
 update value, otherwise, the destination is updated with the source's
 value~\citep{intel2021inst}.
 Older studies may give different definitions of
-CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995datastructures},Appendix~A}, such that line \ref{alg:line:sourceneqdest} is excluded.
+CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995datastructures},~Appendix~A},
+such that line five is excluded.
 
 \SetNoFillComment
 \SetKwComment{Comment}{/* }{ */}
@@ -147,11 +148,11 @@ CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995datastruc
         \KwOut{boolean success}
         \If{$Source~=~Destination$}
         {
-            $Source~\gets~UpdateValue$
-            \Return{true}
+            $Source~\gets~UpdateValue$\;
+            \Return{True}\;
         }
-        $Destination~\gets~Source$ \label{alg:line:sourceneqdest}
-        \Return{False}
+        $Destination~\gets~Source$\label{alg:line:sourceneqdest}\;
+        \Return{False}\;
 \end{algorithm}
 
 
@@ -188,7 +189,7 @@ progress~\cite[Section~3.2]{scott2013shared}. The non-blocking property is
 desired due to its immunity to random delays. % TODO: Find citation
 
 The following are a subset of non-blocking progress conditions, ordered by the
-strength of the property (starting from the weakest) and the complexity of
+strictness of the property (starting from the most relaxed) and the complexity of
 implementation (starting from the simplest):
 
 \begin{enumerate}
@@ -247,7 +248,7 @@ order~\citep[Section~3.6.2]{herlihy2020art}.
 % [] Modern Intel CPUs use a variation of sequential consistency known as program-ordered-consistency
 
 \subsection{Memory Consistency Models}
-\emph{Memory Consistency Models (referred to as memory models henceforth)} are correctness properties that describe how
+\emph{Memory Consistency Models} (referred to as \emph{memory models} henceforth) are correctness properties that describe how
 threads perceive the order of other threads' effects on shared
 memory~\citep[Section~3.7]{herlihy2020art}. Similarly to the correctness
 conditions described in section~\ref{sec:correctness_conditions}, memory
@@ -263,7 +264,7 @@ performance, as opposed to a programmer's intuition about shared-memory
 (sequential consistency)~\citep{gharachorloo1996consistency}.
 
 Memory models\textemdash such as sequentially consistent models\textemdash are considered to be
-\emph{strongly ordered}. Strongly ordered systems tend to
+\emph{strong\-ly ordered}. Strongly ordered systems tend to
 heavily restrict the reordering of instructions, giving a simpler and
 higher-level interface between memory and the programmer. 
 
@@ -305,8 +306,8 @@ the tail of the queue), following First in First out ordering (FIFO).
 Concurrent queues are types queues that remain consistent and correct when
 accessed simultaneously through a number of threads. Non-concurrent\textemdash or
 ill-synchronized queues\textemdash typically become inconsistent after being
-accessed through multiple threads~\citep{yahav2003automatically}, leading
-to hard-to-find bugs. Concurrent queues are often the basis of scheduling
+accessed through multiple threads, leading
+to hard-to-find bugs~\citep{yahav2003automatically}. Concurrent queues are often the basis of scheduling
 algorithms~\citep{debattista2002high} and many other concurrent
 algorithms~\citep{yahav2003automatically}. Linearizability is the de-facto correctness condition
 for non-blocking queues, as the semantics of the queue's

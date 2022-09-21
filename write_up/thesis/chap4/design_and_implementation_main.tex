@@ -368,6 +368,13 @@ to validate suitability of the delay; such a test allows for immediate feedback
 loops, where changes to the delay's behaviour may be verified in a timely
 manner.
 
+The benchmarking framework's auxiliary data stores the number of times an
+algorithm visits any specific line of code (visited lines are counted only if
+the user instruments the benchmark to do so). Counters act as crude indicators that an
+algorithm may not be functioning correctly; for instance, if a counter indicating a
+dequeue on an empty queue has occurred for the majority of the benchmark's
+iterations, one can deduce that the queue's linked list is corrupted. 
+
 A \emph{Test Driven Development (TDD)} approach was used when implementing the
 pointer packing logic, which served the purpose of reducing the chances of
 regressions due to code changes or differences in CPU architecture. Atomic

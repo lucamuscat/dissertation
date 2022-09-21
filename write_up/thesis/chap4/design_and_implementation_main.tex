@@ -1,4 +1,4 @@
-\chapter{Design \& Implementation}
+\chapter{Design \& Implementation\label{chap:design_and_implementation}}
 This chapter marks out the design and implementation of the benchmarking
 framework (research objective~\textbf{O1}). A discussion on the steps taken to validate the
 present study's results (research objective~\textbf{O2}), together
@@ -12,12 +12,12 @@ garbage collector~\citep{kogan2011wait}. \citeauthor{fog2020optimizing} notes
 that large runtimes are typically more resource-consuming than the executed
 algorithms~\citep{fog2020optimizing}. Arguably, implementations of non-blocking
 algorithms in lock-based, garbage-collected environments are not truly
-non-blocking. The study is implemented using the C programming language, since
+non-blocking. The present study is implemented using the C programming language, since
 it uses a relatively light runtime without garbage collection. The clang
 \emph{version 10.0.0-4ubuntu1} compiler, with \emph{-O3 -march=native}
 optimisation flags are used for compilation. An \emph{Intel Core i7 6700HQ
 (Skylake)}, with four cores and a base frequency of $2.60\text{GHz}$, together
-with \textbf{16GB} of RAM is used throughout the rest of this study.
+with 16GB of RAM (8x2) is used throughout the rest of this study.
 
 \emph{PAPI (Performance Application Programming Interface)} is used to measure
 elapsed time in nanoseconds~\citep{terpstra2010papi}. Although an entire library for measuring time 
@@ -124,7 +124,8 @@ mean (\emph{coefficient of variation}), $\text{CV} = \frac{\sigma}{\bar{x}}
 
 % TODO: Don't forget to mention the modifications made to the baskets queue.
 \section{Design Decisions\label{sec:design_and_implementation_design_decisions}}
-This study focuses on four concurrent queueing algorithms:
+As per research objective \textbf{O3}, the following concurrent queueing
+algorithms are implemented:
 \citeauthor{michael1996simple}'s Lock-Free Queue~\citep{michael1996simple};
 ~\citeauthor{michael1996simple}'s Two-Lock Concurrent
 Queue~\citep{michael1996simple} (protected by a \emph{test-and-test-and-set-lock}~\citep{mellor1991algorithms}); \citeauthor{hoffman2007baskets}'s Baskets

@@ -274,12 +274,13 @@ mutex, that \emph{busy-waiting}, and can be released by any thread.
 Every mutex has to decide what actions to take when a critical section has
 already been acquired; the three categories said action can fall under are: 
 \begin{itemize}
-\item \emph{Blocking}:~Voluntarily yields to the CPU if the mutex is acquired.
+\item \emph{Blocking}:~Yield the remaining CPU time if the mutex is already acquired.
 Blocking is not suitable for small critical sections\footnote{A critical
-section is small if it takes hundreds of nanoseconds or micro seconds to
-execute.}, as context-switches typically take tens of milliseconds.
+small critical section takes hundreds of nanoseconds or microseconds to
+execute.}, as a thread typically has to wait tens of milliseconds to transition
+from a \emph{ready state} to a \emph{running state}.
 \item \emph{Busy-Waiting (spinning)}:~Polls an area in memory containing the
-state of a mutex. \emph{Busy-waiting} is suited for small critical sections, as
+state of a mutex. \emph{Busy-waiting} is best suited for small critical sections, as
 contention caused by polling may lead to degraded performance;
 \item \emph{Hybrid}:~Utilizes a mix of \emph{blocking} and \emph{busy-waiting},
 forgoing the inefficiencies associated with both methods.

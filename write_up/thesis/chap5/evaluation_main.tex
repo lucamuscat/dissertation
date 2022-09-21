@@ -35,7 +35,7 @@ shows that the \emph{Two-Lock Queue} consistently outperforms the
 \emph{MS-Queue} (by at most \textbf{0.27} times).
 
 \section{Workload under two threads}
-Similar to \citep{michael1996simple,hoffman2007baskets,ladan2008optimistic},
+Similar to~\citep{michael1996simple,hoffman2007baskets,ladan2008optimistic},
 under a workload of two threads, a significant degradation in performance can
 be observed. \citeauthor{michael1996simple} notes that as each queue's head and
 tail are shared across two processors, cache misses are more frequent. 
@@ -72,7 +72,7 @@ Although outperformed, non-blocking queues using tagged pointers remain
 competitive under low-contention. 
 
 The performance of \citeauthor{valois1994queues}' queue in this study highly
-conflicts with that of \citep{michael1996simple}. Although a queue without a
+conflicts with that of~\citep{michael1996simple}. Although a queue without a
 memory reclamation scheme may share a common algorithm with one that has, it
 does not imply that they are algorithmically equivalent, making their
 performance unconnected; as this study does not include memory reclamation
@@ -104,7 +104,7 @@ Figure~\ref{fig:perf_deg_2_thread} shows that at specific delays, speedups of
 up to \textbf{6.591\%} can be obtained.
 \citeauthor{michael1996simple} observe speedups of a factor less than
 $\frac{1}{3}$~\citep{michael1996simple}, which is far more drastic than that
-observed in \citep{ladan2008optimistic, hoffman2007baskets} and this study. The
+observed in~\citep{ladan2008optimistic, hoffman2007baskets} and this study. The
 50\% enqueue benchmark does not exhibit any speedups, further highlighting the
 effects of a benchmark's artificiality on the validity of its results.
 
@@ -254,7 +254,7 @@ each queue's optimal delay slightly varies between zero and 250 nanoseconds.
 
 \section{Biases and Threats to Validity}
 \paragraph{Artificiality of Workloads}
-In \citep{gregg2014systems}, \citeauthor{gregg2014systems} claims that
+In~\citep{gregg2014systems}, \citeauthor{gregg2014systems} claims that
 \emph{micro-benchmarks} (type of benchmark adopted in this study) produces
 artificial workloads, rendering results which are  solely obtained under
 various assumptions. Results obtained in this study represent the concurrent
@@ -317,7 +317,7 @@ Similar to prior art
 net runtime increased by several times under two threads.
 \citeauthor{michael1996simple} claim that a speed-up of less than a factor of
 $\frac{1}{3}$ can be observed in the \emph{MS-Queue}, under a workload of three threads~\citep{michael1996simple},
-however, similar to \citep{ladan2008optimistic,hoffman2007baskets}, the
+however, similar to~\citep{ladan2008optimistic,hoffman2007baskets}, the
 observed speedups were more modest (up to \textbf{6.591\%}).
 Under high contention at three threads, the \emph{non-blocking} queues were
 superior to the \emph{blocking two-lock queue}. 

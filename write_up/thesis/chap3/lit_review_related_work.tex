@@ -34,7 +34,7 @@ that fails to commit a node to the linked list, may help other threads by doing
 part of their work (acting as a secondary back-off, reducing contention). 
 The authors omit any discussion on the MS-queue's memory reclamation scheme,
 which as pointed out by \citeauthor{michael2004hazard}
-in \citep{michael2004hazard} may lead to race conditions. 
+in~\citep{michael2004hazard} may lead to race conditions. 
 
 \paragraph{Two-Lock Queue}
 Similar to the MS-queue, the head and tail are separated, allowing for
@@ -47,7 +47,7 @@ referenced by another thread.
 \subsection{Optimistic MS-Queue}
 \citeauthor{ladan2008optimistic} improve upon the MS-queue by enabling enqueues
 to take effect in a single CAS~\citep{ladan2008optimistic}.
-With enqueues adding nodes to the beginning of the list\textemdash
+With enqueues adding nodes to the beginning of the list,
 doubly-linked lists enable the deletion of a node through backwards
 traversals of the linked list.
 Pointers to previous elements are maintained using simple stores, and are fixed

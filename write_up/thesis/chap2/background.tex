@@ -1,79 +1,80 @@
-\chapter{Background \& Literature Review}
-Common intuitions programmers may have about sequential programs rarely
-carry-over to concurrent ones. This chapter guides the reader through the basic
-concepts required to understand the contributions of this study. 
-Firstly, a discussion on the differences between \emph{uniprocessors} and
-\emph{multiprocessors} is given. Secondly, multiprocessor programming concepts
-are discussed. Lastly, a definition of queues and concurrent queues is provided.
+\chapter{Background \& Literature Review\label{chap:background}} 
+
+When developing concurrent programs, programmers often find that their
+intuitions about sequential programs do not apply. This chapter introduces the
+fundamental concepts necessary to comprehend the contributions of this study.
+Initially, the differences between \emph{uniprocessors} and
+\emph{multiprocessors} are presented. Second, concepts of multiprocessor programming
+are discussed. Lastly, a definition of queues and concurrent queues is
+provided.
 
 \section{Multiprocessors}
-The diminishing growth in \emph{uniprocessor} speeds
-forced programmers to look at parallelism as a means of improving
-performance~\citep{cantrill2008real}. Unlike uniprocessors, \emph{multiprocessors} do
+The diminishing growth of \emph{uniprocessor} speeds
+compelled programmers to consider parallelism as a means of improving
+performance~\citep{cantrill2008real}. Unlike \emph{uniprocessors}, \emph{multiprocessors} do
 not ensure that instructions appear in execution order~\cite{scott2013shared},
 making multiprocessors hard to model.
 
 % \emph{Multiprocessors} consist of multiple hardware processors, each
 % executing a \emph{sequential program}~\citep[Appendix~B.2]{herlihy2020art}.
 
-Over the years, multiprocessor programming has become more practical and
+Throughout the years, multiprocessor programming has become more practical and
 feasible, partly thanks to multiprocessors getting cheaper, and
 easier to program due to abstractions such as OpenMP, MPI (Message Passing
 Interface), implicit parallel programming environments such as SQL, and
 programming language standards that provide guarantees as to how parallel code will
-behave, such as Java's\citep{javamemorymodel2014} and C++11's
+behave, such as Java's~\citep{javamemorymodel2014} and C++11's
 \citep{cppmemorymodel} standardized memory models
 \citep[Chapter~2.2]{perfbook2021}.
 
 \emph{Multiprocessors} execute a number of \emph{processes} on distinct
 hardware processors~\citep[Appendix~B.2]{herlihy2020art}, with each processor
-continuously executing, and swapping out \emph{processes}.
-\citeauthor{scott2013shared} defines a \emph{process} as a set of
-\emph{threads}, where a thread is an active computation that has the potential
-to share variables with other, concurrent threads~\citep[p.6]{scott2013shared}.
-Once a process' \emph{time quantum} (fixed share of CPU time) expires, the
-process is \emph{context-switched}. Processes
-may be prematurely \emph{de-scheduled} due to interrupts,
-system calls, or through the voluntary yielding of control to the CPU~\citep[Section~3.2.3]{osconcepts2021}.
+constantly executing and swapping out \emph{processes}. \citeauthor{scott2013shared}
+defines a \emph{process} as a set of \emph{threads}, where a thread is an
+active computation that has the potential to share variables with other,
+concurrent threads~\citep[p.6]{scott2013shared}. When a process's \emph{time
+quantum} (fixed share of CPU time) expires, it is
+\emph{context-switched}. Processes may be \emph{de-scheduled} prematurely as a result
+of interrupts, system calls, or the voluntary yielding of control to
+the CPU~\citep[Section~3.2.3]{osconcepts2021}.
 
-% \citep[Appendix~B.7.1]{perfbook2021}.
-For the sake of optimization, Compilers and CPUs do not guarantee specific
-results in cases where multiple threads concurrently modify the same memory
-location~\citep{drepper2007every}. The explicit use synchronization primitives
-(such as read-modify-write operations, or memory barriers) are needed to
-prevent incoherence across caches, which may eventually lead to the corruption
-of data.
+%~\citep[Appendix~B.7.1]{perfbook2021}.
+For the sake of optimization, compilers and CPUs do not guarantee deterministic
+results when multiple threads modify the same memory location
+concurrently~\citep{drepper2007every}. To prevent incoherence across caches,
+explicit use of synchronization primitives (such as read-modify-write
+operations or memory barriers) is required.
 
 \section{Synchronization}
 \subsection{CPU Cache}
 As the disparity between CPU frequency and memory access times grew, 
-CPU engineers added small, yet fast SRAM chips between the CPU
+CPU engineers inserted small, yet fast SRAM chips between the CPU
 and main memory in order to alleviate issues caused by the differences in speed
 ~\citep{cantrill2008real,drepper2007every,perfbook2021}. Using large
-quantities of SRAM is considered to be uneconomical, ergo, more cache layers
-were introduced, with each layer being cheaper, larger, and slower than the
-last~\citep{drepper2007every,perfbook2021}.
+quantities of SRAM are deemed uneconomical, hence more cache layers
+have been implemented, with each layer becoming cheaper, larger, and slower~\citep{drepper2007every,perfbook2021}.
 
 Data is transferred in units of \emph{cache lines}, which are power-of-two
-fixed-size aligned blocks of memory, commonly ranging from 32 to 256 bytes in
-size~\citep{perfbook2021_cacheline}. Cache lines are filled with data
-starting from the requested memory address, together with neighbouring bytes~\citep{perfbook2021_cacheline}.
+fixed-size aligned blocks of memory, commonly ranging from 32 to 256
+bytes~\citep{perfbook2021_cacheline}. Cache lines are filled with data starting
+from the requested memory address and continuing with neighbouring
+bytes~\citep{perfbook2021_cacheline}.
 
 % The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, Invalid)
 % attaches states to memory addresses; transitions notify the processor
 % when to invalidate a cache line in order to prevent stale data~\citep[Appendix~B.5.1]{herlihy2020art}.
 
-\emph{Cache-Incoherence} is a problem where distinct caches contain stale
+\emph{Cache-Incoherence} occurs when distinct caches contain stale
 data~\citep{herlihy2020art_cachecoherence}. A memory address
-may be safely cached in different processors if no updates occur; 
+can be safely cached in different processors if no updates on it occur; 
 cache lines will be invalidated if the contents of the shared memory address are
 updated (preventing stale data from being
 read)~\citep{herlihy2020art_cachecoherence}.
 The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, or
 Invalid) attaches states to memory
-addresses~\citep{herlihy2020art_cachecoherence}. Transitions in state notify
-the processor when to invalidate a cache
-line~\citep{herlihy2020art_cachecoherence}.
+addresses~\citep{herlihy2020art_cachecoherence}. State transitions notify
+the processor when a cache
+line should be invalidated~\citep{herlihy2020art_cachecoherence}.
 
 %\emph{Sharing} occurs when overlapping data is loaded into several cache lines.
 \emph{Sharing} occurs when one processor reads or writes to a memory address that
@@ -92,8 +93,8 @@ to prevent the sharing of cache lines~\citep{scott2013shared}.
 \subsection{Interconnection}
 
 % TODO: Not really happy with the UMA definition, will need to give a better explanation.
-An interconnection medium is used to connect CPUs to cache and memory; where
-two kinds of interconnection architectures exist: (1)
+CPUs are linked to cache and memory via an interconnection medium.
+Two kinds of interconnection architectures exist: (1)
 \emph{Nonuniform memory access (NUMA)}
 architectures~\citep[Appendix~B.3]{herlihy2020art} are typically associated with
 multi-CPU and distributed systems; (2) \emph{Uniform memory
@@ -136,7 +137,7 @@ update value, otherwise, the destination is updated with the source's
 value~\citep{intel2021inst}.
 Older studies may give different definitions of
 CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995datastructures},~Appendix~A},
-such that line five is excluded.
+such that line five of algorithm \ref{alg:cas} is excluded.
 
 \SetNoFillComment
 \SetKwComment{Comment}{/* }{ */}
@@ -190,13 +191,12 @@ strictness of the property (starting from the most relaxed) and the complexity o
 implementation (starting from the simplest):
 
 \begin{enumerate}
-\item \emph{Obstruction-Freedom}: A method is obstruction-free\textemdash if from any
-point after which it executes in isolation\textemdash it finishes in a finite number of
-steps~\citep[Section~3.8.3]{herlihy2020art};
-\item \emph{Lock-Freedom}: A method is lock-free\textemdash if \textemdash some method call finishes
-in a finite number of steps~\citep[Section~3.8.2]{herlihy2020art};
-\item \emph{Wait-Freedom}: A method is wait-free\textemdash if \textemdash every call finishes its
-execution in a finite number of steps~\citep[Section~3.8.1]{herlihy2020art}.
+\item \emph{Obstruction-Freedom}: A method is obstruction free if a thread
+finishes execution in a finite number of steps after executing in isolation~\citep[Section~3.8.3]{herlihy2020art};
+\item \emph{Lock-Freedom}: A method is lock-free if from all threads, a single
+(undetermined) thread finishes in a finite number steps~\citep[Section~3.8.2]{herlihy2020art};
+\item \emph{Wait-Freedom}: A method is wait-free if every method call executes
+in finite number of steps~\citep[Section~3.8.1]{herlihy2020art}.
 \end{enumerate}
 
 Stronger guarantees do not necessarily equate to higher throughput, as the
@@ -207,10 +207,10 @@ correlated to the strength of the guarantee.
 \label{sec:correctness_conditions}
 \emph{Correctness conditions} describe the pre and post conditions for a concurrent
 object's operations~\citep{herlihy2020art}. Such conditions decide
-whether a concurrent history is legal \citep{herlihy1990linearizability}.
+whether a concurrent history is legal~\citep{herlihy1990linearizability}.
 Correctness conditions are based on two requirements: (1) When an
 operation takes effect, and (2) how the order of non-concurrent operations
-should be preserved \citep{herlihy1990linearizability}.
+should be preserved~\citep{herlihy1990linearizability}.
 
 A method is said to \emph{take effect} when the effects of its method call is
 seen by other method calls~\citep[Section~3.4.1]{herlihy2020art}. 
@@ -231,7 +231,7 @@ order}~\citep{lamport1979make}.
 A \emph{linearizable} concurrent computation gives the illusion that a method
 call takes effect instantaneously some time between the method's invocation and
 response; the point in time when the method takes effect is also known as the
-\emph{linearizability point} \citep{herlihy2020art,herlihy1990linearizability}.
+\emph{linearizability point}~\citep{herlihy2020art,herlihy1990linearizability}.
 Processors perceive linearizable operations in a \emph{total, and real-time
 order}, where overlapping method calls take effect in a non-deterministic
 order~\citep[Section~3.6.2]{herlihy2020art}.
@@ -309,7 +309,7 @@ to hard-to-find bugs~\citep{yahav2003automatically}. Concurrent queues are often
 algorithms~\citep{debattista2002high} and many other concurrent
 algorithms~\citep{yahav2003automatically}. Linearizability is the de-facto correctness condition
 for non-blocking queues, as the semantics of the queue's
-operations remain unchanged \citep{mellor1987concurrent, valois1995datastructures}.
+operations remain unchanged~\citep{mellor1987concurrent, valois1995datastructures}.
 % TODO: Add "Section 2.2.2" to valois1995datastructures reference
 
 The multiplicity of producers and
@@ -328,10 +328,10 @@ queues in further detail.
     \begin{tabular}{lll}
         \hline
         Label & Description & Reference \\ \hline
-        SPSC & Single-Producer/Single-Consumer & \citep{aldinucci2012efficient} \\
-        SPMC & Single-Producer/Multi-Consumer & \citep{arnautov2017ffq} \\
+        SPSC & Single-Producer/Single-Consumer &~\citep{aldinucci2012efficient} \\
+        SPMC & Single-Producer/Multi-Consumer &~\citep{arnautov2017ffq} \\
         MPSC & Multi-Producer/Single-Consumer & \\
-        MPMC & Multi-Producer/Multi-Consumers & \citep{michael1996simple,valois1994queues,hoffman2007baskets}\\ \hline
+        MPMC & Multi-Producer/Multi-Consumers &~\citep{michael1996simple,valois1994queues,hoffman2007baskets}\\ \hline
     \end{tabular}        
 \end{figure}
 

@@ -19,4 +19,124 @@ reclaim(unsigned node)
   private.node = node;
 }
 \end{lstlisting}
+\begin{lstlisting}[language=C,caption={Memory management used in \citeauthor{michael1996simple}'s original implementation of the Valois' Queue},label={lst:ms_queue_memory}]
+void
+init_private()
+{
+  private.value = 1 + initial_nodes + (pid * iterations);
+}
+
+void
+init_memory()
+{
+}
+
+
+unsigned
+dec_tas(unsigned* ptr)
+{
+  unsigned old;
+  unsigned new;
+
+  do {
+    old = *ptr;
+    new = old - 2;
+    if (new == 0) {
+      new = 1;
+    }
+  } while (cas(ptr, old, new) == FALSE);
+  return (old == 2);
+}
+
+void
+clear_bit(unsigned* ptr)
+{
+  unsigned old;
+  unsigned new;
+
+  do {
+    old = *ptr;
+    new = old - 1;
+  } while (cas(ptr, old, new) == FALSE);
+}
+
+node_t*
+alloc()
+{
+  node_t* pnode;
+  unsigned success;
+
+  for (success = FALSE; success == FALSE; ) {
+    pnode = safe_read(&smp->Avail);
+    assert(pnode != NULL);
+    success = cas(&smp->Avail, pnode, pnode->next);
+    if (success == FALSE) {
+      release(pnode);
+    }
+  }
+  faa(&smp->allocated, 1);
+  return pnode;
+}
+
+void
+reclaim(node_t* pnode)
+{
+  node_t* old;
+
+  do {
+    old = smp->Avail;
+    pnode->next = old;
+  } while (cas(&smp->Avail, old, pnode) == FALSE);
+  faa(&smp->reclaimed, 1);
+}
+
+node_t*
+new_node()
+{
+  node_t* pnode;
+
+  pnode = alloc();
+  faa(&pnode->refct, 2);  /* adjust */
+  clear_bit(&pnode->refct);
+  return pnode;
+}
+
+void
+release(node_t* pnode)
+{
+  node_t* ptr;
+  node_t* next;
+
+  ptr = pnode;
+  while(1) {
+    if (dec_tas(&ptr->refct) == FALSE) {
+      return;
+    }
+    next = ptr->next;
+    reclaim(ptr);
+    ptr = next;
+  }
+}
+
+node_t*
+safe_read(node_t** ptr)
+{
+  node_t* pnode;
+
+  while(1) {
+    pnode = *ptr;
+    if (pnode == NULL) {
+      return NULL;
+    }
+    faa(&pnode->refct, 2);
+    if (pnode == *ptr) {
+      return pnode;
+    }
+    release(pnode);
+  }
+}
+
+
+\end{lstlisting}
+
 

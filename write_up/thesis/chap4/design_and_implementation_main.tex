@@ -24,7 +24,7 @@ elapsed time in nanoseconds~\citep{terpstra2010papi}. Although an entire library
 may seem excessive, PAPI also provides an interface for
 sampling hardware counters, which can be used for debugging purposes.
 
-\section{Methodology}
+\section{Methodology\label{sec:design_and_implementation_methodology}}
 
 % TODO: Can add more citations to this part; can be taken from the literature
 % review once that's done.
@@ -123,7 +123,7 @@ mean (\emph{coefficient of variation}), $\text{CV} = \frac{\sigma}{\bar{x}}
 \cdot 100$ is used to quantify the repeatability of each experiment.
 
 % TODO: Don't forget to mention the modifications made to the baskets queue.
-\section{Design Decisions}
+\section{Design Decisions\label{sec:design_and_implementation_design_decisions}}
 This study focuses on four concurrent queueing algorithms:
 \citeauthor{michael1996simple}'s Lock-Free Queue~\citep{michael1996simple};
 ~\citeauthor{michael1996simple}'s Two-Lock Concurrent
@@ -355,8 +355,8 @@ benchmark, as to warm up the cache and branch predictor, moving cache misses
 due to unpopulated caches and speculative branch mispredictions outside the
 recorded benchmarks.
 
-\subsection{Validation}
-In response to research objective \textbf{O3}, parts of the framework's
+\subsection{Validation\label{sec:design_and_implementation_validation}}
+In response to research objective \textbf{O2}, parts of the framework's
 components are validated, as to increase confidence in the measurements
 obtained. A constant value is enqueued, allowing for the comparison
 between the original and dequeued values to test for any corruption caused by race conditions. 

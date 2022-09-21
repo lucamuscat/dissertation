@@ -90,8 +90,8 @@
     \input{frontmatter/abstract}\if@openright\cleardoublepage\else\clearpage\fi
     \tableofcontents*\if@openright\cleardoublepage\else\clearpage\fi
     \listoffigures\if@openright\cleardoublepage\else\clearpage\fi
-    \listoftables\if@openright\cleardoublepage\else\clearpage\fi
-    \input{frontmatter/abbreviations}\if@openright\cleardoublepage\else\clearpage\fi
+    %\listoftables\if@openright\cleardoublepage\else\clearpage\fi
+    %\input{frontmatter/abbreviations}\if@openright\cleardoublepage\else\clearpage\fi
 
 %% Note: always use \input as you cannot nest \includes (amongst other things)
 %\pagestyle{umpage}
@@ -99,7 +99,7 @@
 \mainmatter 
     \input{chap1/introduction_main} 
     \input{chap2/background}
-    \input{chap3/lit_review_related_work}
+    %\input{chap3/lit_review_related_work}
     \input{chap4/design_and_implementation_main}
     \input{chap5/evaluation_main}
     \input{chap6/conclusions_main}
@@ -111,7 +111,7 @@
 	%% For references use IEEE style [5] or Harvard style [6]
     \bibliographystyle{um-plainnat} %% specific plainnat does not show url for articles
     % Use something like https://flamingtempura.github.io/bibtex-tidy/ to clean all your bibtex entries
-    {\scriptsize\bibliography{chap2/background_biblio,chap3/lit_review_related_work_biblio,chap4/design_and_implementation_biblio,chap5/evaluation_biblio}}
+    {\scriptsize\bibliography{chap2/background_biblio,chap3/lit_review_related_work_biblio,chap4/design_and_implementation_biblio,chap5/evaluation_biblio,chap6/conclusions_biblio}}
 	\printindex
 }
 

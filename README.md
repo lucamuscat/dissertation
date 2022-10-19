@@ -40,6 +40,8 @@ Contains the implementations for blocking queues.
 Contains the scripts used to produce plots and analyse the benchmarking framework's results. `src/utils/scratchpad.ipynb` is a jupyter notebook that gives a lower-level view of the study's _Evaluation_ chapter. `src/utils/plot.py` produces the plots used in the _Evaluation_ chapter, whilst `src/utils/interpret_counters.py` takes the counters from the benchmarking framework's results and outputs them in an HTML table and an excel spreadsheet.
 ### `src/write_up/thesis`
 Contains all the LaTex files related to the write up of my dissertation.
+### Setup
+* Set the `PHYSICAL_CORES` macro (inside of `src/affinity_utils.h`) to the number of physical cores your CPU has 
 ## Extending the Framework
 In order to benchmark your own concurrent queueing algorithm, you need to identify if the queue is blocking (requires a lock/mutex) or non-blocking. Once a new queue is placed in their respective directory, the `Makefile` variables `BLOCKING_QUEUE_NAMES` and `NONBLOCKING_QUEUE_NAMES` are to be adjusted accordingly.
 ## Dependencies

@@ -3,7 +3,9 @@ This chapter marks out the design and implementation of the benchmarking
 framework (research objective~\textbf{O1}). A discussion on the steps taken to validate the
 present study's results (research objective~\textbf{O2}), together
 with efforts to sources of error are discussed. The queues implemented in this
-study (as per research objective~\textbf{O3}) are discussed.
+study (as per research objective~\textbf{O3}) are discussed\footnote{The
+artefacts presented in this study can be found in the following git
+repository: \url{https://github.com/lucamuscat/dissertation}}.
 
 \section{Relevant Software Versions}
 Large runtime environments, such as Java's JVM, are regularly used in
@@ -180,6 +182,79 @@ Pointers may only be dereferenced in their canonical form, meaning that the
 most significant 16 bits either need to be set to zero (user-space pointer) or
 one (kernel-space pointer), as canonical faults are thrown when
 dereferencing a non-canonical pointer.
+\pagebreak
+\subsection{The Essence of the Implemented Queues}
+\subsubsection{Valois' Queue}
+\citeauthor{valois1994queues} presents a lock-free, unbounded, MPMC queue,
+together with three different strategies for retrying failed CAS operations~\citep{valois1994queues}.
+The first strategy strictly requires the tail to point to the last node in the
+linked list. The guarantee of pointing to the last node of the linked list
+comes at the cost of an extra CAS. The second strategy loosens
+this guarantee by only requiring the tail to provide a \emph{hint} of where the
+last node of the linked list is. Lastly, a hybrid approach of the first and
+second approaches can be used. Henceforth, this study will be focusing on
+\emph{\citeauthor{valois1994queues}' lock-free queue} using the second retry strategy.
+
+\paragraph{Segregated Head and Tail}
+Irrespective of the retry strategy used, the head (which points to the last
+dequeued node, and initially points to a dummy node) and tail of the queue are
+separated, allowing for higher degrees of parallelism.
+
+\paragraph{Traversal of the Linked List}
+As the tail solely provides a hint to where the last item is in the linked list,
+the enqueueing thread traverses at most $2p-1$ ($p$ being the number of
+concurrent threads) nodes to reach the end of the linked list. \citeauthor{michael1996simple} notes the
+that the tail may lag behind the head, possibly breaking the linked list when
+reclaiming a node~\citep{michael1996simple}.
+
+\subsubsection{MS Queue}
+The \emph{MS Queue}~\citep{michael1996simple} harnesses the non-deterministic
+outcomes of CAS-contended memory locations, employing thread-helping mechanisms
+in CAS failing threads. In order to enqueue a node, a thread must commit the
+node into the queue by setting the true tail's (i.e., the last node in the linked list) next pointer to the enqueued
+node; next, the tail must be updated to point to the last node in the linked
+list. Consequently, two successful CASs are required to commit a node;
+\citeauthor{ladan2008optimistic} reduces the number of required CASs to enqueue
+a node to a single CAS by employing a doubly-linked
+list~\citep{ladan2008optimistic}. As CASs may fail to update the tail, the tail
+may point to the true tail's preceding node.
+In the event an enqueueing thread takes a snapshot of the node preceding the
+true tail, the thread may update the tail to point to the true tail (this is
+referred to as \emph{swinging the tail}). Failure to swing the tail implies that
+another thread has already swung the tail. A thread will endlessly retry adding
+a node to the end of the linked list (and consequently, remain enqueuing the
+node) until it succeeds to do so. \citeauthor{kogan2012methodology} capitalize on the wasted
+parallelism of multiply-failing CAS threads by employing a wait-free enqueue
+(the slow path) after a number of failures in the lock-free enqueue (the fast
+path). Unfortunately, the degree of parallelism offered by these thread-helping
+mechanisms are restrained to
+simultaneously enqueuing threads, as a thread may only affect the queue if its
+snapshot of the tail is consistent (i.e., the snapshot of the tail is the true
+tail). 
+
+Similar to an enqueue, a dequeue may only take effect if the head is
+consistent. Similar to \emph{\citeauthor{valois1994queues} queue}, the head points to
+the most recently dequeued node. If the snapshot of the head is consistent, and
+is equal to the snapshot of the tail, a queue is said to be empty if the head's
+next pointer is null, otherwise, the thread will attempt to swing the tail to
+the only node in the linked list. The dequeue method may only provide a
+response when it successfully manages to move the head to the next node.
+
+\subsubsection{Baskets Queue}
+The \emph{Baskets Queue}~\citep{hoffman2007baskets} exploits the fact that two or
+more operations overlapping in time have non-deterministic ordering. An
+enqueueing thread which fails to commit its node into the linked list (due to
+a conflicting CAS) spends time building a \emph{basket}, which is a group of
+non-deterministically ordered nodes. Building \emph{baskets} doubles down as a secondary
+backoff. In case the tail does not point to the last node in the linked list,
+the enqueueing thread searches for the last node and swings the tail. The queue's head
+only serves as a hint of the last dequeued node, which is reason nodes are
+logically deleted before they are reclaimed. A node is said to be logically
+deleted if the flag bit inside the ABA counter is set to one. The dequeueing thread
+performs the \emph{free chain} procedure if the newly deleted node is far away
+enough from the head; if the tail is encountered while searching for a
+non-deleted node, the head is updated, and the nodes between the old and the
+new head are safe to reclaim.
 
 \subsection{Nanosecond Accurate Delay}
 % High-resolution timers typically tick at a granularity of microseconds
@@ -301,7 +376,7 @@ may no longer be reused)~\citep{dechev2010understanding}, removes the overhead
 of memory allocation in measurements, and forgoes the need of memory management
 schemes, as memory is released at the end of the benchmark.
 
-\section{Benchmarking Framework API}
+\section{Benchmarking Framework Designs}
 \subsection{Modularity}
 New queues and locks may be added to the framework with ease by implementing
 interfaces~\ref{sec:queue_interface} and~\ref{sec:lock_interface}. Locks in the

@@ -187,6 +187,6 @@ char* get_queue_name()
 #ifdef DWCAS
     return "Baskets Queue using DWCAS";
 #else
-    return "Baskets Queue using tagged pointers";
+    return "Baskets Queue using Tagged Pointers";
 #endif
 }

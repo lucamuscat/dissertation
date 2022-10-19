@@ -1,7 +1,7 @@
 \chapter{Evaluation\label{chap:evaluation}}
 This chapter tackles research objective \textbf{O4} by congealing the
 benchmarking framework's results into a number of insights, which are used to
-compare the performance of the presently implemented queues and their seminal oeuvres. 
+compare the performance of the presently implemented queues and their seminal works. 
 Each section is dedicated to the performance of each
 queue under a workload of a fixed number of threads, with varying
 delay between queue operations.
@@ -10,7 +10,7 @@ together with the magnitude of performance degradation, which is
 calculated as the ratio of net runtime between the current and previous thread
 (where a value greater than one indicates degraded performance).
 
-\section{Workload under one thread}
+\section{Workload Under One Thread}
 
 \begin{figure}[!ht]
     \includegraphics[width=1\textwidth]{plots/delay_thread_1.jpg}
@@ -21,7 +21,7 @@ calculated as the ratio of net runtime between the current and previous thread
 The sequential latency of a queue is determined by its algorithmic
 complexity~\citep{valois1995datastructures}. Contention-reducing
 mechanisms\textemdash such as thread helping\textemdash are not triggered under
-single threaded workloads as they rely on failed CAS operations, adding
+single threaded workloads, as they rely on failed CAS operations, adding
 extra overhead through the computation of predicates.
 Figure~\ref{fig:perf_1_thread} shows the performance of each queue in a single
 threaded workload. Under the \emph{pairwise benchmark}, the \emph{MS-Queue} and
@@ -34,7 +34,7 @@ show which queue is consistently faster, the \emph{50\% enqueue benchmark}
 shows that the \emph{Two-Lock Queue} consistently outperforms the
 \emph{MS-Queue} (by at most \textbf{0.27} times).
 
-\section{Workload under two threads}
+\section{Workload Under Two Threads}
 Similar to~\citep{michael1996simple,hoffman2007baskets,ladan2008optimistic},
 under a workload of two threads, a significant degradation in performance can
 be observed. \citeauthor{michael1996simple} notes that as each queue's head and

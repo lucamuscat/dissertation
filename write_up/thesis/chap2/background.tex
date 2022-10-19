@@ -47,17 +47,18 @@ operations or memory barriers) is required.
 
 \section{Synchronization}
 \subsection{CPU Cache}
-As the disparity between CPU frequency and memory access times grew, 
-CPU engineers inserted small, yet fast SRAM chips between the CPU
-and main memory in order to alleviate issues caused by the differences in speed
-~\citep{cantrill2008real,drepper2007every,perfbook2021}. Using large
-quantities of SRAM are deemed uneconomical, hence more cache layers
-have been implemented, with each layer becoming cheaper, larger, and slower~\citep{drepper2007every,perfbook2021}.
+As the disparity between CPU frequency and memory access times grew, CPU
+engineers inserted small, yet fast SRAM chips between the CPU and main memory
+in order to alleviate issues caused by the differences in speed
+~\citep{cantrill2008real,drepper2007every,perfbook2021}. Large quantities
+of SRAM is deemed uneconomical, hence the implementation of more cache layers,
+with each layer becoming cheaper, larger, and
+slower~\citep{drepper2007every,perfbook2021}.
 
 Data is transferred in units of \emph{cache lines}, which are power-of-two
 fixed-size aligned blocks of memory, commonly ranging from 32 to 256
 bytes~\citep{perfbook2021_cacheline}. Cache lines are filled with data starting
-from the requested memory address and continuing with neighbouring
+from the requested memory address up to an arbitrary amount of neighbouring
 bytes~\citep{perfbook2021_cacheline}.
 
 % The \emph{MESI} cache-coherence protocol (Modified, Exclusive, Shared, Invalid)

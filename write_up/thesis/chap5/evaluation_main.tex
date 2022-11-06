@@ -71,30 +71,23 @@ best performance.
 Although outperformed, non-blocking queues using tagged pointers remain
 competitive under low-contention. 
 
-The performance of \citeauthor{valois1994queues}' queue in this study highly
+The performance of \citeauthor{valois1994queues}'s queue in this study highly
 conflicts with that of~\citep{michael1996simple}. Although a queue without a
 memory reclamation scheme may share a common algorithm with one that has, it
 does not imply that they are algorithmically equivalent, making their
 performance unconnected; as this study does not include memory reclamation
 schemes in its implementations, valid comparisons cannot be made with
-~\citep{michael1996simple}'s results of \citeauthor{valois1994queues}' queue,
+~\citep{michael1996simple}'s results of \citeauthor{valois1994queues}'s queue,
 however, insights may still be inferred.
-\citeauthor{michael1996simple} fail to disclose that their choice of
-memory-reclamation schemes introduced a significant bias in favour of their
-novel algorithms. 
+\citeauthor{michael1996simple} omit a discussion on how their choice of
+memory-reclamation schemes introduces significant biases in their favour. 
 This is only made clear when inspecting the study's published source
-code~\citep{michael1996simple_sourcecode}, where \citeauthor{valois1994queues}' queue
+code~\citep{michael1996simple_sourcecode}, where \citeauthor{valois1994queues}'s queue
 makes use of the safe-read protocol, whilst the \emph{MS-Queue} only keeps
-track of each threads' most recently recycled node non-atomically in thread
-local storage.
-% \citeauthor{michael1996simple} fail to disclose the memory
-% reclamation scheme overheads used by each queue\textemdash which if discussed, would
-% have made the fact that the \emph{MS-Queue} made use of a significantly simpler
-% and less effective memory reclamation scheme than any other queue, leading to
-% heavily biased comparisons in favour of the \emph{MS-Queue}.
+track of each threads' most recently recycled node non-atomically in thread-local storage (see Appendix \ref{lst:ms_queue_memory}).
 
-One may hypothesize \citeauthor{valois1994queues}' queue fitted with the \emph{safe read}
-protocol leads to a horribly inefficient algorithm, as each enqueueing thread
+One may hypothesize that \citeauthor{valois1994queues}'s queue fitted with the \emph{safe read}
+protocol would lead to a horribly inefficient algorithm, as each enqueueing thread
 is required to traverse a number of nodes in the linked list, incurring a high
 number of cache misses due to the reference counting system incurring
 additional loads and stores on visiting and moving on from a node.
@@ -110,7 +103,7 @@ effects of a benchmark's artificiality on the validity of its results.
 
 \section{Workload Under Three Threads}
 A minor speedup under a workload of three threads is commonly
-observed\citep{ladan2008optimistic,michael1996simple,hoffman2007baskets}.
+observed~\citep{ladan2008optimistic,michael1996simple,hoffman2007baskets}.
 \citeauthor{michael1996simple} link the boost in performance to fewer
 iterations per thread, in combination with a cache miss rate similar to that
 under two threads.
@@ -194,7 +187,7 @@ where the \emph{`baskets'} mechanism is used more frequently.
 \subsection{Workload Under Five Threads}
 In this study, processors are oversubscribed by pinning more than one process
 to each processor, forcing the thread scheduler to increase the frequency of
-context-switches.
+context switches.
 
 Figure \ref{fig:perf_deg_5_thread} shows that between 0 and 150 nanoseconds of delay, the
 magnitude of performance degradation is a linear function of delay; As delays
@@ -229,15 +222,16 @@ in the \emph{50\% Enqueue Benchmark}. This repeating pattern shows that the perf
 \end{figure}
 
 \subsection{Six Threads and Above}
-At six threads, the non-blocking queues significantly outperform the \emph{two-lock}
-queue at every delay. This trend repeats itself up to 12 threads, with the
-degree at which the non-blocking queues outperform the \emph{two-lock queue}
-increasing at every thread; the degree at which the \emph{baskets queue} outperforms
-the \emph{MS-Queue} also grows with every thread.
+With six threads, the non-blocking queues significantly outperform the
+\emph{two-lock queue} at every delay. This trend repeats itself up to 12
+threads, with the degree at which the non-blocking queues outperform the
+\emph{two-lock queue} increasing at every thread; the degree at which the
+\emph{baskets queue} outperforms the \emph{MS-Queue} also grows with every
+thread.
 
 \section{Effects of Delay on Performance}
 \citeauthor{valois1995datastructures} and \citeauthor{hoffman2007baskets}
-\citep{valois1995datastructures,hoffman2007baskets} note that backoff
+\citep{valois1995datastructures,hoffman2007baskets} note that back-off
 algorithms are required to improve the efficiency of concurrent algorithms.
 More often than not, a queue's optimal delay tends to be similar in consecutive
 threads, with the pattern changing once over-subscription is present. Between
@@ -255,10 +249,10 @@ each queue's optimal delay slightly varies between zero and 250 nanoseconds.
 \section{Biases and Threats to Validity}
 \paragraph{Artificiality of Workloads}
 In~\citep{gregg2014systems}, \citeauthor{gregg2014systems} claims that
-\emph{micro-benchmarks} (type of benchmark adopted in this study) produces
+\emph{micro-benchmarks} (type of benchmark adopted in this study) produce
 artificial workloads, rendering results which are  solely obtained under
 various assumptions. Results obtained in this study represent the concurrent
-queues, whose operations are separated by fixed delays, inside a ``clean-room''
+queues, whose operations are separated by fixed delays, inside a clean-room
 environment. Realistic workloads seldom follow such rigid patterns, making the
 results' validity under real-world scenarios undetermined.
 
@@ -293,7 +287,7 @@ instructions (for ABA prevention purposes) were several times slower than
 their Single-Word-Compare-And-Swap (CAS) counterparts.
 
 It was noted that \citeauthor{michael1996simple}~\citep{michael1996simple}
-failed to disclose the memory-reclamation scheme overheads of each of their
+omitted a discussion on the memory-reclamation scheme overheads of each of their
 implementations\textemdash which if brought to light\textemdash would have
 shown that the choice of memory-reclamation scheme for the \emph{MS-Queue} (the
 authors' novel algorithm) potentially led to significant biases in their
@@ -307,7 +301,7 @@ queue}, due to the required linked-list traversals.
 Under single-threaded workloads, \emph{non-blocking} queues were consistently
 outperformed by \citeauthor{michael1996simple}'s \emph{Two-Lock Queue}
 \citep{michael1996simple}.
-Workloads of two-threads present that tagged pointers using CAS suffer from a
+Workloads of two threads present that tagged pointers using CAS suffer from a
 harsher degradation in performance when compared to their DWCAS counterpart, as
 they are more likely to fail a CAS, requiring one or more retries to completely
 commit their changes. Yet again, the \emph{Blocking Two-Lock Queue}
@@ -333,7 +327,7 @@ competitive at lower degrees of contention. Every workload with six threads or
 more showed monotonically attenuating trends similar to those observed at five
 threads.
 
-A few challenges encountered in this project included minimizing interferences
+A few challenges encountered in this project included minimizing interference
 created by the operating system, and the creation of a simple memory-management
 system which could be used in a lock-free manner.
 Performance measuring tools, such as the instrumentation of counters and the

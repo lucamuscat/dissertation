@@ -2,7 +2,7 @@
 This chapter marks out the design and implementation of the benchmarking
 framework (research objective~\textbf{O1}). A discussion on the steps taken to validate the
 present study's results (research objective~\textbf{O2}), together
-with efforts to sources of error are discussed. The queues implemented in this
+with efforts to contain the sources of error are discussed. The queues implemented in this
 study (as per research objective~\textbf{O3}) are discussed\footnote{The
 artefacts presented in this study can be found in the following git
 repository: \url{https://github.com/lucamuscat/dissertation}}.
@@ -16,7 +16,7 @@ algorithms~\citep{fog2020optimizing}. Arguably, implementations of non-blocking
 algorithms in lock-based, garbage-collected environments are not truly
 non-blocking. The present study is implemented using the C programming language, since
 it uses a relatively light runtime without garbage collection. The clang
-\emph{version 10.0.0-4ubuntu1} compiler, with \emph{-O3 -march=native}
+\emph{version 10.0.0-4ubuntu1} compiler, with \emph{\mbox{-O3} -march=native}
 optimisation flags are used for compilation. An \emph{Intel Core i7 6700HQ
 (Skylake)}, with four cores and a base frequency of $2.60\text{GHz}$, together
 with 16GB of RAM (8x2) is used throughout the rest of this study.
@@ -35,7 +35,9 @@ algorithms~\citep{michael1996simple,valois1994queues,kogan2011wait,hoffman2007ba
 frequently compare their contributions with existing algorithms. The
 \emph{Pairwise} and \emph{50\% Enqueue}
 benchmarks are considered to be standard benchmarking procedures for concurrent
-queueing algorithms. Ten million operations are
+queueing algorithms. Ten million operations\footnote{Ten million operations
+reach a suitable equilibrium between test runtime, memory
+consumption, and amortized overheads.} are
 executed amongst $N$ threads ($t_0,~t_1,~\cdots,~t_{N-1}$) as follows: 
 
 \[
@@ -67,7 +69,7 @@ producer and a consumer.
 
 \subsection{50\% Enqueue Benchmark}
 Drawing from a uniform distribution, each thread is equally probable to execute
-an enqueue or a dequeue, followed by an artificial delay. The queue prefilled
+an enqueue or a dequeue, followed by an artificial delay. The queue is prefilled
 with 1000 items to prevent long runs of empty dequeues (potentially introducing
 biases). Randomness aids with exercising a larger breadth of code paths.
 
@@ -103,16 +105,16 @@ Variance is commonly attributed to operating system activities, such as process
 migration across cores, and context-switching.
 
 Hyperthreading is disabled as it leads to higher rates of cache misses due to
-the each core's cache being split with an extra
+each core's cache being split with an extra
 thread~\citep{fog2020optimizing}.
 Turbo boost is disabled, since it dynamically controls processor performance
 according to the CPU's thermal status~\citep[Section~14.3.3]{intel2021system}.
 Threads are pinned to specific cores using thread affinity to reduce \emph{process
 migration}.
 
-The \emph{observer effect} describes the phenomena where the behaviour of an
+The \emph{observer effect} describes the phenomenon where the behaviour of an
 observed experiment deviates
-from its true form under no observation. Concurrent algorithms are
+from its true form when not under observation. Concurrent algorithms are
 highly timing-sensitive\footnote{As a testament to the timing-sensitive nature
 of concurrent algorithms, the term \emph{heisenbug} has been coined for bugs
 that tend to disappear when debugging overheads are
@@ -131,7 +133,7 @@ algorithms are implemented:
 \citeauthor{michael1996simple}'s Lock-Free Queue~\citep{michael1996simple};
 ~\citeauthor{michael1996simple}'s Two-Lock Concurrent
 Queue~\citep{michael1996simple} (protected by a \emph{test-and-test-and-set-lock}~\citep{mellor1991algorithms}); \citeauthor{hoffman2007baskets}'s Baskets
-Queue~\citep{hoffman2007baskets}; and \citeauthor{valois1994queues}' Lock-Free
+Queue~\citep{hoffman2007baskets}; and \citeauthor{valois1994queues}'s Lock-Free
 Queue~\citep{valois1994queues}. Keen-eyed readers may observe that the chosen
 queues are \emph{unbounded} and \emph{MPMC}.
 
@@ -144,7 +146,8 @@ each successful CAS. Comparisons between pointers that have the same address,
 but do not match in tag value are expected to fail, as differing tag values hint
 at the possibility of a change in logical data. Counters may overflow, leading to tags wrapping back
 to their initial value, allowing for ABA violations to still occur (the chances
-of which are virtually nil).
+of which are virtually nil)\footnote{Our implementation of \emph{version
+tagging} can be found in the following resource: \url{https://github.com/lucamuscat/dissertation/blob/5e493261cb152c870551a360a5a859619bdfb773/src/tagged_ptr.h}}.
 
 % When should version counting with DWCAS be used
 For systems with a significant number of processors (for instance multi-CPU
@@ -184,7 +187,7 @@ one (kernel-space pointer), as canonical faults are thrown when
 dereferencing a non-canonical pointer.
 \pagebreak
 \subsection{The Essence of the Implemented Queues}
-\subsubsection{Valois' Queue}
+\subsubsection{Valois's Queue}
 \citeauthor{valois1994queues} presents a lock-free, unbounded, MPMC queue,
 together with three different strategies for retrying failed CAS operations~\citep{valois1994queues}.
 The first strategy strictly requires the tail to point to the last node in the
@@ -192,8 +195,10 @@ linked list. The guarantee of pointing to the last node of the linked list
 comes at the cost of an extra CAS. The second strategy loosens
 this guarantee by only requiring the tail to provide a \emph{hint} of where the
 last node of the linked list is. Lastly, a hybrid approach of the first and
-second approaches can be used. Henceforth, this study will be focusing on
-\emph{\citeauthor{valois1994queues}' lock-free queue} using the second retry strategy.
+second approaches can be used. This study implements 
+\emph{\citeauthor{valois1994queues}'s lock-free queue} using the second retry
+strategy\footnote{Our implementation of \emph{\citeauthor{valois1994queues}'s lock-free queue} can be found in the following
+resource: \url{https://github.com/lucamuscat/dissertation/blob/master/src/queues/non-blocking/valois_queue.c}}.
 
 \paragraph{Segregated Head and Tail}
 Irrespective of the retry strategy used, the head (which points to the last
@@ -208,32 +213,34 @@ that the tail may lag behind the head, possibly breaking the linked list when
 reclaiming a node~\citep{michael1996simple}.
 
 \subsubsection{MS Queue}
-The \emph{MS Queue}~\citep{michael1996simple} harnesses the non-deterministic
-outcomes of CAS-contended memory locations, employing thread-helping mechanisms
-in CAS failing threads. In order to enqueue a node, a thread must commit the
-node into the queue by setting the true tail's (i.e., the last node in the linked list) next pointer to the enqueued
-node; next, the tail must be updated to point to the last node in the linked
-list. Consequently, two successful CASs are required to commit a node;
+The \emph{MS Queue}~\citep{michael1996simple}\footnote{Our implementation of
+the \emph{MS queue} can be found in the following resource:
+\url{https://github.com/lucamuscat/dissertation/blob/master/src/queues/non-blocking/ms_queue.c}}
+harnesses the non-deterministic outcomes of CAS-contended memory locations,
+employing thread-helping mechanisms in CAS-failing threads. In order to enqueue
+a node, a thread must commit the node into the queue by setting the true tail's
+(i.e., the last node in the linked list) next pointer to the enqueued node;
+next, the tail must be updated to point to the last node in the linked list.
+Consequently, two successful CASs are required to commit a node;
 \citeauthor{ladan2008optimistic} reduces the number of required CASs to enqueue
 a node to a single CAS by employing a doubly-linked
 list~\citep{ladan2008optimistic}. As CASs may fail to update the tail, the tail
-may point to the true tail's preceding node.
-In the event an enqueueing thread takes a snapshot of the node preceding the
-true tail, the thread may update the tail to point to the true tail (this is
-referred to as \emph{swinging the tail}). Failure to swing the tail implies that
-another thread has already swung the tail. A thread will endlessly retry adding
-a node to the end of the linked list (and consequently, remain enqueuing the
-node) until it succeeds to do so. \citeauthor{kogan2012methodology} capitalize on the wasted
-parallelism of multiply-failing CAS threads by employing a wait-free enqueue
-(the slow path) after a number of failures in the lock-free enqueue (the fast
-path). Unfortunately, the degree of parallelism offered by these thread-helping
-mechanisms are restrained to
-simultaneously enqueuing threads, as a thread may only affect the queue if its
-snapshot of the tail is consistent (i.e., the snapshot of the tail is the true
-tail). 
+may point to the true tail's preceding node. In the event an enqueueing thread
+takes a snapshot of the node preceding the true tail, the thread may update the
+tail to point to the true tail (this is referred to as \emph{swinging the
+tail}). Failure to swing the tail implies that another thread has already swung
+the tail. A thread will endlessly retry adding a node to the end of the linked
+list (and consequently, remain enqueuing the node) until it succeeds to do so.
+\citeauthor{kogan2012methodology} capitalize on the wasted parallelism of
+multiply-failing CAS threads by employing a wait-free enqueue (the slow path)
+after a number of failures in the lock-free enqueue (the fast path).
+Unfortunately, the degree of parallelism offered by these thread-helping
+mechanisms are restrained to simultaneously enqueuing threads, as a thread may
+only affect the queue if its snapshot of the tail is consistent (i.e., the
+snapshot of the tail is the true tail). 
 
 Similar to an enqueue, a dequeue may only take effect if the head is
-consistent. Similar to \emph{\citeauthor{valois1994queues} queue}, the head points to
+consistent. Similar to \emph{\citeauthor{valois1994queues}'s queue}, the head points to
 the most recently dequeued node. If the snapshot of the head is consistent, and
 is equal to the snapshot of the tail, a queue is said to be empty if the head's
 next pointer is null, otherwise, the thread will attempt to swing the tail to
@@ -241,20 +248,23 @@ the only node in the linked list. The dequeue method may only provide a
 response when it successfully manages to move the head to the next node.
 
 \subsubsection{Baskets Queue}
-The \emph{Baskets Queue}~\citep{hoffman2007baskets} exploits the fact that two or
-more operations overlapping in time have non-deterministic ordering. An
-enqueueing thread which fails to commit its node into the linked list (due to
-a conflicting CAS) spends time building a \emph{basket}, which is a group of
-non-deterministically ordered nodes. Building \emph{baskets} doubles down as a secondary
-backoff. In case the tail does not point to the last node in the linked list,
-the enqueueing thread searches for the last node and swings the tail. The queue's head
-only serves as a hint of the last dequeued node, which is reason nodes are
-logically deleted before they are reclaimed. A node is said to be logically
-deleted if the flag bit inside the ABA counter is set to one. The dequeueing thread
-performs the \emph{free chain} procedure if the newly deleted node is far away
-enough from the head; if the tail is encountered while searching for a
-non-deleted node, the head is updated, and the nodes between the old and the
-new head are safe to reclaim.
+The \emph{Baskets Queue}~\citep{hoffman2007baskets}\footnote{Our implementation
+of the \emph{Baskets Queue} can be found in the following resource:
+\url{https://github.com/lucamuscat/dissertation/blob/master/src/queues/non-blocking/baskets_queue.c}}
+exploits the fact that two or more operations overlapping in time have
+non-deterministic ordering. An enqueueing thread which fails to commit its node
+into the linked list (due to a conflicting CAS) spends time building a
+\emph{basket}, which is a group of non-deterministically ordered nodes.
+Building \emph{baskets} doubles down as a secondary backoff. In case the tail
+does not point to the last node in the linked list, the enqueueing thread
+searches for the last node and swings the tail. The queue's head only serves as
+a hint of the last dequeued node, which is reason nodes are logically deleted
+before they are reclaimed. A node is said to be logically deleted if the flag
+bit inside the ABA counter is set to one. The dequeueing thread performs the
+\emph{free chain} procedure if the newly deleted node is far away enough from
+the head; if the tail is encountered while searching for a non-deleted node,
+the head is updated, and the nodes between the old and the new head are safe to
+reclaim.
 
 \subsection{Nanosecond Accurate Delay}
 % High-resolution timers typically tick at a granularity of microseconds
@@ -271,7 +281,7 @@ With respect to CPUs, time may be described in different dimensions, where the
 number of CPU cycles can be extrapolated from wall-clock time and the CPU's
 clock speed, allowing for an instruction\textemdash with a known
 latency\textemdash to be executed as many times as required to consume an
-arbitrary number of time. Unfortunately, extrapolating CPU cycles from
+arbitrary amount of time. Unfortunately, extrapolating CPU cycles from
 wall-clock time requires a fixed CPU clock speed, hurting the validity of
 results in cases where CPU clock speeds are highly unstable.
 
@@ -305,18 +315,18 @@ executed are modified according to the error between the delay's average time
 elapsed, and the expected delay.
 
 \subsection{Test-and-Test-and-Set Lock with Exponential Delay}
-\citeauthor{rudolph1984dynamic} propose an alternative to the \emph{test and set
+\citeauthor{rudolph1984dynamic} propose an alternative to the \emph{test-and-set
 (TAS)} spinning method called \emph{test-and-test-and-set
 (TTAS)}~\citep{rudolph1984dynamic}. The steps \emph{TTAS} takes to reduce cache line
 invalidations caused by indiscriminate \emph{TAS} instructions are two-fold: (1) Read
-the polled flag until a falsey value has been read (lock has been released);
+the polled flag until a 'falsey' value has been read (lock has been released);
 (2) Acquire the lock using the \emph{TAS} instruction, going back to the
-first step if the \emph{TAS} operation returns a truthy value (another thread
+first step if the \emph{TAS} operation returns a 'truthy' value (another thread
 has acquired the lock between steps one and two). 
 
 Exponential back-off is needed to control
 contention~\citep{valois1994queues}. \citeauthor{anderson1990performance}
-suggests a bound on the delay, as uncontended processors that back-off a number
+suggests a bound on the delay, as uncontended processors that back off a number
 of times will take longer to acquire a lock; furthermore, unfairness
 exacerbated under exponential delay~\citep[Section~7.4]{herlihy2020art}.
 Intel's \emph{Contended Locks with Increasing
@@ -365,7 +375,7 @@ typedef struct ttas_lock_t
 \subsection{Memory Management}
 % Is the terminology of dissertation correctly used here? I.e. is is supposed
 % to be thesis?
-Due to limited time, dynamic memory management of non-blocking data-structures
+Due to time constraints, dynamic memory management of non-blocking data-structures
 is omitted, as it is an actively researched field which can single-handedly fit
 an entire dissertation ~\citep{valois1995datastructures,michael2004hazard}.
 
@@ -419,13 +429,13 @@ and data caching~\citep[Section~14.11]{fog2020optimizing}.
 
 The alignment and padding variables reduces false sharing, preventing logically
 distinct data from being stored in the same cache line.
-Thread-specific data was stored in thread local storage, as to further reduce
+Thread-specific data was stored in thread-local storage, as to further reduce
 false sharing. Struct fields were aligned to 128 bytes, due to
 Intel's spatial prefetcher loading data into L2
 cache in chunks of 128 bytes~\citep[Section~E.2.5.4]{intelmanualoptimization}.
 
 Threads are synchronized to start at the same time using
-barriers, mitigating transient start up effects~\citep{hoffman2007baskets}.
+barriers, mitigating transient start-up effects~\citep{hoffman2007baskets}.
 Furthermore, a number of operations are executed before the start of each
 benchmark, as to warm up the cache and branch predictor, moving cache misses
 due to unpopulated caches and speculative branch mispredictions outside the
@@ -439,7 +449,7 @@ between the original and dequeued values to test for any corruption caused by ra
 
 The artificial delay's accuracy is validated through a separate
 benchmark where the average delay over ten million operations is recorded several times.
-An arbitrary threshold for the coefficient of variance of one percent is used
+A threshold for the coefficient of variance of one percent is used
 to validate suitability of the delay; such a test allows for immediate feedback
 loops, where changes to the delay's behaviour may be verified in a timely
 manner.

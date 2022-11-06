@@ -1,7 +1,6 @@
 \chapter{Conclusions \& Future Work}
 \section{Conclusion}
-Concurrent queues remain in a consistent state after being accessed
-simultaneously by multiple threads. Limited work explicitly focusing on surveying concurrent
+Limited work explicitly focusing on surveying concurrent
 queueing algorithms exists. Consequently, we implement the algorithms
 in~\citep{michael1996simple,hoffman2007baskets,valois1994queues} and compare
 their performance through identical benchmarks. This study addresses the following research
@@ -23,8 +22,9 @@ taken in validating a number of the benchmarking framework's components.
 The absolute error of the artificial delay (i.e.~the absolute difference
 between the actual average and the expected time) and its coefficient of
 variance are recorded and are kept to a minimum.
-Although every queue's implementation is not thoroughly tested (due to the
-complexity testing concurrent algorithms), the frequency at which specific code
+Although every queue's implementation is not thoroughly tested (in terms of
+code coverage, due to the
+complexity of testing concurrent algorithms), the frequency at which specific code
 paths are executed is measured; specific distributions of these counters act as
 a tell-tale sign that each algorithm is either working or not working as
 expected. Finally, the repeatability of the benchmarking framework is
@@ -52,7 +52,7 @@ levels of contention (i.e. a combination of low thread count and high delay),
 however, non-blocking queues still remain competitive. At high levels of
 contention, blocking queues are inferior to non-blocking ones. 
 
-Under workloads of three threads, \citeauthor{michael1996simple} boast an
+Under workloads of three threads, the \citeauthor{michael1996simple} queue boasts an
 impressive speedup of a factor less than $\frac{1}{3}$~\citep{michael1996simple},
 however, \citeauthor{hoffman2007baskets}'s reported speedup for the
 \emph{MS-Queue}~\citep{hoffman2007baskets} and the present study's reported
@@ -81,9 +81,9 @@ Between one and three threads, the \emph{MS-Queue} consistently outperforms the
 \emph{Baskets Queue} start to consistently outperform the \emph{MS-Queue}
 at four threads or above.
 
-Queues using 128 bit tagged pointers (through the \emph{Double-Width Compare and
-Swap} instruction) are several magnitudes slower than queues adopting 64 bit
-pointers.
+Queues using 128-bit tagged pointers (through the \emph{Double-Width
+Compare-and-Swap} instruction) are several magnitudes slower than queues
+adopting 64-bit pointers.
 
 \section{Related Work}
 \citeauthor{pourmeidani2019performance}~\citep{pourmeidani2019performance} evaluates the performance of a blocking
@@ -99,25 +99,27 @@ evictions.
 \section{Critique and Limitations}
 Our evaluation is limited by the number of cores on the benchmarking
 machine's CPU, although this does not affect the validity of the study, it
-reduced the number of potential insights.
+potentially reduces the amount of insights found.
 
 The queues evaluated in this study do not include memory-reclamation schemes,
 potentially leading to biases.
 
 Although several validation techniques are adopted, none of them are exhaustive
-enough to ensure that from race conditions. The evaluation does not
+enough to ensure freedom from race conditions. The evaluation does not
 discuss the benchmarking framework's overhead, making the degree of its effects
 on the benchmarked code benchmarked unknown.
 
 \section{Future Work}
 \begin{itemize}
 \item Add more algorithms with different progress conditions, such as
-obstruction-free or wait-free queues.
+obstruction-free or wait-free queue;
 \item Adopt \citeauthor{curtsinger2013stabilizer}'s \emph{stabilizer}~\citep{curtsinger2013stabilizer}, which allows
 for statistically sound performance evaluations by forcing benchmark executions
-to sample the space of memory configurations.
-\item Further extend the study by running the benchmarks on machines with
-better processors.
+to sample the space of memory configurations;
+\item Further extend the study by running the benchmarks on UMA machines with
+better processors;
+\item Make the benchmarks more organic by substituting different queues in real
+world code (similar to \citeauthor{boyd2012non}'s analysis of non-scalable locks~\citep{boyd2012non});
 \item Add a variety of memory-reclamation schemes to the implemented queues,
 discussing their effects on each queue's performance and behaviour.
 \end{itemize}

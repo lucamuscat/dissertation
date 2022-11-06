@@ -47,11 +47,11 @@ operations or memory barriers) is required.
 
 \section{Synchronization}
 \subsection{CPU Cache}
-As the disparity between CPU frequency and memory access times grew, CPU
-engineers inserted small, yet fast SRAM chips between the CPU and main memory
-in order to alleviate issues caused by the differences in speed
-~\citep{cantrill2008real,drepper2007every,perfbook2021}. Large quantities
-of SRAM is deemed uneconomical, hence the implementation of more cache layers,
+As the disparity between CPU frequency and memory access times grew, small, yet
+fast SRAM chips were inserted between the CPU and main memory in order to alleviate issues
+caused by the differences in speed
+~\citep{cantrill2008real,drepper2007every,perfbook2021}. Large quantities of
+SRAM is deemed uneconomical, hence the implementation of more cache layers,
 with each layer becoming cheaper, larger, and
 slower~\citep{drepper2007every,perfbook2021}.
 
@@ -102,9 +102,9 @@ multi-CPU and distributed systems; (2) \emph{Uniform memory
 access (UMA)} architectures link processors and memory using a bus
 interconnect~\citep[Appendix~B.3]{herlihy2020art}.
 
-The cognisance of interconnection architecture is important, 
-as some algorithms are not suited for different architectures due to
-overheads associated with accessing memory. This study will be
+Programmers require prior knowledge on the interconnection architecture they
+intend to deploy their high-performance programs on, as certain algorithms are not suited for specific interconnection
+architectures, due to the characteristics of the memory access overhead. This study will be
 conducted on a \emph{UMA} architecture.
 
 \subsection{Atomic Operations}
@@ -138,7 +138,7 @@ update value, otherwise, the destination is updated with the source's
 value~\citep{intel2021inst}.
 Older studies may give different definitions of
 CAS~\citetext{\citealp{scott2013shared},~Table~2.2;~\citealp{valois1995datastructures},~Appendix~A},
-such that line five of algorithm \ref{alg:cas} is excluded.
+such that line five of Algorithm~\ref{alg:cas} is excluded.
 
 \SetNoFillComment
 \SetKwComment{Comment}{/* }{ */}
@@ -156,8 +156,8 @@ such that line five of algorithm \ref{alg:cas} is excluded.
 \end{algorithm}
 
 \subsection{ABA Problem}
-\citeauthor{dechev2010understanding} define the ABA problem as a false positive
-execution of a CAS on a shared location~\citep{dechev2010understanding}. The ABA
+\citeauthor{dechev2010understanding}~\citep{dechev2010understanding} define the ABA problem as a false positive
+execution of a CAS on a shared location. The ABA
 problem may occur when the source's memory address has been changed from $A$ to
 $B$, and back to $A$, bearing in mind that $A$ has been freed and immediately
 allocated a logically distinct value, between the point in time when the
@@ -254,7 +254,10 @@ models vary in strength; as the model used becomes more relaxed, more aggressive
 optimizations may be used, increasing performance at the cost of
 programmability and portability~\citep{gharachorloo1996consistency}.
 
-\emph{Relaxed memory models} such as \emph{weakly ordered models}\footnote{A number of ARM processors tend to be weakly ordered when interacting with main memory~\citep[Section~A3.5.5]{arm2022architecture}} offer little to no
+\emph{Relaxed memory models} such as \emph{weakly ordered
+models}\footnote{There exists ARM processors that tend to be weakly ordered when
+interacting with main memory~\citep[Section~A3.5.5]{arm2022architecture}} offer
+little to no
 constraints with respect to the ordering of reads and writes, requiring the
 explicit use of memory barriers for a finer grained control over the ordering~\citep{gharachorloo1996consistency}. \citeauthor{gharachorloo1996consistency} identifies relaxed
 memory models as \emph{system-centric models}, since they tend to favour
@@ -284,7 +287,7 @@ from a \emph{ready state} to a \emph{running state}.
 state of a mutex. \emph{Busy-waiting} is best suited for small critical sections, as
 contention caused by polling may lead to degraded performance;
 \item \emph{Hybrid}:~Utilizes a mix of \emph{blocking} and \emph{busy-waiting},
-forgoing the inefficiencies associated with both methods.
+forgoing the inefficiencies associated with both waiting strategies.
 \end{itemize}
 
 Algorithms reliant on mutual exclusion are inherently
